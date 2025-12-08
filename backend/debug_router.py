@@ -1,0 +1,73 @@
+"""
+调试路由器问题
+"""
+import asyncio
+from httpx import ASGITransport, AsyncClient
+from app.main import app
+
+
+async def debug_router():
+    """调试路由器"""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 登录
+        login_response = await client.post(
+            "/api/auth/login",
+            json={"login_field": "张三", "password": "123"}
+        )
+        print(f"登录响应: {login_response.status_code}")
+        if login_response.status_code != 200:
+            print(f"登录失败: {login_response.text}")
+            return
+        
+        token_data = login_response.json()
+        token = token_data["access_token"]
+        print(f"获取token: {token[:20]}...")
+        
+        # 创建项目
+        project_data = {
+            "name": "路由器调试项目",
+            "description": "用于调试路由器的项目"
+        }
+        
+        create_response = await client.post(
+            "/api/projects/",
+            json=project_data,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        print(f"创建项目响应: {create_response.status_code}")
+        if create_response.status_code != 200:
+            print(f"创建项目失败: {create_response.text}")
+            return
+        
+        created_project = create_response.json()
+        project_id = created_project["id"]
+        print(f"创建的项目ID: {project_id}")
+        print(f"创建的项目详情: {created_project}")
+        
+        # 直接查询数据库来验证项目是否存在
+        from app.database import async_session
+        from app.models import Project
+        from sqlalchemy import select
+        
+        async with async_session() as session:
+            result = await session.execute(select(Project).where(Project.id == project_id))
+            db_project = result.scalar_one_or_none()
+            print(f"数据库中的项目: {db_project}")
+            if db_project:
+                print(f"数据库项目详情: ID={db_project.id}, name={db_project.name}, owner_id={db_project.owner_id}")
+        
+        # 获取项目
+        get_response = await client.get(
+            f"/api/projects/{project_id}",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        print(f"获取项目响应: {get_response.status_code}")
+        if get_response.status_code != 200:
+            print(f"获取项目失败: {get_response.text}")
+        else:
+            project_data = get_response.json()
+            print(f"获取的项目: {project_data['name']}, ID: {project_data['id']}")
+
+
+if __name__ == "__main__":
+    asyncio.run(debug_router())

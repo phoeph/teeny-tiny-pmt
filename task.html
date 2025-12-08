@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TASK详情</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
+    a { color:#2563eb; text-decoration:none; }
+    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    .breadcrumb { font-size:12px; color:#6b7280; }
+    .breadcrumb a { color:#2563eb; text-decoration:none; }
+    .breadcrumb .sep { margin:0 6px; color:#9ca3af; }
+    .meta-panel { display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:8px; }
+    .meta-item { display:flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; font-size:12px; color:#374151; }
+    .meta-label { color:#6b7280; }
+    .meta-value { color:#111827; font-weight:500; }
+    .section { border-top: 2px solid #e5e7eb; padding-top: 16px; margin-top: 24px; }
+    .toast { position: fixed; top: 16px; right: 16px; padding: 10px 12px; border-radius: 6px; color: #fff; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 13px; }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+    .desc-menu-btn { cursor:pointer; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; }
+    .desc-menu-btn:hover { background:#eef2ff; }
+    .primary-btn { padding:8px 12px; background:#2563eb; color:#fff; border:none; border-radius:6px; }
+    .ghost-btn { padding:8px 12px; background:#f3f4f6; color:#374151; border:none; border-radius:6px; }
+    .dropdown { position:absolute; z-index:10000; background:#fff; border:1px solid #e5e7eb; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.2); min-width:240px; max-height:240px; overflow-y:auto; }
+    .dropdown-item { padding:8px 10px; cursor:pointer; font-size:13px; color:#111827; }
+    .dropdown-item:hover { background:#f3f4f6; }
+    .dropdown-footer { display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-top:1px solid #e5e7eb; font-size:12px; color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="header" style="display:flex; align-items:center;">
+    <div class="header-left" style="display:flex; align-items:center; gap:12px;">
+      <div id="breadcrumb" class="breadcrumb"></div>
+    </div>
+    <div class="header-center" style="flex:1; display:none;">
+      <div id="taskHeader" style="font-weight:600;"></div>
+    </div>
+    <div class="header-right" style="display:flex; align-items:center; gap:12px;">
+      <div id="userMenuContainer"></div>
+    </div>
+  </div>
+  <div id="taskMeta"></div>
+  <div class="jira-card" style="margin-top:24px; position:relative;"><h4 style="display:flex; align-items:center;">Description<span id="projDescMenu" class="desc-menu-btn" title="编辑" style="display:none; margin-left:auto;"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="12" r="2" fill="#2563eb"/><circle cx="12" cy="12" r="2" fill="#2563eb"/><circle cx="19" cy="12" r="2" fill="#2563eb"/></svg></span></h4><div id="issueDescProject" class="jira-desc"></div><div id="projDescEditor" style="margin-top:8px; display:none;"></div></div>
+
+
+  <link rel="stylesheet" href="assets/issue-layout.css" />
+  <link rel="stylesheet" href="assets/header-user-menu.css" />
+  <script src="assets/rich-editor.js"></script>
+  <script src="assets/meta-panel.js"></script>
+  <script src="assets/label-cascader-multi.js"></script>
+  <script src="assets/page-history.js"></script>
+  <script src="assets/header-user-menu.js"></script>
+  <script src="assets/ux-enhancements.js"></script>
+  <script src="assets/comments.js"></script>
+  <script>
+    document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? '#10b981' : (p==='high' ? '#ef4444' : '#f59e0b'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });
+    const API = 'http://localhost:8000/api';
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams(location.search);
+    const taskCode = params.get('code');
+    window.__pageHistoryKey = `task:${taskCode||''}`;
+    PageHistory.init(window.__pageHistoryKey);
+    const projectParam = params.get('project');
+    const jobCode = params.get('job');
+    const projectId = parseInt(projectParam || '', 10);
+    function showToast(text, type) { const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = text; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 1800); }
+    async function __showErrorFromResponse(res){ let msg=''; try{ const ct=(res.headers && res.headers.get && res.headers.get('content-type'))||''; if(ct.indexOf('application/json')>=0){ const data=await res.json(); const detail=typeof data==='string'? data : (data && (data.detail || data.message || '')); msg=String(detail||'').trim(); } else { msg=String((await res.text())||'').trim(); } } catch (e) { msg=''; } showToast(msg||'操作失败','error'); }
+
+    async function fetchTask(){
+      let task=null;
+      try{
+        const r = await fetch(`${API}/work-items/by-code/${taskCode}`, { headers: { Authorization: `Bearer ${token}` } });
+        if(!r.ok) throw new Error('backend');
+        task = await r.json();
+      }catch(e){
+        const items = Array.isArray(window.__items) ? window.__items : [];
+        task = items.find(i => (i.code===taskCode));
+      }
+      if(!task){ document.getElementById('taskHeader').textContent = `${taskCode} 未找到`; return; }
+      document.getElementById('taskHeader').textContent = `${task.code} · ${task.title || task.name || ''}`;
+      const metaTarget = document.getElementById('taskMeta');
+      const links = `<a href="job?code=${jobCode}&project=${projectId}">所属JOB</a> · <a href="project?id=${projectId}">所属项目</a>`;
+      let rawProject=null; try{ const pr=await fetch(`${API}/projects/${projectId}`, { headers:{ Authorization:`Bearer ${token}` } }); if(pr.ok){ rawProject=await pr.json(); } }catch(_){ }
+      const projectCode = rawProject && rawProject.code ? rawProject.code : '';
+      const bc = `<a href="projects">Projects</a> / <a href="project?id=${projectId}">${projectCode}</a> / <a href="job?code=${jobCode}&project=${projectId}">${jobCode}</a>`;
+      try {
+        const topBc = document.getElementById('breadcrumb');
+        if (topBc) {
+          const taskTitle = task.title || task.name || '';
+          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span><a href="project?id=${projectId}">${projectCode}</a><span class="sep">/</span><a href="job?code=${jobCode}&project=${projectId}">${jobCode}</a><span class="sep">/</span>${task.code}<span class="sep">/</span>${taskTitle}`;
+        }
+      } catch (_) {}
+      const entityObj = normalizeEntity('task', task, { project: { id: projectId }, job: { code: jobCode } });
+      if(rawProject && rawProject.priority){ entityObj.priority = rawProject.priority; }
+      renderJiraIssueLayout(metaTarget, entityObj, { breadcrumb: bc, counter: '', linksHtml: '', project_id: projectId, rawProject: rawProject||null, hideHeader: true });
+      try{ setupLabelEditor(metaTarget, entityObj, { project_id: projectId, rawItem: task }); }catch(_){}
+      const descEl=document.getElementById('issueDescProject'); if(descEl) descEl.innerHTML = (task.description || '') || '暂无描述';
+      try{ const meRes=await fetch(`${API}/auth/me`, { headers:{ Authorization:`Bearer ${token}` } }); if(meRes.ok){ const meRaw=await meRes.json(); const me=(meRaw && meRaw.user) ? meRaw.user : meRaw; window.__me = me; window.__isAdmin = !!(me && (me.username==='admin')); const canEdit = !!(me && ((me.username==='demo')||(me.username==='admin')||(me.id===task.creator_id))); const menu=document.getElementById('projDescMenu'); const editor=document.getElementById('projDescEditor'); if(menu){ menu.style.display = canEdit ? 'inline-flex' : 'none'; menu.onclick=function(){ if(!canEdit) return; editor.style.display='block'; const view=document.getElementById('issueDescProject'); if(view) view.style.display='none'; const ed = createRichEditor('projDescEditor', { entityType: 'work_item', entityId: (task.id||0), saveText: '保存', onSave: async function(html){ try{ const wid=Number(task.id)||0; const res = await fetch(`${API}/work-items/${wid}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ description: html }) }); if(res.ok){ const view=document.getElementById('issueDescProject'); if(view){ view.innerHTML = html || '暂无描述'; view.style.display='block'; } editor.style.display='none'; showToast('描述已保存','success'); return true; } else { await __showErrorFromResponse(res); return false; } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); return false; } } }); ed.setHTML(task.description || ''); }; } } }catch(_){ }
+      window.__currentTaskId = task.id || null;
+      await loadTaskAttachments(task.id||0);
+      if(window.__setupCommentsModule) window.__setupCommentsModule();
+      if(window.__setupComments) window.__setupComments();
+      await loadComments();
+    }
+
+    fetchTask();
+    try{ const onHashChange=function(){ const h=(location.hash||'').trim(); const targetId = h && h.startsWith('#comment-') ? h.slice(1) : ''; if(targetId){ const target=document.getElementById(targetId); if(target){ target.scrollIntoView({ behavior:'smooth', block:'start' }); target.style.boxShadow='0 0 0 2px #2563eb inset'; setTimeout(()=>{ target.style.boxShadow=''; }, 1500); } } }; window.addEventListener('hashchange', onHashChange); }catch(_){}
+  </script>
+  <div class="gantt" style="margin-top:16px;">
+    <div class="jira-tabs" style="margin-top:8px;">
+      <div class="jira-tab active" id="tabComments">Comments</div>
+    </div>
+    <div id="commentsPane">
+      <div id="comments"></div>
+      <div id="commentEditor" style="margin-top:12px;"></div>
+      <div style="margin-top:8px;"><span id="commentError" style="color:#b91c1c;"></span></div>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+        <button id="addCommentBtn" class="primary-btn">添加评论</button>
+        <button id="cancelCommentBtn" class="ghost-btn" style="display:none;">取消</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    async function loadTaskAttachments(id){ try{ const res=await fetch(`${API}/comments/work_item/${id}`, { headers:{ Authorization:`Bearer ${token}` } }); if(!res.ok) return; const items=await res.json(); const files=[]; for(const c of items){ try{ const r=await fetch(`${API}/attachments/comments/${c.id}`, { headers:{ Authorization:`Bearer ${token}` } }); if(r.ok){ const list=await r.json(); list.forEach(a=> files.push({ id:a.id, name:a.file_name })); } } catch (e) {} } const div=document.getElementById('taskAttachmentList'); if(div){ div.innerHTML = files.length? files.map(a=> `<a href="${API}/attachments/${a.id}" target="_blank">${a.name}</a>`).join(' · ') : '暂无附件'; } } catch (e) {} }
+    (function(){ const up=document.getElementById('taskAttachUpload'); const file=document.getElementById('taskAttachFile'); if(up){ up.onclick = async function(){ if(!file || !file.files.length) return; try{ const idVal=(window.__currentTaskId)||0; const res0 = await fetch(`${API}/comments/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ entity_type:'work_item', entity_id: idVal, content: '附件' }) }); if(!res0.ok) return; const data=await res0.json(); const cid=data.id; const fd=new FormData(); fd.append('file', file.files[0]); const rr=await fetch(`${API}/attachments/comments/${cid}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: fd }); if(rr.ok){ await loadTaskAttachments(idVal); } } catch (e) {} } } })();
+    
+    function bindCommentTabs(){ const cTab=document.getElementById('tabComments'); const hTab=document.getElementById('tabHistory'); const cPane=document.getElementById('commentsPane'); const hPane=document.getElementById('historyPane'); if(cTab&&hTab){ cTab.onclick=function(){ cTab.classList.add('active'); hTab.classList.remove('active'); cPane.style.display='block'; hPane.style.display='none'; PageHistory.log('切换标签','Comments'); }; hTab.onclick=function(){ hTab.classList.add('active'); cTab.classList.remove('active'); cPane.style.display='none'; hPane.style.display='block'; PageHistory.renderTo('historyList'); PageHistory.log('切换标签','History'); }; } }
+    window.__setupCommentsModule = function(){ var cm=CommentsModule.init({ entityType:'work_item', entityId:(window.__currentTaskId||0), selectors:{ listId:'comments', editorId:'commentEditor', addBtnId:'addCommentBtn', cancelBtnId:'cancelCommentBtn', errorId:'commentError', historyListId:'historyList' }, hooks:{ PageHistory: PageHistory } }); window.loadComments=cm.load; window.__disableLegacyTaskComments=true; bindCommentTabs(); };
+  </script>
+ </body>
+ </html>

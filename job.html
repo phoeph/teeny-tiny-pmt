@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JOB详情</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
+    a { color:#2563eb; text-decoration:none; }
+    .header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    .title { color:#111827; font-weight:600; margin-bottom:6px; }
+    .meta { display:flex; justify-content:space-between; font-size:12px; color:#6b7280; }
+    .breadcrumb { font-size:12px; color:#6b7280; }
+    .breadcrumb a { color:#2563eb; text-decoration:none; }
+    .breadcrumb .sep { margin:0 6px; color:#9ca3af; }
+    .desc-menu-btn { cursor:pointer; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; }
+    .desc-menu-btn:hover { background:#eef2ff; }
+    .primary-btn { padding:8px 12px; background:#2563eb; color:#fff; border:none; border-radius:6px; }
+    .ghost-btn { padding:8px 12px; background:#f3f4f6; color:#374151; border:none; border-radius:6px; }
+    .jira-breadcrumb { display:none; }
+    .dropdown { position:absolute; z-index:10000; background:#fff; border:1px solid #e5e7eb; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.2); min-width:240px; max-height:240px; overflow-y:auto; }
+    .dropdown-item { padding:8px 10px; cursor:pointer; font-size:13px; color:#111827; }
+    .dropdown-item:hover { background:#f3f4f6; }
+    .columns { display:flex; gap: 12px; }
+    .col { flex:1; border:1px solid #e5e7eb; border-radius: 8px; padding: 12px; background:#fafafa; }
+    .col h3 { margin:0 0 8px; }
+    .kanban-list { min-height: 200px; }
+    .card { padding:10px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:10px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); -webkit-user-drag: element; transition: transform 120ms ease, box-shadow 120ms ease; }
+    .card-header { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#6b7280; margin-bottom:4px; }
+    .card-header .left { display:flex; align-items:center; gap:6px; }
+    .card-header .center { display:flex; align-items:center; gap:8px; flex:1; justify-content:center; }
+    .card-header .right { display:flex; align-items:center; gap:6px; }
+    .code-prefix-first { font-weight:700; font-size:14px; }
+    .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
+    .dot-orange { background:#f59e0b; }
+    .dot-green { background:#10b981; }
+    .dot-blue { background:#3b82f6; }
+    .status-todo { border-left:4px solid #f59e0b; }
+    .status-doing { border-left:4px solid #10b981; }
+    .status-done { border-left:4px solid #3b82f6; }
+    .card.dragging { opacity: 0.8; transform: scale(0.98); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .kanban-list.drop-active { outline: 2px solid #3b82f6; background: rgba(59,130,246,0.08); transition: background 0.12s ease; }
+    .toast { position: fixed; top: 16px; right: 16px; padding: 10px 12px; border-radius: 6px; color: #fff; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 13px; }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+    .gantt-container { border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+    .gantt-header { display:flex; background:#f8f9fa; border-bottom:1px solid #e5e7eb; }
+    .task-header { width:260px; padding:10px; font-weight:600; border-right:1px solid #e5e7eb; box-sizing:border-box; }
+    .assignee-header { width:160px; padding:10px; font-weight:600; border-right:1px solid #e5e7eb; box-sizing:border-box; }
+    .time-header { flex:1; overflow-x:auto; }
+    .time-row { display:flex; height:40px; }
+    .time-cell { flex:0 0 auto; display:flex; align-items:center; justify-content:center; border-right:1px solid #e5e7eb; color:#6b7280; font-size:12px; }
+    .gantt-body { display:flex; height: 360px; }
+    .task-list { width:260px; border-right:1px solid #e5e7eb; overflow-y:auto; background:#fff; box-sizing:border-box; scrollbar-gutter:stable; }
+    .assignee-list { width:160px; border-right:1px solid #e5e7eb; overflow-y:auto; background:#fff; box-sizing:border-box; scrollbar-gutter:stable; }
+    .timeline { flex:1; position:relative; overflow:hidden; background:#fff; z-index:1; }
+    .timeline-container { position:relative; overflow:auto; height:100%; }
+    .row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
+    .row-timeline { position:relative; height:40px; border-bottom:1px solid #f3f4f6; }
+    .bar { position:absolute; top:12px; height:16px; border-radius:8px; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:9999; overscroll-behavior: contain; }
+    .modal { width:420px; background:#fff; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; }
+    .modal h4 { margin:0 0 10px; }
+    .modal .row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .modal label { width:90px; flex-shrink:0; color:#374151; }
+    .modal input, .modal select, .modal textarea { flex:1; min-width:0; padding:8px; border:1px solid #e5e7eb; border-radius:6px; }
+    .modal .actions { display:flex; justify-content:flex-end; gap:8px; }
+    .task-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
+    .assignee-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
+    .task-row-timeline { position:relative; height:40px; border-bottom:1px solid #f3f4f6; }
+    .task-bar { position:absolute; border-radius:8px; z-index:1; display:flex; align-items:center; justify-content:flex-start; color:#fff; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition: left 120ms ease, width 120ms ease; font-size:12px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .task-bar-text { padding:0 8px; text-align:left; font-size:12px; }
+    .resize-handle { position:absolute; top:0; bottom:0; width:6px; }
+    .resize-handle.left { left:0; cursor:ew-resize; }
+    .resize-handle.right { right:0; cursor:ew-resize; }
+    /* 视图切换样式与显示控制（与 project.html 对齐） */
+    .view-toggle { display:inline-flex; background:#eef2ff; border-radius:8px; overflow:hidden; box-shadow: inset 0 0 0 1px #e5e7eb; }
+    .toggle-btn { padding:8px 14px; border:none; background:transparent; cursor:pointer; font-size:13px; color:#374151; transition: all .18s ease; display:inline-flex; align-items:center; gap:6px; }
+    .toggle-btn:hover { background:#e0e7ff; }
+    .toggle-btn.active { background:#2563eb; color:#fff; }
+    .fade { transition: opacity .25s ease, visibility .25s ease; }
+    .hidden { opacity:0; visibility:hidden; height:0; overflow:hidden; }
+    .visible { opacity:1; visibility:visible; }
+  </style>
+</head>
+<body>
+  <div class="header" style="display:flex; align-items:center;">
+    <div class="header-left" style="display:flex; align-items:center; gap:12px;">
+      <div id="breadcrumb" class="breadcrumb"></div>
+    </div>
+    <div class="header-center" style="flex:1; display:none;">
+      <div id="jobHeader" style="font-weight:600;"></div>
+    </div>
+    <div class="header-right" style="display:flex; align-items:center; gap:12px;">
+      <div class="view-toggle">
+        <button id="btnGantt" class="toggle-btn active" title="甘特视图"><span>Gantt</span><svg id="btnGanttCaret" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg></button>
+        <button id="btnCard" class="toggle-btn" title="卡片视图">Card</button>
+      </div>
+      <div id="userMenuContainer"></div>
+    </div>
+  </div>
+  <div id="jobMeta"></div>
+  <div class="jira-card" style="margin-top:12px;"><h4 style="display:flex; align-items:center;">Description<span id="jobDescMenu" class="desc-menu-btn" title="编辑" style="display:none; margin-left:auto;"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="12" r="2" fill="#2563eb"/><circle cx="12" cy="12" r="2" fill="#2563eb"/><circle cx="19" cy="12" r="2" fill="#2563eb"/></svg></span></h4><div id="jobDesc" class="jira-desc"></div><div id="jobDescEditor" style="margin-top:8px; display:none;"></div></div>
+  <div id="jobMeta"></div>
+
+  <div style="margin-top:16px;">
+    <div id="cardView" class="fade hidden" style="margin-top:12px;">
+      <div class="columns">
+        <div class="col" id="col-todo">
+          <h3>To Do</h3>
+          <div class="kanban-list" id="todo"></div>
+        </div>
+        <div class="col" id="col-doing">
+          <h3>In Progress</h3>
+          <div class="kanban-list" id="doing"></div>
+        </div>
+        <div class="col" id="col-done">
+          <h3>Done</h3>
+          <div class="kanban-list" id="done"></div>
+        </div>
+      </div>
+    </div>
+    <div id="ganttView" class="fade visible" style="margin-top:12px;">
+      <div class="gantt-container">
+        <div class="gantt-header">
+          <div class="task-header">任务</div>
+          <div class="assignee-header">负责人</div>
+          <div class="time-header">
+            <div class="year-row" id="yearRow"></div>
+            <div class="month-row" id="monthRow"></div>
+            <div class="day-row" id="dayRow"></div>
+          </div>
+        </div>
+        <div class="gantt-body">
+          <div class="task-list" id="taskList"></div>
+          <div class="assignee-list" id="assigneeList"></div>
+          <div class="timeline">
+            <div class="timeline-container" id="timelineContainer">
+              <div class="timeline" id="timeline"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div class="modal-backdrop" id="taskModalBackdrop">
+      <div class="modal" id="taskModal">
+        <h4>新增任务</h4>
+        <div class="row"><label>所属JOB</label><select id="taskJobSelect"></select></div>
+        <div class="row"><label>任务标题</label><input id="taskTitleInput" placeholder="请输入任务标题" /></div>
+        <div class="row" style="display:flex; gap:8px;">
+          <div style="flex:1"><label>开始日期</label><input id="taskStartInput" type="date" /></div>
+          <div style="flex:1"><label>结束日期</label><input id="taskEndInput" type="date" /></div>
+        </div>
+        <div class="row"><label>描述</label><textarea id="taskDescInput" placeholder="请输入任务描述" rows="3"></textarea></div>
+        <div class="actions">
+          <button class="ghost-btn" id="taskCancelBtn">取消</button>
+          <button class="primary-btn" id="taskCreateBtn">创建</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" id="taskEditModalBackdrop">
+      <div class="modal" id="taskEditModal">
+        <h4>编辑任务</h4>
+        <div class="row"><label>任务标题</label><input id="taskEditTitleInput" placeholder="请输入任务标题" /></div>
+        <div class="row"><label>负责人</label><input id="taskEditAssigneeInput" placeholder="请输入负责人" /></div>
+        <div class="row" style="display:flex; gap:8px;">
+          <div style="flex:1"><label>开始日期</label><input id="taskEditStartInput" type="date" /></div>
+          <div style="flex:1"><label>结束日期</label><input id="taskEditEndInput" type="date" /></div>
+        </div>
+        <div class="row"><label>状态</label><select id="taskEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
+        <div class="row"><label>预估工时</label><input id="taskEditEstimatedHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
+        <div class="row"><label>实际工时</label><input id="taskEditActualHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
+        <div class="row"><label>完成时间</label><input id="taskEditCompletedAtInput" type="datetime-local" /></div>
+        <div class="actions">
+          <button class="ghost-btn" id="taskEditCancelBtn">取消</button>
+          <button class="primary-btn" id="taskEditSaveBtn">保存</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" id="jobModalBackdrop">
+      <div class="modal" id="jobModal">
+        <h4>新增JOB</h4>
+        <div class="row"><label>任务名称</label><input id="jobTitleInput" placeholder="请输入任务名称" /></div>
+        <div class="row" style="display:flex; gap:8px;">
+          <div style="flex:1"><label>开始日期</label><input id="jobStartInput" type="date" /></div>
+          <div style="flex:1"><label>结束日期</label><input id="jobEndInput" type="date" /></div>
+        </div>
+        <div class="row"><label>描述</label><textarea id="jobDescInput" placeholder="请输入JOB描述" rows="3"></textarea></div>
+        <div class="actions">
+          <button class="ghost-btn" id="jobCancelBtn">取消</button>
+          <button class="primary-btn" id="jobCreateBtn">创建</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" id="jobEditModalBackdrop">
+      <div class="modal" id="jobEditModal">
+        <h4>编辑JOB</h4>
+        <div class="row"><label>任务名称</label><input id="jobEditTitleInput" placeholder="请输入任务名称" /></div>
+        <div class="row"><label>负责人</label><input id="jobEditAssigneeInput" placeholder="请输入负责人" /></div>
+        <div class="row" style="display:flex; gap:8px;">
+          <div style="flex:1"><label>开始日期</label><input id="jobEditStartInput" type="date" /></div>
+          <div style="flex:1"><label>结束日期</label><input id="jobEditEndInput" type="date" /></div>
+        </div>
+        <div class="row"><label>状态</label><select id="jobEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
+        <div class="row"><label>预估工时</label><input id="jobEditEstimatedHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
+        <div class="row"><label>实际工时</label><input id="jobEditActualHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
+        <div class="row"><label>完成时间</label><input id="jobEditCompletedAtInput" type="datetime-local" /></div>
+        <div class="actions">
+          <button class="ghost-btn" id="jobEditCancelBtn">取消</button>
+          <button class="primary-btn" id="jobEditSaveBtn">保存</button>
+        </div>
+      </div>
+    </div>
+
+  <div class="gantt" style="margin-top:24px;">
+    <div class="jira-tabs" style="margin-top:8px;">
+      <div class="jira-tab active" id="tabComments">Comments</div>
+    </div>
+    <div id="commentsPane">
+      <div id="comments"></div>
+      <div id="commentEditor" style="margin-top:12px;"></div>
+      <div style="margin-top:8px;"><span id="commentError" style="color:#b91c1c;"></span></div>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+        <button id="addCommentBtn" class="primary-btn">添加评论</button>
+        <button id="cancelCommentBtn" class="ghost-btn" style="display:none;">取消</button>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <link rel="stylesheet" href="assets/issue-layout.css" />
+  <link rel="stylesheet" href="assets/header-user-menu.css" />
+  <link rel="stylesheet" href="assets/comment-modal.css" />
+  <script src="assets/rich-editor.js"></script>
+  <script src="assets/comment-modal.js"></script>
+  <script src="assets/meta-panel.js"></script>
+  
+  <script src="assets/label-cascader-multi.js"></script>
+  <script src="assets/label-cascader-multi.js"></script>
+  <script src="assets/header-user-menu.js"></script>
+  <script src="assets/page-history.js"></script>
+  <script src="assets/ux-enhancements.js"></script>
+  <script src="assets/comments.js"></script>
+  <script>
+    const API = 'http://localhost:8000/api';
+    const token = localStorage.getItem('token');
+    if (!token) { try{ location.href = 'login.html'; }catch(_){} }
+    const isDemo = !token;
+    const params = new URLSearchParams(location.search);
+    const jobCode = params.get('code');
+    const projectParam = params.get('project');
+    const projectId = parseInt(projectParam || '', 10);
+
+    function fmtDate(d) { return d ? new Date(d) : null; }
+  function colorForStatus(s) { return s === 'done' ? '#3b82f6' : (s === 'doing' ? '#10b981' : '#f59e0b'); }
+
+    async function fetchJob() {
+      let job = null;
+      let tasks = [];
+      try {
+        document.getElementById('jobHeader').textContent = `加载中：${jobCode}`;
+        let data = null;
+        const res = await fetch(`${API}/work-items/by-project/${projectId}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+        if (res && res.ok) { data = await res.json(); job = (data.items || []).find(j => j.code === jobCode) || null; }
+        if (!job) {
+          const r2 = await fetch(`${API}/work-items/by-code/${jobCode}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+          if (r2 && r2.ok) { job = await r2.json(); }
+        }
+        tasks = job ? (job.subtasks || []) : [];
+      } catch (e) {
+        try {
+          const demoItems = (window.__jobs || []);
+          job = demoItems.find(j => j.code === jobCode) || null;
+          tasks = job ? (job.subtasks || []) : [];
+        } catch(_) { job=null; tasks=[]; }
+      }
+      if (!job) { document.getElementById('jobHeader').textContent = `${jobCode} 未找到`; return; }
+      document.getElementById('jobHeader').textContent = `${job.code} · ${job.title}`;
+      const descEl=document.getElementById('jobDesc'); if(descEl) descEl.innerHTML=(job.description||'')||'暂无描述';
+      (async function(){ try{ const meRes=await fetch(`${API}/auth/me`, { headers:{ Authorization:`Bearer ${token}` } }); if(!meRes.ok) return; const meRaw=await meRes.json(); const me=(meRaw && meRaw.user) ? meRaw.user : meRaw; window.__me = me; window.__isAdmin = !!(me && (me.username==='admin')); const canEdit = !!(me && ((me.username==='demo')||(me.username==='admin')||(me.id===job.creator_id))); const menu=document.getElementById('jobDescMenu'); const editor=document.getElementById('jobDescEditor'); if(menu){ menu.style.display = canEdit ? 'inline-flex' : 'none'; menu.onclick=function(){ if(!canEdit) return; if(editor) editor.style.display='block'; const view=document.getElementById('jobDesc'); if(view) view.style.display='none'; const ed = createRichEditor('jobDescEditor', { entityType: 'work_item', entityId: (job.id||0), saveText: '保存', onSave: async function(html){ try{ const idOrCode=(job.id||job.code); const res = await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ description: html }) }); if(res.ok){ const v=document.getElementById('jobDesc'); if(v){ v.innerHTML = html || '暂无描述'; v.style.display='block'; } if(editor){ editor.style.display='none'; } showToast('描述已保存','success'); return true; } else { await __showErrorFromResponse(res); return false; } } catch (e) { showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); return false; } } }); ed.setHTML(job.description || ''); }; }
+      } catch(_){} })();
+      window.__currentJobId = job.id || null;
+      window.__job = job;
+      window.__pageHistoryKey = 'job:' + String(job.id || job.code || '');
+      try{ if(window.PageHistory && typeof PageHistory.init==='function'){ PageHistory.init(window.__pageHistoryKey); } }catch(_){ }
+      try{
+        window.__tasks = (tasks||[]).map(function(t){
+          try{
+            const email = t.assignee_email || t.owner_email || t.email || '';
+            const rawPrefix = t.assignee_prefix || '';
+            const raw = rawPrefix || t.assignee || t.owner || (email||'');
+            const prefix = rawPrefix || String(raw||'').split('@')[0];
+            return Object.assign({}, t, { assignee: prefix });
+          }catch(_){ return t; }
+        });
+      }catch(_){ window.__tasks = tasks || []; }
+      loadJobAttachments();
+      try{ if(window.CommentsModule){ var cm2=CommentsModule.init({ entityType:'work_item', entityId:(window.__currentJobId||0), selectors:{ listId:'comments', editorId:'commentEditor', addBtnId:'addCommentBtn', cancelBtnId:'cancelCommentBtn', errorId:'commentError', historyListId:'historyList' }, hooks:{ PageHistory: PageHistory, __showErrorFromResponse: __showErrorFromResponse } }); window.loadComments=cm2.load; } }catch(_){ }
+      try{ if(typeof window.loadComments === 'function'){ window.loadComments(); } else { setTimeout(function(){ if(typeof window.loadComments === 'function'){ window.loadComments(); } }, 0); } }catch(_){ }
+      const metaTarget = document.getElementById('jobMeta');
+      const links = '';
+      let bc = `<a href="projects">Projects</a> / ${job.code}`;
+      let projectCode = '';
+      try {
+        const pr = await fetch(`${API}/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (pr && pr.ok) {
+          const p = await pr.json();
+          projectCode = p && p.code ? p.code : '';
+          window.__rawProject = p;
+        }
+      } catch (_) {}
+      if (projectCode) { bc = `<a href="projects">Projects</a> / ${projectCode} / ${job.code}`; }
+      try {
+        const topBc = document.getElementById('breadcrumb');
+        if (topBc) {
+          const mid = projectCode ? `<a href="project?id=${projectId}">${projectCode}</a>` : `${job.code}`;
+          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${projectCode ? mid : ''}${projectCode ? '<span class=\"sep\">/</span>' : ''}${projectCode ? job.code + '<span class=\"sep\">/</span>' : job.code + '<span class=\"sep\">/</span>'}${job.title}`;
+        }
+      } catch (_) {}
+      
+      if(window.__rawProject){
+        const entity = normalizeEntity('project', window.__rawProject, { project: window.__rawProject });
+        renderJiraIssueLayout(metaTarget, entity, { breadcrumb: bc, counter: '', linksHtml: '', hideHeader: true, rawProject: window.__rawProject });
+        try{ setupPriorityEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
+        try{ setupLabelEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
+      }
+      document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? '#10b981' : (p==='high' ? '#ef4444' : '#f59e0b'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });
+      try { document.querySelectorAll('.jira-breadcrumb').forEach(function(el){ el.remove(); }); } catch(_){ }
+      try{
+        const k = 'board_view_' + String(projectId || '');
+        const saved = localStorage.getItem(k);
+        if (typeof window.__setBoardView === 'function') {
+          window.__setBoardView(saved === 'card' ? 'card' : 'gantt');
+        }
+      }catch(_){ }
+      
+    }
+
+    function __findJobKids(jobCode){ try{ const j=window.__job||null; if(j && (j.code===jobCode)) return Array.isArray(j.subtasks)? j.subtasks : []; return (window.__tasks||[]).filter(t=> t.parent_code===jobCode || t.parent===jobCode || t.parentId===j?.id || t.parent_id===j?.id); }catch(_){ return []; } }
+    function __parentJobCodeOfItem(it){ try{ const j=window.__job||null; if(!j) return ''; const subs=j.subtasks||[]; return subs.find(s=> (s.id===it.id)||(s.code===it.code))? (j.code||'') : ''; }catch(_){ return ''; } }
+    function __applyShakeByCodes(codes, exclude){ try{ const set=new Set((codes||[]).filter(Boolean)); const cards=[...document.querySelectorAll('.card')]; cards.forEach(c=>{ const cd=c.getAttribute('data-code')||''; if(set.has(cd) && (!exclude || exclude!==cd)) c.classList.add('shake'); }); } catch(_){ } }
+    function __clearShake(){ try{ [...document.querySelectorAll('.card.shake')].forEach(c=> c.classList.remove('shake')); } catch(_){ } }
+    function __applyShakeForTaskHover(parentCode, currentStatus, excludeCode){ try{ const kids=__findJobKids(parentCode)||[]; const j=window.__job||null; let codes=[]; if(j && (String(j.status||'')===String(currentStatus||''))){ codes = kids.filter(k=> (k && (String(k.status||'')!==String(currentStatus||'')))).map(k=> k.code||''); } else { codes = [parentCode].concat(kids.map(k=> k.code||'')); } const cards=[...document.querySelectorAll('.card')]; cards.forEach(c=>{ const cd=c.getAttribute('data-code')||''; if(codes.includes(cd) && cd!==excludeCode){ c.classList.add('shake'); } }); } catch(_){ } }
+    function renderKanban(byStatus) {
+      const mkCard = (item) => {
+        const el = document.createElement('div');
+        el.className = `card status-${item.status}`;
+        el.dataset.wid = item.id || '';
+        el.dataset.code = item.code || '';
+        el.setAttribute('draggable','true');
+        (function(){
+          const codeStr = item.code || '';
+          const prefix = (codeStr.match(/^([A-Z]+)/) || [null, ''])[1] || (item.kind||'');
+          const first = prefix ? prefix.charAt(0) : '';
+          const rest = prefix ? prefix.slice(1) : '';
+          let countsHTML = '';
+          if (item.kind === 'JOB') {
+            const kidsAll = __findJobKids(item.code);
+            const cTodo = kidsAll.filter(t=> t.status==='todo').length;
+            const cDoing = kidsAll.filter(t=> t.status==='doing').length;
+            const cDone = kidsAll.filter(t=> t.status==='done').length;
+            countsHTML = `<span class="status-dot dot-orange"></span><span>${cTodo}</span><span class="status-dot dot-green"></span><span>${cDoing}</span><span class="status-dot dot-blue"></span><span>${cDone}</span>`;
+          }
+          const ellipsis = `<span class="ellipsis-btn" data-role="edit"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="#2563eb"/><circle cx="12" cy="12" r="2" fill="#2563eb"/><circle cx="19" cy="12" r="2" fill="#2563eb"/></svg></span>`;
+          const assigneeDisp = __assigneeToDisplay(item.assignee||'');
+          el.innerHTML = `<div class="card-header">
+              <div class="left"><span class="code"><span class="code-prefix-first">${first}</span>${rest}${codeStr.replace(/^([A-Z]+)/,'')}</span></div>
+              <div class="center">${countsHTML}</div>
+              <div class="right">${ellipsis}</div>
+            </div>
+            <div class="title">${item.title||item.name||item.code||'-'}</div>
+            <div class="meta" style="display:flex; justify-content:space-between;"><span class="assignee">${assigneeDisp || '-'}</span><span class="dates">${__getPlannedStartStr(item) || ''} ~ ${__getPlannedEndStr(item) || ''}</span></div>`;
+          const editBtn = el.querySelector('.ellipsis-btn');
+          if (editBtn) {
+            editBtn.addEventListener('click', function(ev){ ev.stopPropagation(); if(item.kind==='JOB'){ openEditJobModal(item); } else { openEditTaskModal(item); } });
+          }
+          el.addEventListener('mouseenter', function(){ if(item.kind==='JOB'){ __applyShakeForTaskHover(item.code||'', item.status||'', item.code||''); } else { const parent=__parentJobCodeOfItem(item)||''; if(parent){ __applyShakeForTaskHover(parent, item.status||'', item.code||''); } } });
+          el.addEventListener('mouseleave', function(){ __clearShake(); });
+        })();
+        const assSpan = el.querySelector('.assignee');
+        if (assSpan) {
+          assSpan.style.cursor = 'pointer';
+          assSpan.title = '点击编辑负责人';
+          assSpan.addEventListener('click', function(ev){ ev.stopPropagation(); openAssigneePickerForItem(assSpan, item); });
+        }
+        el.ondblclick = function(ev){ if(item.kind==='JOB'){ window.location.href = `job?code=${item.code}&project=${projectId}`; } else { const parent=(window.__job&&window.__job.code)||''; const tid=item.code||item.id; window.location.href = `task?code=${tid}&project=${projectId}&job=${parent}`; } };
+        return el;
+      };
+      ['todo','doing','done'].forEach(s => { const c = document.getElementById(s); if(c){ c.innerHTML=''; (byStatus[s]||[]).forEach(it => c.appendChild(mkCard(it))); } });
+    }
+
+    let startDate = (function(){ const y=new Date().getFullYear()-1; return new Date(y,0,1); })();
+    let endDate = (function(){ const y=new Date().getFullYear()+1; return new Date(y,11,31); })();
+    let totalDays = 0;
+    let columnWidth = 30;
+    let timeMode = 'day';
+    const ganttData = { tasks: [], timeColumns: [] };
+    window.__expandedParents = window.__expandedParents || {};
+    let __sortTaskAsc = true;
+    let __sortAssigneeAsc = true;
+    function __assigneeToDisplay(v){ try{ const s=String(v||'').trim(); if(!s) return '-'; const p=s.split('@')[0]; return p||'-'; }catch(_){ return '-'; } }
+    function __assigneeDefaults(){ return [ { name:'张三', prefix:'zhangsan', email:'zhangsan@chinaunicom.cn' }, { name:'李四', prefix:'lisi', email:'lisi@chinaunicom.cn' }, { name:'王五', prefix:'wangwu', email:'wangwu@chinaunicom.cn' }, { name:'赵六', prefix:'zhaoliu', email:'zhaoliu@chinaunicom.cn' }, { name:'钱七', prefix:'qianqi', email:'qianqi@chinaunicom.cn' }, { name:'demo', prefix:'demo', email:'demo@chinaunicom.cn' } ]; }
+    function __assigneeToPrefix(input){ const v=(input==null?'' : String(input)).trim(); if(!v) return ''; const defs=__assigneeDefaults(); const byName=defs.find(u=>u.name===v); if(byName) return byName.prefix; const emailIdx=v.indexOf('@'); if(emailIdx>0) return v.slice(0, emailIdx); return v; }
+    function __loadLocalAssignments(){ try{ const raw=localStorage.getItem('gantt_assignments')||'{}'; const obj=JSON.parse(raw); return (obj && typeof obj==='object')? obj : {}; } catch(_){ return {}; } }
+    function __saveLocalAssignment(key, prefix){ try{ const data=__loadLocalAssignments(); data[String(key)]=String(prefix||''); localStorage.setItem('gantt_assignments', JSON.stringify(data)); } catch(_){} }
+    function __prefixToEmail(prefix){ const p=(prefix==null?'' : String(prefix)).trim(); if(!p) return ''; if(p.indexOf('@')>0) return p; return p+"@chinaunicom.cn"; }
+    function buildAssigneeIndex(){ const map=new Map(); const items=Array.isArray(window.__items)?window.__items:[]; items.forEach(function(i){ if(i.assignee){ const k=String(i.assignee); if(!map.has(k)) map.set(k, { name:k, prefix:'', email:'' }); } const subs=i.subtasks||[]; subs.forEach(function(s){ if(s.assignee){ const k=String(s.assignee); if(!map.has(k)) map.set(k, { name:k, prefix:'', email:'' }); } }); }); const defaults=__assigneeDefaults(); defaults.forEach(function(u){ if(!map.has(u.name)) map.set(u.name, u); }); const arr=[...map.values()].sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); }); window.__assigneesIndex=arr; }
+    function showAssigneeDropdown(input, q){ buildAssigneeIndex(); const list = Array.isArray(window.__assigneesIndex) ? window.__assigneesIndex : []; const query = String(q || '').trim().toLowerCase(); const filtered = query ? list.filter(function(u){ return String(u.name).toLowerCase().includes(query) || String(u.prefix||'').toLowerCase().includes(query) || String(u.email||'').toLowerCase().includes(query); }) : list.slice(); const pageSize = 10; const state = window.__assigneeDropdownState || {}; const page = (state[input.id] && state[input.id].page) || 1; const total = filtered.length; const pages = Math.max(1, Math.ceil(total / pageSize)); const cur = Math.max(1, Math.min(page, pages)); const start = (cur - 1) * pageSize; const end = Math.min(start + pageSize, total); let el = document.getElementById('assigneeDropdown'); if (!el) { el = document.createElement('div'); el.id = 'assigneeDropdown'; el.className = 'dropdown'; document.body.appendChild(el); } const rect = input.getBoundingClientRect(); el.style.display = 'block'; el.style.left = (rect.left + window.scrollX) + 'px'; el.style.top = (rect.bottom + window.scrollY) + 'px'; el.style.width = rect.width + 'px'; const itemsHtml = filtered.slice(start, end).map(function(u){ const tip = u.prefix || u.email || ''; return '<div class="dropdown-item" title="'+ tip +'" data-name="' + u.name + '">' + u.name + '</div>'; }).join(''); const footerHtml = '<div class="dropdown-footer"><span>共' + total + '人，显示' + (start + 1) + '-' + end + '</span><div class="pager"><button data-act="prev">上一页</button><button data-act="next">下一页</button></div></div>'; el.innerHTML = itemsHtml + footerHtml; el.querySelectorAll('.dropdown-item').forEach(function(it){ it.onclick = function(){ input.value = this.getAttribute('data-name') || ''; hideAssigneeDropdown(); }; }); const prev = el.querySelector('button[data-act="prev"]'); const next = el.querySelector('button[data-act="next"]'); if (prev) { prev.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.max(1, cur - 1) }; showAssigneeDropdown(input, input.value); }; } if (next) { next.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.min(pages, cur + 1) }; showAssigneeDropdown(input, input.value); }; } el.onmousedown = function(e){ e.preventDefault(); }; el.addEventListener('wheel', function(e){ e.preventDefault(); this.scrollTop += (e.deltaY || 0); }, { passive: false }); }
+    function hideAssigneeDropdown(){ const el=document.getElementById('assigneeDropdown'); if(el) el.style.display='none'; }
+    function enableAssigneeDropdown(inputId){ const input=document.getElementById(inputId); if(!input) return; input.addEventListener('focus', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('input', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('blur', function(){ setTimeout(hideAssigneeDropdown, 120); }); }
+    function __getPlannedStartStr(i){ return i && (i.planned_start_date || i.planned_start) || null; }
+    function __getPlannedEndStr(i){ return i && (i.planned_end_date || i.planned_end) || null; }
+    function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(__getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(__getPlannedEndStr(i))).filter(Boolean); const now=new Date(); const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); const clampMax=new Date(now.getFullYear(), now.getMonth()+7, 0); if(startDates.length||endDates.length){ const minStart=startDates.length? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null; const maxEnd=endDates.length? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null; startDate=minStart? new Date(Math.max(minStart.getTime(), clampMin.getTime())) : clampMin; endDate=maxEnd? new Date(Math.min(maxEnd.getTime(), clampMax.getTime())) : clampMax; } else { startDate=clampMin; endDate=clampMax; } totalDays=Math.ceil((endDate-startDate)/(1000*60*60*24))+1; ganttData.tasks=[]; const parent=window.__job||null; const kids=(items||[]); const pStart=fmtDate(__getPlannedStartStr(parent)), pEnd=fmtDate(__getPlannedEndStr(parent)); const pStartDay=pStart? Math.max(0, Math.floor((pStart-startDate)/(1000*60*60*24))) : 0; const pDuration=(pStart&&pEnd)? Math.max(1, Math.ceil((pEnd-pStart)/(1000*60*60*24))+1) : 1; const mappedKids=kids.map(function(t){ const s=fmtDate(__getPlannedStartStr(t)), e=fmtDate(__getPlannedEndStr(t)); const sd=s? Math.max(0, Math.floor((s-startDate)/(1000*60*60*24))) : 0; const du=(s&&e)? Math.max(1, Math.ceil((e-s)/(1000*60*60*24))+1) : 1; return { id:t.id||t.code, name:(t.title||t.code||'-'), startDay:sd, duration:du, color:colorForStatus(t.status), assignee:__assigneeToDisplay(t.assignee||''), description:(t.title||t.code||'-') }; }); if(parent){ ganttData.tasks.push({ id:parent.id||parent.code, name:(parent.title||parent.code||'-'), category:'', startDay:pStartDay, duration:pDuration, color:colorForStatus(parent.status), assignee:__assigneeToDisplay(parent.assignee||''), description:(parent.title||parent.code||'-'), type:'parent', subtasks:mappedKids }); } else { if(mappedKids.length){ ganttData.tasks.push({ id:'__orphans__', name:'未归属任务', category:'', startDay:0, duration:1, color:'#9ca3af', assignee:'', description:'未归属任务', type:'parent', subtasks:mappedKids }); } }
+    }
+    function generateTimeColumns(){ ganttData.timeColumns=[]; if(timeMode==='day'){ let d=new Date(startDate.getTime()); for(let day=0; day<totalDays; day++){ ganttData.timeColumns.push({ id:`day-${day}`, label:`${d.getMonth()+1}/${d.getDate()}`, date:new Date(d.getTime()), type:'day', width:columnWidth }); d.setDate(d.getDate()+1); } } else { const sy=startDate.getFullYear(), sm=startDate.getMonth(), ey=endDate.getFullYear(), em=endDate.getMonth(); let cur=new Date(sy,sm,1), tgt=new Date(ey,em,1); while(cur<=tgt){ const y=cur.getFullYear(), m=cur.getMonth()+1, days=new Date(y, cur.getMonth()+1, 0).getDate(); ganttData.timeColumns.push({ id:`month-${y}-${m}`, label:`${m}月`, year:y, month:m, days, type:'month', width:columnWidth }); cur.setMonth(cur.getMonth()+1); } } }
+    function renderTimeHeader(){ const yearRow=document.getElementById('yearRow'); const monthRow=document.getElementById('monthRow'); const dayRow=document.getElementById('dayRow'); const timeline=document.getElementById('timeline'); yearRow.innerHTML=''; monthRow.innerHTML=''; dayRow.innerHTML=''; if(timeMode==='day'){ const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow,dayRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); dayRow.style.display='flex'; const monthGroups={}; (ganttData.timeColumns||[]).forEach(col=>{ const d=col.date; const ym=`${d.getFullYear()}-${d.getMonth()+1}`; if(!monthGroups[ym]) monthGroups[ym]={ year:d.getFullYear(), month:d.getMonth()+1, count:0 }; monthGroups[ym].count++; }); const yearGroups={}; Object.values(monthGroups).forEach(m=>{ if(!yearGroups[m.year]) yearGroups[m.year]=0; yearGroups[m.year]+=m.count; }); Object.keys(yearGroups).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(yearGroups[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); Object.keys(monthGroups).sort((a,b)=>{ const [ya,ma]=a.split('-').map(Number); const [yb,mb]=b.split('-').map(Number); return ya!==yb?ya-yb:ma-mb; }).forEach(key=>{ const m=monthGroups[key]; const div=document.createElement('div'); div.className='month-cell'; div.style.width=(m.count*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=`${m.month}月`; monthRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='day-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.date.getDate(); dayRow.appendChild(div); }); } else { dayRow.style.display='none'; const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); const years={}; (ganttData.timeColumns||[]).forEach(col=>{ const y=col.year; if(!years[y]) years[y]=0; years[y]++; }); Object.keys(years).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(years[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='month-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.label; monthRow.appendChild(div); }); }
+    }
+    function renderGantt(items){ const taskList=document.getElementById('taskList'); const assigneeList=document.getElementById('assigneeList'); const tl=document.getElementById('timeline'); taskList.innerHTML=''; assigneeList.innerHTML=''; tl.innerHTML=''; buildGanttTasks(items); generateTimeColumns(); renderTimeHeader(); (ganttData.tasks||[]).forEach((task, ti)=>{ const parent=document.createElement('div'); parent.className='task-row parent-task'; const toggleDown=`<svg class="btn-icon" data-ti="${ti}" data-role="toggle" viewBox="0 0 24 24"><path fill="#2563eb" d="M7 10l5 5 5-5z"/></svg>`; const addIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="add" viewBox="0 0 24 24" title="新增TASK"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>`; const editIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="edit-job" viewBox="0 0 24 24" title="编辑JOB"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`; const delIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="del-job" viewBox="0 0 24 24" title="删除JOB"><circle cx="12" cy="12" r="11" fill="none" stroke="#ef4444"/><path d="M8 8l8 8" stroke="#ef4444" stroke-width="2"/><path d="M16 8l-8 8" stroke="#ef4444" stroke-width="2"/></svg>`; parent.innerHTML=`<div class="task-name" style="display:flex; align-items:center; justify-content:flex-start;"><div style="display:flex; align-items:center; gap:6px;"><div class="task-title" style="font-weight:600;">${task.name}</div>${toggleDown}${addIcon}${editIcon}${delIcon}</div></div>`; taskList.appendChild(parent); const assP=document.createElement('div'); assP.className='assignee-row'; assP.setAttribute('data-ti', ti); assP.setAttribute('data-si', -1); assP.textContent=task.assignee||''; assigneeList.appendChild(assP); const row=document.createElement('div'); row.className='task-row-timeline'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', -1); const bar=document.createElement('div'); bar.className='task-bar'; bar.style.left=(task.startDay*columnWidth)+'px'; bar.style.width=(task.duration*columnWidth)+'px'; bar.style.background=task.color; bar.innerHTML=`<span class="task-bar-text">${task.name}</span>`; row.appendChild(bar); tl.appendChild(row); (task.subtasks||[]).forEach((st, si)=>{ const div=document.createElement('div'); div.className='task-row subtask'; div.style.paddingLeft='24px'; div.innerHTML=`<div class="task-name"><div class="task-title">${st.name}</div><svg class="btn-icon" data-ti="${ti}" data-si="${si}" data-role="edit-task" viewBox="0 0 24 24" title="编辑"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></div>`; taskList.appendChild(div); const ass=document.createElement('div'); ass.className='assignee-row'; ass.setAttribute('data-ti', ti); ass.setAttribute('data-si', si); ass.textContent=st.assignee||''; assigneeList.appendChild(ass); const subRow=document.createElement('div'); subRow.className='task-row-timeline'; subRow.setAttribute('data-ti', ti); subRow.setAttribute('data-si', si); const sb=document.createElement('div'); sb.className='task-bar'; sb.style.left=(st.startDay*columnWidth)+'px'; sb.style.width=(st.duration*columnWidth)+'px'; sb.style.background=st.color; sb.innerHTML=`<span class="task-bar-text">${st.name}</span>`; subRow.appendChild(sb); tl.appendChild(subRow); }); }); applyTaskExpansionStates(); setupScrollSync(); }
+    (function(){ const tl=document.getElementById('taskList'); if(!tl) return; tl.addEventListener('click', function(e){ const btnJob=e.target.closest('[data-role="edit-job"]'); if(btnJob){ e.preventDefault(); e.stopImmediatePropagation(); const ti=parseInt(btnJob.getAttribute('data-ti')); const ref=(ganttData.tasks||[])[ti]; openEditJobModal(ref); return; } const btnTask=e.target.closest('[data-role="edit-task"]'); if(btnTask){ e.preventDefault(); e.stopImmediatePropagation(); const tIdx=parseInt(btnTask.getAttribute('data-ti')); const sIdx=parseInt(btnTask.getAttribute('data-si')); const ref=(ganttData.tasks||[])[tIdx].subtasks[sIdx]; openEditTaskModal(ref); return; } }, true); tl.addEventListener('click', function(e){ const tog=e.target.closest('[data-role="toggle"]'); if(!tog) return; const ti=parseInt(tog.getAttribute('data-ti')); const t=(ganttData.tasks||[])[ti]; const pid=t&&(t.id||t.code); const path=tog.querySelector('path'); const isDown = !!(path && path.getAttribute('d')==='M7 10l5 5 5-5z'); window.__expandedParents = window.__expandedParents || {}; window.__expandedParents[pid] = isDown; applyTaskExpansionStates(); }, false); })();
+
+    function setupScrollSync() {
+      const th = document.querySelector('.time-header');
+      const tl = document.getElementById('timelineContainer');
+      const taskList = document.getElementById('taskList');
+      const assigneeList = document.getElementById('assigneeList');
+      const onTlScroll = () => { th.scrollLeft = tl.scrollLeft; taskList.scrollTop = tl.scrollTop; assigneeList.scrollTop = tl.scrollTop; };
+      const onThScroll = () => { tl.scrollLeft = th.scrollLeft; };
+      tl.removeEventListener('scroll', onTlScroll); th.removeEventListener('scroll', onThScroll);
+      tl.addEventListener('scroll', onTlScroll); th.addEventListener('scroll', onThScroll);
+      bindPan(th); bindPan(tl); bindZoom(th); bindZoom(tl);
+    }
+
+    function bindPan(el) {
+      let isPanning = false, panStartX = 0, panStartScroll = 0;
+      el.addEventListener('mousedown', function(e){ isPanning = true; panStartX = e.clientX; const th = document.querySelector('.time-header'); panStartScroll = th.scrollLeft; e.preventDefault(); });
+      el.addEventListener('mousemove', function(e){ if (!isPanning) return; const th = document.querySelector('.time-header'); const tl = document.getElementById('timelineContainer'); const delta = e.clientX - panStartX; th.scrollLeft = panStartScroll - delta; tl.scrollLeft = th.scrollLeft; });
+      el.addEventListener('mouseup', function(){ isPanning = false; });
+      el.addEventListener('mouseleave', function(){ isPanning = false; });
+    }
+
+    function bindZoom(el) {
+      el.addEventListener('wheel', function(e){ if (!e.ctrlKey) return; e.preventDefault(); const delta = e.deltaY; columnWidth = Math.min(24, Math.max(6, columnWidth + (delta > 0 ? -1 : 1))); fetchJob(); }, { passive: false });
+    }
+
+    function enableDnD(items) {
+      ['todo','doing','done'].forEach(id => { const container = document.getElementById(id); container.addEventListener('dragenter', ev => { const col = ev.currentTarget; col.classList.add('drop-active'); }, true); container.addEventListener('dragleave', ev => { const col = ev.currentTarget; col.classList.remove('drop-active'); }, true); });
+      const setDrop = (colId, status) => { const col = document.getElementById(colId); col.addEventListener('dragover', ev => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move'; }, true); col.addEventListener('drop', async ev => { ev.preventDefault(); const idOrCode = ev.dataTransfer.getData('text/plain') || ev.dataTransfer.getData('text'); if (!idOrCode) { showToast('拖拽数据缺失', 'error'); return; } try { let isJob=false; let jobId=null; let target = null; const tasks=(window.__tasks||[]); const job=(window.__job||null); if(job && (String(job.id)===String(idOrCode) || String(job.code)===String(idOrCode))){ isJob=true; jobId=job.id; target=job; } else { target = tasks.find(t => String(t.id)===String(idOrCode) || String(t.code)===String(idOrCode)); } if(isJob && Array.isArray(job.subtasks) && job.subtasks.length>0){ const dlg=document.createElement('div'); dlg.style.position='fixed'; dlg.style.inset='0'; dlg.style.background='rgba(0,0,0,0.35)'; dlg.style.display='flex'; dlg.style.alignItems='center'; dlg.style.justifyContent='center'; dlg.style.zIndex='9999'; const box=document.createElement('div'); box.style.background='#fff'; box.style.borderRadius='8px'; box.style.padding='16px'; box.style.width='400px'; box.innerHTML=`<div style=\"font-weight:600; color:#111827;\">此操作将使该JOB下的所有TASK状态同步变更为「${status}」</div><div style=\"margin-top:12px; display:flex; justify-content:flex-end; gap:8px;\"><button id=\"__dlgCancel\" class=\"user-btn-ghost\">取消</button><button id=\"__dlgOk\" class=\"user-btn-primary\">确认</button></div>`; dlg.appendChild(box); document.body.appendChild(dlg); const ok = await new Promise((resolve)=>{ box.querySelector('#__dlgCancel').onclick=function(){ dlg.remove(); resolve(false); }; box.querySelector('#__dlgOk').onclick=function(){ dlg.remove(); resolve(true); }; dlg.addEventListener('click', function(ev){ if(ev.target===dlg){ dlg.remove(); resolve(false); } }); const onKey=(ev)=>{ if(ev.key==='Escape'){ dlg.remove(); resolve(false); document.removeEventListener('keydown', onKey); } }; document.addEventListener('keydown', onKey); }); if(!ok){ col.classList.remove('drop-active'); return; } const body = { status }; const r2=await fetch(`${API}/work-items/${jobId}/cascade-status`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) }); if(r2.ok){ showToast('状态联动成功','success'); await fetchJob(); } else { await __showErrorFromResponse(r2); } } else { const body={ status }; const res = await fetch(`${API}/work-items/${idOrCode}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); if (res.ok) { showToast('状态更新成功', 'success'); fetchJob(); } else { await __showErrorFromResponse(res); } } } catch (e) { showToast('网络错误，更新失败', 'error'); } col.classList.remove('drop-active'); col.classList.add('drop-flash'); setTimeout(()=>col.classList.remove('drop-flash'), 300); }, true); };
+      setDrop('todo','todo'); setDrop('doing','doing'); setDrop('done','done');
+    }
+
+    function showToast(text, type) { const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = text; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 1800); }
+    async function __showErrorFromResponse(res){ let msg=''; try{ const ct=(res.headers && res.headers.get && res.headers.get('content-type'))||''; if(ct.indexOf('application/json')>=0){ const data=await res.json(); const detail=typeof data==='string'? data : (data && (data.detail || data.message || '')); msg=String(detail||'').trim(); } else { msg=String((await res.text())||'').trim(); } } catch (e) { msg=''; } showToast(msg||'操作失败','error'); }
+    function __toLocalInputValue(dtStr){ try{ if(!dtStr) return ''; const d=new Date(dtStr); const off=d.getTimezoneOffset(); const local=new Date(d.getTime() - off*60000); return local.toISOString().slice(0,16); }catch(_){ return ''; } }
+    function __normalizeWorkItemShape(i){ if (!i) return i; if (i.planned_start_date && !i.planned_start) i.planned_start = i.planned_start_date; if (i.planned_end_date && !i.planned_end) i.planned_end = i.planned_end_date; return i; }
+    function __toYMD(date){ const y=date.getFullYear(); const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
+    function __daysBetween(startStr, endStr){ try{ if(!startStr||!endStr) return 0; const s=new Date(startStr); const e=new Date(endStr); const ms=1000*60*60*24; return Math.max(0, Math.floor((e - s)/ms) + 1); }catch(_){ return 0; } }
+    function openCreateTaskModal(parentItem){ const backdrop=document.getElementById('taskModalBackdrop'); const sel=document.getElementById('taskJobSelect'); sel.innerHTML=''; const parent=window.__job||null; if(parent){ const opt=document.createElement('option'); opt.value=parent.id||parent.code; opt.textContent=parent.title||parent.code; sel.appendChild(opt); sel.value=opt.value; } document.getElementById('taskTitleInput').value=''; document.getElementById('taskStartInput').value=__toYMD(startDate); document.getElementById('taskEndInput').value=__toYMD(startDate); backdrop.style.display='flex'; }
+    function closeCreateTaskModal(){ const backdrop=document.getElementById('taskModalBackdrop'); backdrop.style.display='none'; }
+    function openCreateJobModal(){ const backdrop=document.getElementById('jobModalBackdrop'); document.getElementById('jobTitleInput').value=''; document.getElementById('jobStartInput').value=__toYMD(startDate); document.getElementById('jobEndInput').value=__toYMD(startDate); backdrop.style.display='flex'; }
+    let __editingTaskRef=null;
+    function openEditTaskModal(ref){ __editingTaskRef=ref; const b=document.getElementById('taskEditModalBackdrop'); const titleEl=document.querySelector('#taskEditModal h4'); if(titleEl) titleEl.textContent='编辑子任务'; document.getElementById('taskEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('taskEditAssigneeInput'); assEl.value=(ref.assignee||''); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; const startEl=document.getElementById('taskEditStartInput'); const endEl=document.getElementById('taskEditEndInput'); if(startEl) startEl.value=sStr; if(endEl) endEl.value=eStr; const estEl=document.getElementById('taskEditEstimatedHoursInput'); if(estEl) estEl.value = (__editingTaskRef.estimated_hours!=null ? __editingTaskRef.estimated_hours : (__daysBetween(sStr,eStr)*8)) || 0; const actEl=document.getElementById('taskEditActualHoursInput'); if(actEl) actEl.value=(__editingTaskRef.actual_hours!=null ? __editingTaskRef.actual_hours : ''); const compEl=document.getElementById('taskEditCompletedAtInput'); if(compEl) compEl.value=(__editingTaskRef.completed_at? __toLocalInputValue(__editingTaskRef.completed_at) : ''); const sel=document.getElementById('taskEditStatusSelect'); sel.value=__editingTaskRef.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
+    function closeEditTaskModal(){ const b=document.getElementById('taskEditModalBackdrop'); b.style.display='none'; __editingTaskRef=null; document.body.style.overflow=''; }
+    let __editingJobRef=null;
+    function openEditJobModal(ref){ __editingJobRef=ref; const b=document.getElementById('jobEditModalBackdrop'); const titleEl=document.querySelector('#jobEditModal h4'); if(titleEl) titleEl.textContent='编辑任务'; document.getElementById('jobEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('jobEditAssigneeInput'); assEl.value=(ref.assignee||''); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; document.getElementById('jobEditStartInput').value=sStr; document.getElementById('jobEditEndInput').value=eStr; const estEl=document.getElementById('jobEditEstimatedHoursInput'); if(estEl) estEl.value=(ref.estimated_hours!=null? ref.estimated_hours : (__daysBetween(sStr,eStr)*8))||0; const actEl=document.getElementById('jobEditActualHoursInput'); if(actEl) actEl.value=(ref.actual_hours!=null? ref.actual_hours : ''); const compEl=document.getElementById('jobEditCompletedAtInput'); if(compEl) compEl.value=(ref.completed_at? __toLocalInputValue(ref.completed_at) : ''); const sel=document.getElementById('jobEditStatusSelect'); sel.value=ref.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
+    function closeEditJobModal(){ const b=document.getElementById('jobEditModalBackdrop'); b.style.display='none'; __editingJobRef=null; document.body.style.overflow=''; }
+    async function __patchTask(idOrCode, payload){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('已保存','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); } }
+    async function __batchPatch(items){ try{ const payload={ items: (items||[]).map(function(ch){ const it = Object.assign({}, ch); if(it.idOrCode && !it.id) it.id = it.idOrCode; delete it.idOrCode; return it; }) }; const res=await fetch(`${API}/work-items/batch`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ const data=await res.json(); const updatedList=(data&&data.items)||[]; showToast('批量更新成功','success'); const itemsLocal = Array.isArray(window.__items)? window.__items.slice() : []; for(const updated of updatedList){ const norm=__normalizeWorkItemShape(updated); const idx = itemsLocal.findIndex(i=> (i.id===norm.id) || (i.code===norm.code)); if(idx>=0){ itemsLocal[idx] = Object.assign({}, itemsLocal[idx], norm); } else { for (let i=0;i<itemsLocal.length;i++){ const subs=itemsLocal[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===norm.id) || (s.code===norm.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], norm); break; } } } } renderAfterLocalUpdate(itemsLocal); return updatedList; } else { await __showErrorFromResponse(res, '保存失败'); return []; } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); return []; } }
+    async function __scheduleChange(idOrCode, ps, pe){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ planned_start_date: ps, planned_end_date: pe }) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('时间已更新','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); } }
+
+    (function(){ const cancel=document.getElementById('taskEditCancelBtn'); const save=document.getElementById('taskEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditTaskModal(); }; } if(save){ save.onclick=async function(){ if(!__editingTaskRef) return; const wid=__editingTaskRef.id; const ps=document.getElementById('taskEditStartInput').value||null; const pe=document.getElementById('taskEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const prefix=__assigneeToPrefix(document.getElementById('taskEditAssigneeInput').value||''); const status=document.getElementById('taskEditStatusSelect').value||'todo'; const payload={ title: document.getElementById('taskEditTitleInput').value||'', assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), planned_start_date: ps, planned_end_date: pe, status }; if(status==='done'){ const endStr = pe || __getPlannedEndStr(__editingTaskRef) || ps; const startStr = ps || __getPlannedStartStr(__editingTaskRef) || endStr; const eDate = endStr ? new Date(endStr) : new Date(); const sDate = startStr ? new Date(startStr) : null; const msPerDay = 1000*60*60*24; let days = 1; if(sDate){ days = Math.max(1, Math.floor((eDate - sDate)/msPerDay) + 1); } payload.completed_at = eDate.toISOString(); payload.actual_hours = days * 8; } await __patchTask(wid, payload); __saveLocalAssignment(wid, prefix); closeEditTaskModal(); }; } })();
+    (function(){ const cancel=document.getElementById('jobEditCancelBtn'); const save=document.getElementById('jobEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditJobModal(); }; } if(save){ save.onclick=async function(){ if(!__editingJobRef) return; const idOrCode=__editingJobRef.id||__editingJobRef.code; const ps=document.getElementById('jobEditStartInput').value||null; const pe=document.getElementById('jobEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const changes = []; changes.push({ idOrCode: idOrCode, title: document.getElementById('jobEditTitleInput').value||'', assignee_prefix: __assigneeToPrefix(document.getElementById('jobEditAssigneeInput').value||''), planned_start_date: ps, planned_end_date: pe, status: document.getElementById('jobEditStatusSelect').value||'todo' }); await __batchPatch(changes); closeEditJobModal(); }; } })();
+
+    fetchJob();
+    window.addEventListener('error', (e)=>{ try{ console.error('[job] error', e.message, e.filename, e.lineno); }catch(_){} });
+    async function loadJobAttachments(){ try{ const res=await fetch(`${API}/comments/work_item/${window.__currentJobId||0}`, { headers:{ Authorization:`Bearer ${token}` }, cache: 'no-store' }); if(!res.ok) return; const items=await res.json(); const files=[]; for(const c of items){ try{ const r=await fetch(`${API}/attachments/comments/${c.id}`, { headers:{ Authorization:`Bearer ${token}` }, cache: 'no-store' }); if(r.ok){ const list=await r.json(); list.forEach(a=> files.push({ id:a.id, name:a.file_name })); } } catch (e) {} } const div=document.getElementById('jobAttachmentList'); if(div){ div.innerHTML = files.length? files.map(a=> `<a href="${API}/attachments/${a.id}" target="_blank">${a.name}</a>`).join(' · ') : '暂无附件'; } } catch (e) {} }
+    (function(){ const up=document.getElementById('jobAttachUpload'); const file=document.getElementById('jobAttachFile'); if(up){ up.onclick = async function(){ if(!file || !file.files.length) return; try{ const idVal=(window.__currentJobId)||0; const res0 = await fetch(`${API}/comments/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ entity_type:'work_item', entity_id: idVal, content: '附件' }) }); if(!res0.ok) return; const data=await res0.json(); const cid=data.id; const fd=new FormData(); fd.append('file', file.files[0]); const rr=await fetch(`${API}/attachments/comments/${cid}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: fd }); if(rr.ok){ PageHistory.log('上传附件', `JOB#${idVal}`); await loadJobAttachments(idVal); } } catch (e) {} } } })();
+    (function(){ var cm=CommentsModule.init({ entityType:'work_item', entityId:(window.__currentJobId||0), selectors:{ listId:'comments', editorId:'commentEditor', addBtnId:'addCommentBtn', cancelBtnId:'cancelCommentBtn', errorId:'commentError', historyListId:'historyList' }, hooks:{ PageHistory: PageHistory, __showErrorFromResponse: __showErrorFromResponse } }); window.loadComments=cm.load; window.__disableLegacyJobComments=true; })();
+
+    
+
+    
+    
+    function switchTimeMode(m){ try{ timeMode = m || 'day'; columnWidth = timeMode==='day' ? 30 : 100; renderGantt(window.__tasks||[]); }catch(_){} }
+    function __initBoardToggle(){ try {
+      const btnG = document.getElementById('btnGantt');
+      const btnC = document.getElementById('btnCard');
+      const caret = document.getElementById('btnGanttCaret');
+      const gantt = document.getElementById('ganttView');
+      const card = document.getElementById('cardView');
+      function openGanttModeDropdown(anchor){ try{ let menu=document.getElementById('ganttModeDropdown'); if(!menu){ menu=document.createElement('div'); menu.id='ganttModeDropdown'; menu.className='dropdown'; document.body.appendChild(menu); } const rect=anchor.getBoundingClientRect(); menu.style.display='block'; menu.style.left=(rect.left+window.scrollX)+'px'; menu.style.top=(rect.bottom+window.scrollY)+'px'; const current=(typeof timeMode==='string')? timeMode : 'day'; menu.innerHTML=[ `<div class="dropdown-item" data-mode="day">日${current==='day' ? ' ✓' : ''}</div>`, `<div class="dropdown-item" data-mode="month">月${current==='month' ? ' ✓' : ''}</div>` ].join(''); menu.querySelectorAll('.dropdown-item').forEach(function(it){ it.onclick=function(){ const m=this.getAttribute('data-mode')||'day'; try{ switchTimeMode(m); }catch(_){} menu.style.display='none'; }; }); const hider=function(e){ if(!menu.contains(e.target) && e.target!==anchor){ menu.style.display='none'; document.removeEventListener('mousedown', hider, true); } }; setTimeout(function(){ document.addEventListener('mousedown', hider, true); }, 0); }catch(_){ } }
+      function setActive(which){
+        const showG = (which === 'gantt');
+        if (gantt) { gantt.classList.toggle('visible', showG); gantt.classList.toggle('hidden', !showG); }
+        if (card) { card.classList.toggle('visible', !showG); card.classList.toggle('hidden', showG); }
+        if (btnG) { btnG.classList.toggle('active', showG); }
+        if (btnC) { btnC.classList.toggle('active', !showG); }
+        try{ const k = 'board_view_' + String(projectId || ''); localStorage.setItem(k, which); }catch(_){ }
+        try{ if(showG){ renderGantt(window.__tasks||[]); } else { const tasks=window.__tasks||[]; const byStatus={ todo:[], doing:[], done:[] }; tasks.forEach(function(t){ if(t && byStatus[t.status]) byStatus[t.status].push(t); }); renderKanban(byStatus); enableDnD(window.__tasks||[]); } }catch(_){}
+      }
+      window.__setBoardView = setActive;
+      if (btnG) btnG.onclick = function(){ setActive('gantt'); };
+      if (caret) caret.onclick = function(ev){ ev.stopPropagation(); openGanttModeDropdown(btnG); };
+      if (btnC) btnC.onclick = function(){ setActive('card'); };
+      try{
+        const k = 'board_view_' + String(projectId || '');
+        const saved = localStorage.getItem(k);
+        if (saved === 'card' || saved === 'gantt') { setActive(saved); }
+        else { setActive('gantt'); }
+      }catch(_){ setActive('gantt'); }
+    } catch (_) { } }
+    document.addEventListener('DOMContentLoaded', function(){ __initBoardToggle(); });
+  </script>
+</body>
+</html>

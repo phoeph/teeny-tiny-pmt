@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 - 项目管理系统</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 40px; }
+    .card { max-width: 400px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .row { margin-bottom: 12px; }
+    label { display: block; font-size: 14px; color: #333; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+    button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
+    .primary { background: #2563eb; color: #fff; }
+    .ghost { background: #f3f4f6; color: #111827; }
+    .actions { display: flex; gap: 8px; }
+    .error { color: #b91c1c; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>登录</h2>
+    <div class="row">
+      <label for="username">用户名（中文或邮箱前缀）</label>
+      <input id="username" type="text" value="admin" />
+    </div>
+    <div class="row">
+      <label for="password">密码</label>
+      <input id="password" type="password" value="123" />
+    </div>
+    <div class="actions">
+      <button id="fillAdmin" class="ghost">填充 admin</button>
+      <button id="fillDemo" class="ghost">填充 demo</button>
+      <button id="fillZhang" class="ghost">填充 pm_zhang</button>
+      <button id="loginBtn" class="primary">登录</button>
+    </div>
+    <div id="error" class="error" style="display:none;"></div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000/api';
+    document.getElementById('fillAdmin').onclick = () => {
+      document.getElementById('username').value = 'admin';
+      document.getElementById('password').value = '123';
+    };
+    document.getElementById('fillDemo').onclick = () => {
+      document.getElementById('username').value = 'demo';
+      document.getElementById('password').value = 'demo123';
+    };
+    document.getElementById('fillZhang').onclick = () => {
+      document.getElementById('username').value = 'pm_zhang';
+      document.getElementById('password').value = '123456';
+    };
+    document.getElementById('loginBtn').onclick = async () => {
+      const login_field = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login_field, password })
+        });
+        if (!res.ok) {
+          const detail = await res.json();
+          throw new Error(detail?.detail || '登录失败');
+        }
+        const data = await res.json();
+        localStorage.setItem('token', data.access_token);
+        location.href = '../projects.html';
+      } catch (e) {
+        const err = document.getElementById('error');
+        err.textContent = e.message;
+        err.style.display = 'block';
+      }
+    };
+  </script>
+</body>
+</html>

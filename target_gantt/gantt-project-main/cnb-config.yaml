@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: teeny-tiny-pmt
+spec:
+  # 构建源
+  source:
+    type: Git
+    git:
+      uri: https://github.com/YOUR_USERNAME/teeny-tiny-pmt.git
+      ref: main
+  
+  # 构建策略
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  
+  # 输出配置
+  output:
+    to:
+      kind: ImageStreamTag
+      name: teeny-tiny-pmt:latest

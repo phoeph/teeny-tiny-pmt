@@ -1,0 +1,17 @@
+{
+  "name": "teeny-tiny-pmt",
+  "version": "1.0.0",
+  "description": "项目管理工具",
+  "main": "index.html",
+  "scripts": {
+    "dev": "serve . -l 8080 --no-port-switching",
+    "build": "echo 'Building static files...' && cp *.html dist/ && cp -r assets dist/ 2>/dev/null || true",
+    "start": "serve . -l 8080 --no-port-switching"
+  },
+  "keywords": ["gantt", "project-management", "unicom", "甘特图"],
+  "author": "Leo com",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

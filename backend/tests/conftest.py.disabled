@@ -1,0 +1,93 @@
+import pytest
+import asyncio
+from typing import AsyncGenerator, Generator
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.main import app
+from app.database import Base, get_db
+from app.config import DATABASE_URL
+
+# Create test database engine
+test_engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+TestAsyncSession = sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture(scope="session")
+def event_loop() -> Generator:
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def setup_test_database() -> AsyncGenerator[None, None]:
+    """Create test database tables."""
+    # For now, just yield since we don't have models yet
+    yield
+    # async with test_engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
+    # yield
+    # async with test_engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+    # await test_engine.dispose()
+
+
+@pytest.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Create a clean database session for each test."""
+    async with TestAsyncSession() as session:
+        yield session
+        # Rollback any changes after test
+        await session.rollback()
+
+
+@pytest.fixture
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create a test client with overridden database dependency."""
+    async def override_get_db():
+        yield db_session
+    
+    app.dependency_overrides[get_db] = override_get_db
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def sample_user_data():
+    """Sample user data for testing."""
+    return {
+        "username": "testuser",
+        "email": "test@example.com",
+        "full_name": "测试用户",
+        "password": "testpassword123"
+    }
+
+
+@pytest.fixture
+def sample_project_data():
+    """Sample project data for testing."""
+    return {
+        "name": "测试项目",
+        "description": "这是一个测试项目",
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31"
+    }
+
+
+@pytest.fixture
+def sample_work_item_data():
+    """Sample work item data for testing."""
+    return {
+        "title": "测试任务",
+        "description": "这是一个测试任务",
+        "item_type": "task",
+        "status": "todo",
+        "priority": "medium",
+        "assignee_id": 1,
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31"
+    }

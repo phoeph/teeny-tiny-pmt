@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+# ignore dot-prefixed directories
+.*/
+# ignore any scripts directories
+**/scripts/
