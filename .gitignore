@@ -5,3 +5,5 @@ dist/
 .*/
 # ignore any scripts directories
 **/scripts/
+# ignore build artifacts
+target_gantt/
