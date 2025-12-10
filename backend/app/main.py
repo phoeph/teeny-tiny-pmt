@@ -126,7 +126,7 @@ def health():
 
 
 # 导入并注册路由
-from .routers import auth, project, work_items, comments, notifications, attachments, users, labels
+from .routers import auth, project, work_items, comments, notifications, attachments, users, labels, exports
 from .routers import watch
 app.include_router(auth.router)
 app.include_router(project.router)
@@ -138,3 +138,4 @@ app.include_router(watch.router)
 app.include_router(watch.router)
 app.include_router(users.router)
 app.include_router(labels.router)
+app.include_router(exports.router)

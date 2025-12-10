@@ -147,6 +147,7 @@ class ProjectService:
             conditions.append(
                 or_(
                     Project.name.like(search_term),
+                    Project.code.like(search_term),
                     Project.description.like(search_term)
                 )
             )

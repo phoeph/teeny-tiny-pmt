@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据管理 · 导出到Excel</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
+    .top { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; gap:12px; }
+    .panel { border:1px solid #e5e7eb; border-radius: 8px; padding: 16px; background:#fff; }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap:12px; }
+    .row { display:flex; flex-direction:column; gap:6px; }
+    .row label { color:#374151; font-size:13px; }
+    .row input, .row select { padding:8px 10px; border:1px solid #e5e7eb; border-radius:6px; }
+    .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+    .btn { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; }
+    .btn-selected { background:#2563eb; color:#fff; border:1px solid #2563eb; }
+    .project-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; max-height: 300px; overflow-y: auto; }
+    .hint { color:#6b7280; font-size:12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="left-sidebar"></div>
+
+  <div class="top">
+    <h2>项目数据导出</h2>
+    <div id="headerRight" style="display:flex; align-items:center; gap:12px;"><div id="userMenuContainer"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <label>选择项目（可多选）</label>
+      <input type="hidden" id="projInput" />
+      
+      <!-- Search Input -->
+      <div style="margin-bottom: 8px;">
+          <input id="projSearchInput" type="text" placeholder="输入项目名称或编号搜索..." style="width: 100%; box-sizing: border-box;" />
+      </div>
+
+      <!-- Selected Projects Area -->
+      <div id="selectedArea" style="display:none; margin-bottom: 12px; padding: 8px; background: #f0f9ff; border-radius: 6px; border: 1px dashed #bae6fd;">
+          <div style="font-size: 12px; color: #0284c7; margin-bottom: 4px;">已选项目：</div>
+          <div id="selectedChips" class="project-list" style="margin-top:0;"></div>
+      </div>
+
+      <!-- Search Results Area -->
+      <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">可选项目：</div>
+      <div id="projChips" class="project-list">正在加载项目...</div>
+    </div>
+    
+    <div class="actions">
+      <button class="btn btn-ghost" id="resetBtn">重置选择</button>
+      <button class="btn btn-primary" id="exportBtn">导出Excel</button>
+    </div>
+    <div class="hint" id="hint">导出内容包含：Jobs, Tasks, 及工时汇总。可在Excel中进行筛选和透视。</div>
+  </div>
+
+  <link rel="stylesheet" href="assets/header-user-menu.css" />
+  <link rel="stylesheet" href="assets/left-sidebar.css" />
+  <script src="assets/header-user-menu.js"></script>
+  <script src="assets/left-sidebar.js"></script>
+  <script>
+    const API = 'http://localhost:8000/api';
+    const token = localStorage.getItem('token');
+    
+    // Store selected project objects: Map<id, {id, code, name}>
+    let selectedProjects = new Map();
+    // Debounce timer
+    let searchTimer = null;
+
+    async function fetchProjects(query = ''){ 
+      try{ 
+        const url = new URL(`${API}/projects`);
+        url.searchParams.set('size', '100'); // Fetch up to 100 matches
+        if(query) {
+            url.searchParams.set('search', query);
+        }
+        
+        const r=await fetch(url, { headers:{ Authorization:`Bearer ${token}` } }); 
+        if(!r.ok) throw new Error('Failed to fetch projects'); 
+        const data=await r.json(); 
+        const items=data.items||[]; 
+        
+        renderAvailableProjects(items);
+      }catch(e){ 
+        document.getElementById('projChips').textContent = "加载项目失败";
+        console.error(e);
+      } 
+    }
+
+    function renderAvailableProjects(items) {
+        const chips = document.getElementById('projChips'); 
+        chips.innerHTML=''; 
+        
+        if(items.length === 0) {
+            chips.textContent = "无匹配项目";
+            return;
+        }
+
+        items.forEach(p=>{ 
+          // If already selected, skip or show differently? 
+          // Better to skip in "Available" if we have a dedicated "Selected" area, 
+          // OR show as selected but disabled.
+          // Let's show them but mark as selected (visual feedback in search results is good too).
+          const isSelected = selectedProjects.has(String(p.id));
+          
+          const chip=document.createElement('button'); 
+          let label = p.name || `Project ${p.id}`;
+          if(p.code) label = `[${p.code}] ${label}`;
+          chip.className = isSelected ? 'btn btn-selected' : 'btn btn-ghost'; 
+          chip.textContent=label; 
+          chip.title=label;
+          chip.dataset.id = String(p.id);
+          
+          chip.onclick=function(){ 
+            const id = String(p.id);
+            if(selectedProjects.has(id)){ 
+              selectedProjects.delete(id); 
+            } else { 
+              selectedProjects.set(id, {id: p.id, code: p.code, name: p.name}); 
+            } 
+            renderSelectedArea();
+            renderAvailableProjects(items); // Re-render to update classes
+            updateHiddenInput();
+          }; 
+          chips.appendChild(chip); 
+        }); 
+    }
+
+    function renderSelectedArea() {
+        const area = document.getElementById('selectedArea');
+        const container = document.getElementById('selectedChips');
+        container.innerHTML = '';
+
+        if(selectedProjects.size === 0) {
+            area.style.display = 'none';
+            return;
+        }
+        area.style.display = 'block';
+
+        selectedProjects.forEach((p) => {
+            const chip=document.createElement('button'); 
+            let label = p.name || `Project ${p.id}`;
+            if(p.code) label = `[${p.code}] ${label}`;
+            chip.className = 'btn btn-selected'; 
+            chip.textContent = label + ' ✕'; // Add X to indicate removal
+            chip.title = "点击移除";
+            
+            chip.onclick = function() {
+                selectedProjects.delete(String(p.id));
+                renderSelectedArea();
+                // Also update the available list UI if the item is currently visible
+                // But since we don't have easy access to the current 'items' array here without refetching or storing global state,
+                // we can just re-trigger the current search or let the user do it.
+                // Actually, let's just trigger a re-render of available if we store the last items?
+                // For simplicity, just update the hidden input. Visual update in "Available" might lag until next interaction, which is fine.
+                // Better: find the chip in projChips and update class.
+                const availChip = document.querySelector(`#projChips button[data-id="${p.id}"]`);
+                if(availChip) availChip.className = 'btn btn-ghost';
+                updateHiddenInput();
+            };
+            container.appendChild(chip);
+        });
+    }
+
+    function updateHiddenInput() {
+        document.getElementById('projInput').value = Array.from(selectedProjects.keys()).join(',');
+    }
+
+    // Search Input Event
+    document.getElementById('projSearchInput').addEventListener('input', function(e) {
+        const val = e.target.value.trim();
+        if(searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            fetchProjects(val);
+        }, 300); // 300ms debounce
+    });
+
+    document.addEventListener('DOMContentLoaded', function(){ 
+        fetchProjects(); 
+    });
+
+    document.getElementById('resetBtn').onclick = function(){ 
+        selectedProjects.clear();
+        updateHiddenInput();
+        renderSelectedArea();
+        // Reset all available chips to ghost
+        const chips = document.getElementById('projChips').children;
+        for(let chip of chips) {
+            chip.className = 'btn btn-ghost';
+        }
+        // Optionally reset search
+        document.getElementById('projSearchInput').value = '';
+        fetchProjects();
+    };
+
+    document.getElementById('exportBtn').onclick = function(){ 
+        const qs=new URLSearchParams(); 
+        qs.set('dimension', 'project'); 
+        
+        const p = document.getElementById('projInput').value.trim(); 
+        if(p) qs.set('project_ids', p); 
+        
+        // Defaults for other params (backend handles them, but explicit is fine)
+        qs.set('role', 'both');
+        // No status param means all statuses
+        
+        const url = `${API}/export/jobs-tasks.xlsx?${qs.toString()}`; 
+        
+        const aEl=document.createElement('a'); 
+        aEl.href=url; 
+        aEl.download='jobs-tasks.xlsx'; 
+        
+        if(token){ 
+            aEl.onclick=function(ev){ 
+                ev.preventDefault(); 
+                // Show loading state if needed, but for now just trigger fetch
+                const btn = document.getElementById('exportBtn');
+                const originText = btn.textContent;
+                btn.textContent = '导出中...';
+                btn.disabled = true;
+
+                fetch(url, { headers:{ Authorization:`Bearer ${token}` } })
+                .then(r=> {
+                    if(!r.ok) throw new Error('Export failed');
+                    return r.blob();
+                })
+                .then(blob=>{ 
+                    const blobUrl=URL.createObjectURL(blob); 
+                    const da=document.createElement('a'); 
+                    da.href=blobUrl; 
+                    da.download='jobs-tasks.xlsx'; 
+                    da.click(); 
+                    URL.revokeObjectURL(blobUrl); 
+                })
+                .catch(err => {
+                    alert('导出失败: ' + err.message);
+                })
+                .finally(() => {
+                    btn.textContent = originText;
+                    btn.disabled = false;
+                }); 
+            } 
+        } 
+        document.body.appendChild(aEl); 
+        aEl.click(); 
+        setTimeout(()=>aEl.remove(), 0); 
+    };
+  </script>
+</body>
+</html>
