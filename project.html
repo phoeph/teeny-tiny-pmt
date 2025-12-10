@@ -52,6 +52,7 @@
     .task-list, .assignee-list { position:relative; z-index:2; height:100%; overflow:auto; }
     .row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
     .task-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
+    .task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .assignee-row { height:40px; display:flex; align-items:center; justify-content:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
     .priority-row { height:40px; display:flex; align-items:center; justify-content:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
     .priority-badge { display:inline-block; min-width:56px; text-align:center; font-size:12px; padding:2px 8px; border-radius:12px; background:#f3f4f6; color:#374151; }
@@ -358,7 +359,8 @@
       return ref;
     }
     function __displayName(i){ if(!i) return '-'; const t = i.title || i.name || i.code; const s = (t==null? '' : String(t)).trim(); return s? s : '-'; }
-    function __titleOrCode(i){ if(!i) return '-'; const t = i.title || i.name || i.description || i.code; const s = (t==null? '' : String(t)).trim(); return s? s : '-'; }
+    function __limitChars(str, max){ try{ const arr=Array.from(String(str||'')); if(arr.length<=max) return String(str||''); return arr.slice(0,max).join('') + '...'; }catch(_){ const s=String(str||''); return s.length>max? (s.slice(0,max)+'...') : s; } }
+    function __titleOrCode(i){ if(!i) return '-'; const t = i.title || i.name || i.description || i.code; const s = (t==null? '' : String(t)).trim(); return s? __limitChars(s, 10) : '-'; }
     function __codeOf(ref){ try{ const items=Array.isArray(window.__items)? window.__items : []; const rid = ref && (ref.id||ref.code); if(!rid) return ''; for(const it of items){ if((it.id===ref.id) || (it.code===ref.code) || (it.id===rid) || (it.code===rid)){ return String(it.code||''); } const subs=it.subtasks||[]; for(const s of subs){ if((s.id===ref.id) || (s.code===ref.code) || (s.id===rid) || (s.code===rid)){ return String(s.code||''); } } } return typeof rid==='string'? rid : String(rid||''); }catch(_){ return ''; } }
     function __toLocalInputValue(dtStr){ try{ if(!dtStr) return ''; const d=new Date(dtStr); const off=d.getTimezoneOffset(); const local=new Date(d.getTime() - off*60000); return local.toISOString().slice(0,16); }catch(_){ return ''; } }
     let startDate = (function(){ const y=new Date().getFullYear()-1; return new Date(y,0,1); })();
