@@ -16,7 +16,7 @@ function setupLabelEditor(container, entity, extras){
     const anchor = findAnchor();
     if (!anchor) return;
     const current = (extras && extras.rawProject && extras.rawProject.label_path) || (entity && entity.label_path) || '';
-    anchor.innerHTML = '<a id="labelsEditLink" href="javascript:void(0)" style="color:#2563eb;">' + (current || 'Select Label') + '</a>';
+    anchor.innerHTML = '<a id="labelsEditLink" href="javascript:void(0)" style="color:var(--primary);">' + (current || 'Select Label') + '</a>';
     const link = anchor.querySelector('#labelsEditLink');
     if (!link) return;
 
@@ -74,18 +74,21 @@ function setupLabelEditor(container, entity, extras){
       const render = function(){
         const colWidth = 220;
         const maxCols = Math.max(2, levels.length || 1);
-        menu.style.width = (Math.min(3, maxCols) * colWidth) + 'px';
-        menu.style.minWidth = (2 * colWidth) + 'px';
-        let html = '<div class="cascader-cols" style="display:flex; gap:8px; align-items:flex-start;">';
+        // Allow horizontal scrolling by setting max-width and overflow
+        menu.style.maxWidth = (3 * colWidth + 32) + 'px'; // 3 cols + padding
+        menu.style.width = 'auto';
+        menu.style.overflowX = 'auto';
+        
+        let html = '<div class="cascader-cols" style="display:flex; gap:8px; align-items:flex-start; width:max-content;">';
         for (var i=0;i<levels.length;i++){
           const header = i===0 ? '根节点' : (trail[i-1] && trail[i-1].name ? trail[i-1].name : '');
-          html += '<div class="cascader-col" data-level="'+i+'" style="flex:0 0 '+colWidth+'px; max-height:280px; overflow:auto; border-right:1px solid #e5e7eb;">';
-          html += '<div style="padding:6px 10px; font-size:12px; color:#6b7280; border-bottom:1px solid #e5e7eb;">'+ (header || '&nbsp;') +'</div>';
+          html += '<div class="cascader-col" data-level="'+i+'" style="flex:0 0 '+colWidth+'px; max-height:280px; overflow:auto; border-right:1px solid var(--border-color);">';
+          html += '<div style="padding:6px 10px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-color);">'+ (header || '&nbsp;') +'</div>';
           const list = levels[i] || [];
           html += list.map(function(n){
             const leaf = !n.children || n.children.length===0;
-            const right = leaf ? '' : '<span style="float:right;color:#9ca3af;">›</span>';
-            const active = (trail[i] && trail[i].name===n.name) ? 'background:#eef2ff;' : '';
+            const right = leaf ? '' : '<span style="float:right;color:var(--text-secondary);">›</span>';
+            const active = (trail[i] && trail[i].name===n.name) ? 'background:var(--category-touch);' : '';
             return '<div class="dropdown-item" data-level="'+i+'" data-leaf="'+(leaf?'1':'0')+'" data-name="'+(n.name||'')+'" data-path="'+(n.path||'')+'" style="'+active+'">'+ (n.name||'') + right +'</div>';
           }).join('');
           html += '</div>';
@@ -132,11 +135,11 @@ function setupLabelEditor(container, entity, extras){
     }
 
     // Prefetch permission state to set disabled styling
-    resolveCanEdit().then(function(can){ if (!can){ link.style.color = '#6b7280'; link.style.cursor = 'not-allowed'; } }).catch(function(){});
+    resolveCanEdit().then(function(can){ if (!can){ link.style.color = 'var(--text-secondary)'; link.style.cursor = 'not-allowed'; } }).catch(function(){});
 
     link.onclick = async function(){
       const can = await resolveCanEdit();
-      if (!can){ link.style.color = '#6b7280'; link.style.cursor = 'not-allowed'; return; }
+      if (!can){ link.style.color = 'var(--text-secondary)'; link.style.cursor = 'not-allowed'; return; }
       const tree = await fetchTree();
       const list = Array.isArray(tree.items) ? tree.items : [];
       openMenu(list);

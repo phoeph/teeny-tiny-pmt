@@ -4,64 +4,39 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>项目列表 - 项目管理系统</title>
+  <link rel="stylesheet" href="assets/modern-theme.css" />
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
-    .top { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; gap:12px; }
-    .view-toggle { display:flex; gap:8px; background:#f3f4f6; padding:4px; border-radius:8px; border:1px solid #e5e7eb; }
-    .view-btn { padding:6px 10px; border:none; background:transparent; border-radius:6px; cursor:pointer; color:#374151; }
-    .view-btn.active { background:#2563eb; color:#fff; }
-    .btn { padding:6px 10px; background:#2563eb; color:#fff; border:none; border-radius:6px; cursor:pointer; }
-    .dropdown { position:absolute; background:#fff; border:1px solid #e5e7eb; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.15); padding:6px; z-index:10001; max-height:240px; overflow:auto; }
-    .dropdown-item { padding:6px 8px; cursor:pointer; color:#374151; border-radius:6px; }
-    .dropdown-item:hover { background:#f3f4f6; }
-
-    /* 列表视图 */
-    .list-view { border:1px solid #e5e7eb; border-radius: 8px; overflow:hidden; }
-    .item { display:flex; padding:12px 16px; border-bottom: 1px solid #e5e7eb; align-items:center; cursor:pointer; }
-    .item:hover { background:#f9fafb; }
-    .item:last-child { border-bottom: none; }
-    .item .code { font-weight:600; color:#111827; width:120px; }
-    .item .name { flex:1; color:#374151; }
-
-    /* 卡片视图 */
-    .card-view { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:16px; }
-    .card { border:1px solid #e5e7eb; border-radius:12px; padding:16px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:10px; cursor:pointer; transition: box-shadow .2s, transform .2s; }
-    .card:hover { box-shadow:0 6px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
-    .card .code { display:inline-block; font-weight:600; color:#1f2937; background:#eef2ff; border:1px solid #dbeafe; border-radius:999px; padding:2px 10px; font-size:12px; }
-    .card .name { color:#111827; font-weight:600; font-size:16px; }
-    .card .actions { display:none; }
-    .backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:9999; }
-    .modal { background:#fff; border-radius:12px; padding:16px; width:420px; box-shadow:0 10px 30px rgba(0,0,0,0.15); }
-    .modal h4 { margin:0; color:#111827; font-size:16px; font-weight:600; }
-    .modal .row { display:flex; align-items:center; gap:10px; margin-top:12px; }
-    .modal .row label { width:88px; color:#374151; }
-    .modal .row input { flex:1; padding:8px; border:1px solid #e5e7eb; border-radius:8px; }
-    .modal .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
-    .btn-ghost { padding:6px 10px; background:#fff; color:#374151; border:1px solid #e5e7eb; border-radius:6px; cursor:pointer; }
+    /* Page specific overrides if needed */
   </style>
 </head>
 <body>
   <div id="left-sidebar"></div>
-  <div class="top">
-    <h2>项目列表</h2>
+  <div class="header">
+    <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--text-main);">项目列表</h2>
     <div id="headerRight" style="display:flex; align-items:center; gap:12px;">
       <div class="view-toggle">
-        <button id="btnCard" class="view-btn">卡片</button>
-        <button id="btnList" class="view-btn">列表</button>
+        <button id="btnCard" class="toggle-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          卡片
+        </button>
+        <button id="btnList" class="toggle-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          列表
+        </button>
       </div>
-      <button id="btnCreateProject" class="btn">新建项目</button>
+      <button id="btnCreateProject" class="btn-primary">新建项目</button>
     </div>
   </div>
   <div id="list"></div>
 
-  <div id="projectCreateBackdrop" class="backdrop">
+  <div id="projectCreateBackdrop" class="modal-backdrop">
     <div class="modal">
       <h4>新建项目</h4>
       <div class="row"><label>项目名称</label><input id="projNameInput" placeholder="例如 官网改版 2026Q1" /></div>
-      <div class="row"><label>项目描述</label><textarea id="projDescInput" placeholder="例如 项目背景与目标" style="min-height:120px; resize:vertical; padding:8px; border:1px solid #e5e7eb; border-radius:8px; width:100%;"></textarea></div>
-      <div class="row"><label>负责人</label><input id="projOwnerInput" placeholder="输入邮箱或前缀，例如 zhangsan 或 zhangsan@corp.com" /></div>
-      <div id="projError" style="color:#ef4444; font-size:12px; margin-top:8px;"></div>
-      <div class="actions"><button id="projCancelBtn" class="btn-ghost">取消</button><button id="projCreateBtn" class="btn">创建</button></div>
+      <div class="row"><label>项目描述</label><textarea id="projDescInput" placeholder="例如 项目背景与目标" style="min-height:120px; resize:vertical; padding:8px; border:1px solid var(--border-color); border-radius:6px; width:100%; font-family:inherit; color: var(--text-main); background: var(--bg-input);"></textarea></div>
+      <div class="row"><label>负责人</label><input id="projOwnerInput" placeholder="输入邮箱或前缀，例如 zhangsan" /></div>
+      <div id="projError" style="color:var(--danger); font-size:12px; margin-top:8px;"></div>
+      <div class="actions"><button id="projCancelBtn" class="btn-ghost">取消</button><button id="projCreateBtn" class="btn-primary">创建</button></div>
     </div>
   </div>
 
@@ -87,17 +62,17 @@
 
     function renderProjects() {
       const container = document.getElementById('list');
-      container.className = viewMode === 'card' ? 'card-view' : 'list-view';
+      container.className = viewMode === 'card' ? 'card-grid' : 'list-view';
       container.innerHTML = '';
       if (!projectsData) return;
       projectsData.forEach(p => {
         const el = document.createElement('div');
         if (viewMode === 'card') {
-          el.className = 'card';
+          el.className = 'card project-card';
           el.innerHTML = `<div class="code">${p.code}</div><div class="name">${p.name}</div>`;
           el.onclick = () => location.href = `project?id=${p.id}`;
         } else {
-          el.className = 'item';
+          el.className = 'list-item';
           el.innerHTML = `<div class="code">${p.code}</div><div class="name">${p.name}</div>`;
           el.onclick = () => location.href = `project?id=${p.id}`;
         }
@@ -132,7 +107,6 @@
     function closeCreateProjectModal(){ const b=document.getElementById('projectCreateBackdrop'); if(b){ b.style.display='none'; } }
     async function createProject(){ const name=document.getElementById('projNameInput').value.trim(); const desc=document.getElementById('projDescInput').value.trim(); const owner=document.getElementById('projOwnerInput').value.trim(); const err=document.getElementById('projError'); err.textContent=''; if(!name){ err.textContent='请输入项目名称'; return; } try{ const res=await fetch(`${API}/projects/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ name, description: desc||undefined }) }); if(res.ok){ const p=await res.json(); const pid=p && p.id; if(owner && pid){ try{ const isEmail = owner.indexOf('@')>0; const body = isEmail? { owner_email: owner } : { owner_prefix: owner }; await fetch(`${API}/projects/${pid}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) }); }catch(_){ } } closeCreateProjectModal(); if(pid){ location.href = `project?id=${pid}`; } else { await fetchProjects(); } } else { try{ const txt=await res.text(); err.textContent = (txt||'创建失败'); }catch(_){ err.textContent='创建失败'; } } } catch(e){ err.textContent='网络错误'; } }
 
-    /* 退出登录已迁移至右上角用户菜单 */
     document.getElementById('btnCard').addEventListener('click', () => applyViewMode('card'));
     document.getElementById('btnList').addEventListener('click', () => applyViewMode('list'));
     document.getElementById('btnCreateProject').addEventListener('click', openCreateProjectModal);

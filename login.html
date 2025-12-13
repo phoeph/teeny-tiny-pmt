@@ -4,41 +4,95 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>登录 - 项目管理系统</title>
+  <link rel="stylesheet" href="assets/modern-theme.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 40px; }
-    .card { max-width: 400px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .row { margin-bottom: 12px; }
-    label { display: block; font-size: 14px; color: #333; margin-bottom: 6px; }
-    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-    button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
-    .primary { background: #2563eb; color: #fff; }
-    .ghost { background: #f3f4f6; color: #111827; }
-    .actions { display: flex; gap: 8px; }
-    .error { color: #b91c1c; margin-top: 8px; }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 32px;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-header h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .login-header p {
+      margin: 8px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .quick-fill {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .error-msg {
+      background: var(--bg-danger-light);
+      color: var(--text-danger-dark);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+      font-size: 14px;
+      display: none;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>登录</h2>
-    <div class="row">
-      <label for="username">用户名（中文或邮箱前缀）</label>
-      <input id="username" type="text" value="admin" />
+  <div class="card login-card">
+    <div class="login-header">
+      <h2>欢迎回来</h2>
+      <p>请登录您的账号以继续</p>
     </div>
-    <div class="row">
-      <label for="password">密码</label>
-      <input id="password" type="password" value="123" />
+    
+    <div class="form-group">
+      <label class="form-label" for="username">用户名</label>
+      <input id="username" class="form-input" type="text" value="admin" placeholder="请输入用户名" />
     </div>
+    
+    <div class="form-group">
+      <label class="form-label" for="password">密码</label>
+      <input id="password" class="form-input" type="password" value="123" placeholder="请输入密码" />
+    </div>
+    
     <div class="actions">
-      <button id="fillAdmin" class="ghost">填充 admin</button>
-      <button id="fillDemo" class="ghost">填充 demo</button>
-      <button id="fillZhang" class="ghost">填充 pm_zhang</button>
-      <button id="loginBtn" class="primary">登录</button>
+      <button id="loginBtn" class="btn-primary" style="width: 100%; justify-content: center;">登录</button>
     </div>
-    <div id="error" class="error" style="display:none;"></div>
+
+    <div class="quick-fill">
+      <button id="fillAdmin" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">Admin</button>
+      <button id="fillDemo" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">Demo</button>
+      <button id="fillZhang" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">PM Zhang</button>
+    </div>
+    
+    <div id="error" class="error-msg"></div>
   </div>
 
   <script>
     const API = 'http://localhost:8000/api';
+    
     document.getElementById('fillAdmin').onclick = () => {
       document.getElementById('username').value = 'admin';
       document.getElementById('password').value = '123';
@@ -51,28 +105,59 @@
       document.getElementById('username').value = 'pm_zhang';
       document.getElementById('password').value = '123456';
     };
+    
     document.getElementById('loginBtn').onclick = async () => {
+      const loginBtn = document.getElementById('loginBtn');
+      const originalText = loginBtn.textContent;
+      loginBtn.textContent = '登录中...';
+      loginBtn.disabled = true;
+      loginBtn.style.opacity = '0.7';
+      
       const login_field = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error');
+      
+      errorDiv.style.display = 'none';
+      
       try {
         const res = await fetch(`${API}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ login_field, password })
         });
+        
         if (!res.ok) {
           const detail = await res.json();
           throw new Error(detail?.detail || '登录失败');
         }
+        
         const data = await res.json();
         localStorage.setItem('token', data.access_token);
-        location.href = 'projects';
+        
+        // Show success state briefly
+        loginBtn.style.background = 'var(--success)';
+        loginBtn.textContent = '登录成功';
+        
+        setTimeout(() => {
+          location.href = 'projects';
+        }, 500);
+        
       } catch (e) {
-        const err = document.getElementById('error');
-        err.textContent = e.message;
-        err.style.display = 'block';
+        errorDiv.textContent = e.message;
+        errorDiv.style.display = 'block';
+        loginBtn.textContent = originalText;
+        loginBtn.disabled = false;
+        loginBtn.style.opacity = '1';
+        loginBtn.style.background = ''; // Reset to default
       }
     };
+
+    // Allow Enter key to login
+    document.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('loginBtn').click();
+      }
+    });
   </script>
 </body>
 </html>

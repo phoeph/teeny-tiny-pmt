@@ -66,6 +66,7 @@ async def list_work_items_by_project(
             "code": wi.code,
             "title": wi.title,
             "status": wi.status,
+            "priority": wi.priority,
             "description": wi.description,
             "assignee_id": wi.assignee_id,
             "assignee_prefix": users_map.get(wi.assignee_id, {}).get("email_prefix"),
@@ -89,6 +90,52 @@ async def list_work_items_by_project(
         response.append(job_dict)
 
     return {"items": response}
+
+
+@router.get("/{id}")
+async def get_work_item_by_id(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(WorkItem).where(WorkItem.id == id, WorkItem.deleted_at.is_(None))
+    res = await db.execute(stmt)
+    wi: Optional[WorkItem] = res.scalars().first()
+    if not wi:
+        raise HTTPException(status_code=404, detail="工作项不存在")
+    assignee = None
+    creator = None
+    if wi.assignee_id:
+        res_a = await db.execute(select(User).where(User.id == wi.assignee_id))
+        assignee = res_a.scalars().first()
+    if wi.creator_id:
+        res_c = await db.execute(select(User).where(User.id == wi.creator_id))
+        creator = res_c.scalars().first()
+    return {
+        "id": wi.id,
+        "code": wi.code,
+        "kind": wi.kind,
+        "project_id": wi.project_id,
+        "parent_id": wi.parent_id,
+        "title": wi.title,
+        "status": wi.status,
+        "priority": wi.priority,
+        "description": wi.description,
+        "assignee_id": wi.assignee_id,
+        "assignee_prefix": assignee.email_prefix if assignee else None,
+        "assignee_username": assignee.username if assignee else None,
+        "creator_id": wi.creator_id,
+        "creator_prefix": creator.email_prefix if creator else None,
+        "creator_username": creator.username if creator else None,
+        "planned_start_date": wi.planned_start_date,
+        "planned_end_date": wi.planned_end_date,
+        "completed_at": wi.completed_at,
+        "actual_hours": wi.actual_hours,
+        "estimated_hours": wi.estimated_hours,
+        "label_path": wi.label_path,
+        "created_at": wi.created_at,
+        "deleted_at": wi.deleted_at,
+    }
 
 
 @router.get("/by-code/{code}")
@@ -118,6 +165,8 @@ async def get_work_item_by_code(
         "parent_id": wi.parent_id,
         "title": wi.title,
         "status": wi.status,
+        "priority": wi.priority,
+        "description": wi.description,
         "assignee_id": wi.assignee_id,
         "assignee_prefix": assignee.email_prefix if assignee else None,
         "assignee_username": assignee.username if assignee else None,
@@ -153,6 +202,9 @@ async def create_work_item(
             planned_start_date=body.planned_start_date,
             planned_end_date=body.planned_end_date,
             description=body.description,
+            assignee_id=body.assignee_id,
+            assignee_prefix=body.assignee_prefix,
+            assignee_email=body.assignee_email,
         )
         return wi
     except Exception as e:
@@ -224,6 +276,7 @@ async def batch_update_work_items(
                 "parent_id": wi.parent_id,
                 "title": wi.title,
                 "status": wi.status,
+                "priority": wi.priority,
                 "assignee_id": wi.assignee_id,
                 "planned_start_date": wi.planned_start_date,
                 "planned_end_date": wi.planned_end_date,

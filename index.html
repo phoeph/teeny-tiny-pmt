@@ -4,91 +4,668 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>甘特图项目管理工具 - 完整版</title>
+    <link rel="stylesheet" href="assets/modern-theme.css">
     <script>
       if (location.pathname.endsWith('/') || location.pathname.endsWith('/index.html')) {
         location.replace('login.html');
       }
     </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial','Microsoft YaHei',sans-serif; background-color: #f5f5f5; padding: 20px; }
-        .gantt-chart { max-width: 1400px; margin: 0 auto; }
-        .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:20px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border-radius:8px; }
-        .page-header h1 { font-size:24px; font-weight:600; margin:0; }
-        .header-actions { display:flex; align-items:center; gap:12px; }
-        .gantt-container { background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.1); overflow:hidden; position:relative; }
-        .time-mode-toggle { display:inline-flex; background:#f0f2f5; border-radius:4px; overflow:hidden; }
-        .time-mode-btn { padding:6px 12px; border:none; background:transparent; cursor:pointer; font-size:12px; color:#606266; transition:all .2s; }
-        .time-mode-btn.active { background:#409eff; color:#fff; transform: translateY(-1px); transition: background-color .2s, color .2s, transform .2s; }
-        .timeline-container { overflow-x:auto; overflow-y:hidden; position:relative; cursor: grab; }
-        .timeline { position:relative; background:#fff; min-width:100%; }
-        .gantt-header { display:flex; background:#f8f9fa; border-bottom:2px solid #e4e7ed; }
-        .task-list-header,.assignee-header { height:120px; display:flex; align-items:center; justify-content:center; font-weight:600; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border-right:1px solid #e4e7ed; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-        .task-list-header { width: clamp(140px, 16vw, 200px); }
-        .assignee-header { width: clamp(100px, 12vw, 140px); border-left:1px solid #e4e7ed; border-right:1px solid #e4e7ed; }
-        .time-header { flex:1; display:flex; flex-direction:column; position:relative; overflow-x:auto; overflow-y:hidden; cursor: grab; }
-        .year-row,.month-row,.day-row { display:flex; height:40px; flex-wrap:nowrap; overflow:visible; min-width:100%; }
-        .year-cell,.month-cell,.day-cell { display:flex; align-items:center; justify-content:center; border-right:1px solid #e4e7ed; font-weight:600; position:relative; flex-shrink:0; flex-grow:0; box-sizing:border-box; }
-        .year-cell { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; font-size:14px; border-bottom:2px solid rgba(255,255,255,0.3); box-shadow:inset 0 1px 3px rgba(0,0,0,0.1); }
-        .month-cell { background:linear-gradient(to bottom,#f8f9fc 0%,#e9ecef 100%); color:#495057; font-size:12px; min-width:30px; text-align:center; white-space:nowrap; border-bottom:1px solid #dee2e6; transition:background .2s; }
-        .month-cell:hover { background:linear-gradient(to bottom,#e9ecef 0%,#dee2e6 100%); }
-        .day-cell { background:linear-gradient(to bottom,#ffffff 0%,#f8f9fa 100%); color:#6c757d; font-size:11px; min-width:30px; text-align:center; white-space:nowrap; border-bottom:1px solid #e9ecef; border-right:1px solid rgba(0,0,0,0.05); transition:all .2s; }
-        .day-cell:hover { background:linear-gradient(to bottom,#f8f9fa 0%,#e9ecef 100%); color:#495057; }
-        .gantt-body { display:flex; position:relative; }
-        .task-list { width: clamp(140px, 16vw, 200px); background:#fafafa; flex-shrink:0; max-height: calc(100vh - 300px); overflow-y: auto; }
-        .timeline-container { flex:1; overflow-x:auto; overflow-y:hidden; position:relative; max-height:calc(100vh - 300px); }
-        .timeline { position:relative; background:#fff; min-width:100%; }
-        .assignee-list { width: clamp(100px, 12vw, 140px); background:#fafafa; border-left:1px solid #e4e7ed; flex-shrink:0; max-height: calc(100vh - 300px); overflow-y: auto; }
-        .task-row { height:44px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f0f0f0; transition:background-color .2s; position:relative; }
-        .task-row:hover { background-color:rgba(0,0,0,0.03) !important; }
-        .assignee-row:hover { background-color:rgba(0,0,0,0.03) !important; }
-        .parent-task { font-weight:600; }
-        .subtask { padding-left:32px; font-size:14px; }
-        .task-name { flex:1; }
-        .task-title { color:#303133; line-height:1.4; user-select:none; pointer-events:none; font-size:13px; }
-        .task-category { font-size:12px; color:#909399; margin-top:2px; padding:2px 6px; background:#f0f2f5; border-radius:3px; display:inline-block; width:fit-content; }
-        .task-row-timeline { height:50px; position:relative; border-bottom:1px solid #f0f0f0; }
-        .task-bar { position:absolute; top:8px; height:34px; border-radius:4px; display:flex; align-items:center; padding:0 8px; color:#fff; font-size:12px; cursor:move; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition:all .2s; user-select:none; }
-        .task-bar:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-        .task-bar-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; pointer-events:none; user-select:none; }
-        .resize-handle { position:absolute; top:0; bottom:0; width:6px; cursor:ew-resize; background:rgba(255,255,255,0.3); opacity:0; transition:opacity .2s; }
-        .resize-handle.left { left:0; border-radius:4px 0 0 4px; }
-        .resize-handle.right { right:0; border-radius:0 4px 4px 0; }
-        .task-bar:hover .resize-handle { opacity:1; }
-        .assignee-row { height:44px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f0f0f0; font-size:12px; position:relative; }
-        .assignee-avatar { width:24px; height:24px; border-radius:50%; background:#409eff; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; margin-right:8px; flex-shrink:0; }
-        .assignee-name { color:#606266; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .add-btn { position:absolute; right:52px; top:50%; transform:translateY(-50%); width:20px; height:20px; border:none; background:#409eff; color:#fff; border-radius:50%; font-size:12px; cursor:pointer; opacity:0; transition:all .2s; display:flex; align-items:center; justify-content:center; z-index:1; }
-        .delete-btn,.task-delete-btn { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:16px; height:16px; border:none; background:rgba(255,0,0,0.8); color:#fff; border-radius:50%; font-size:10px; line-height:1; cursor:pointer; opacity:0; transition:opacity .2s; display:flex; align-items:center; justify-content:center; z-index:3; }
-        .edit-btn { position:absolute; right:25px; top:50%; transform:translateY(-50%); width:16px; height:16px; border:none; background:rgba(64,158,255,0.8); color:#fff; border-radius:50%; font-size:10px; cursor:pointer; opacity:0; transition:opacity .2s; display:flex; align-items:center; justify-content:center; z-index:2; }
-        .task-row:hover .delete-btn,.task-row:hover .edit-btn,.task-row:hover .add-btn,.assignee-row:hover .delete-btn,.assignee-row:hover .edit-btn,.month-cell:hover .delete-btn,.month-cell:hover .edit-btn,.month-cell:hover .add-btn,.task-bar:hover .task-delete-btn { opacity:1; }
-        .task-list-header:hover .add-btn,.assignee-header:hover .add-btn { opacity:1; }
-        .date-picker-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
-        .date-picker-modal.show { display:flex; }
-        .date-picker-content { background:#fff; padding:24px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.3); width:400px; max-width:90vw; }
-        .date-picker-content h3 { margin-bottom:20px; color:#303133; }
-        .date-range-group { display:flex; gap:16px; margin-bottom:16px; }
-        .date-range-group>div { flex:1; }
-        .modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
-        .modal.show { display:flex; }
-        .modal-content { background:#fff; padding:24px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.3); width:400px; max-width:90vw; }
-        .modal-content h3 { margin-bottom:20px; color:#303133; }
-        .form-group { margin-bottom:16px; }
-        .form-group label { display:block; margin-bottom:8px; color:#606266; font-weight:500; }
-        .form-group input,.form-group select { width:100%; padding:8px 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:14px; }
-        .form-group input:focus,.form-group select:focus { outline:none; border-color:#409eff; }
-        .form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:24px; }
-        .btn { padding:8px 16px; border:none; border-radius:4px; cursor:pointer; font-size:14px; }
-        .btn-primary { background:#409eff; color:#fff; }
-        .btn-primary:hover { background:#337ab7; }
-        .btn-secondary { background:#f5f7fa; color:#606266; border:1px solid #dcdfe6; }
-        .btn-secondary:hover { background:#ecf5ff; }
-        .time-range-inputs { display:flex; align-items:center; gap:8px; }
-        .time-range-inputs input[type="date"] { flex:1; padding:8px 12px; border:1px solid #dcdfe6; border-radius:4px; font-size:14px; }
-        .time-range-separator { color:#909399; font-size:14px; white-space:nowrap; }
-        .color-picker-container { display:flex; align-items:center; gap:12px; }
-        .color-preview { height:36px; min-width:80px; background:#409eff; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:500; border:1px solid #dcdfe6; transition:background-color .2s; }
-        .is-panning { cursor: grabbing !important; }
+        /* 页面特定样式 - 仅保留非通用部分 */
+        .gantt-chart {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 24px;
+            background: var(--bg-surface);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .gantt-container {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .time-mode-toggle {
+            display: inline-flex;
+            background: var(--bg-body);
+            border-radius: 6px;
+            padding: 4px;
+            overflow: hidden;
+        }
+
+        .time-mode-btn {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .time-mode-btn.active {
+            background: var(--bg-surface);
+            color: var(--primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .timeline-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+            cursor: grab;
+        }
+
+        .timeline {
+            position: relative;
+            background: var(--bg-surface);
+            min-width: 100%;
+        }
+
+        .gantt-header {
+            display: flex;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .task-list-header, .assignee-header {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            box-shadow: none;
+        }
+
+        .task-list-header {
+            width: clamp(140px, 16vw, 200px);
+            padding-right: 6px; /* Balance visual weight */
+        }
+
+        .assignee-header {
+            width: clamp(100px, 12vw, 140px);
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .time-header {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+            cursor: grab;
+        }
+
+        .year-row, .month-row, .day-row {
+            display: flex;
+            height: 40px;
+            flex-wrap: nowrap;
+            overflow: visible;
+            min-width: 100%;
+        }
+
+        .year-cell, .month-cell, .day-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--border-color);
+            font-weight: 600;
+            position: relative;
+            flex-shrink: 0;
+            flex-grow: 0;
+            box-sizing: border-box;
+        }
+
+        .year-cell {
+            background: var(--bg-main);
+            color: var(--text-main);
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+
+        .month-cell {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 12px;
+            min-width: 30px;
+            text-align: center;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .month-cell:hover {
+            background: var(--bg-main);
+        }
+
+        .day-cell {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 11px;
+            min-width: 30px;
+            text-align: center;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .day-cell:hover {
+            background: var(--bg-surface);
+            color: var(--text-main);
+        }
+
+        .gantt-body {
+            display: flex;
+            position: relative;
+        }
+
+        .task-list {
+            width: clamp(140px, 16vw, 200px);
+            background: var(--bg-main);
+            flex-shrink: 0;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .timeline-container {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+            max-height: calc(100vh - 300px);
+        }
+
+        .timeline {
+            position: relative;
+            background: var(--bg-surface);
+            min-width: 100%;
+        }
+
+        .assignee-list {
+            width: clamp(100px, 12vw, 140px);
+            background: var(--bg-main);
+            border-left: 1px solid var(--border-color);
+            flex-shrink: 0;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .task-row {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .task-row:hover {
+            background-color: var(--bg-surface) !important;
+        }
+
+        .assignee-row:hover {
+            background-color: var(--bg-surface) !important;
+        }
+
+        .parent-task {
+            font-weight: 600;
+        }
+
+        .subtask {
+            padding-left: 32px;
+            font-size: 14px;
+        }
+
+        .task-name {
+            flex: 1;
+        }
+
+        .task-title {
+            color: var(--text-main);
+            line-height: 1.4;
+            user-select: none;
+            pointer-events: none;
+            font-size: 13px;
+        }
+
+        .task-category {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            padding: 2px 6px;
+            background: var(--bg-main);
+            border-radius: 3px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .task-row-timeline {
+            height: 50px;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .task-bar {
+            position: absolute;
+            top: 8px;
+            height: 34px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: white;
+            font-size: 12px;
+            cursor: move;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .task-bar:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .task-bar-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: ew-resize;
+            background: rgba(255,255,255,0.3);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .resize-handle.left {
+            left: 0;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .resize-handle.right {
+            right: 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .task-bar:hover .resize-handle {
+            opacity: 1;
+        }
+
+        .assignee-row {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            position: relative;
+        }
+
+        .assignee-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .assignee-name {
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .more-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+
+        .task-row:hover .more-btn {
+            opacity: 1;
+        }
+
+        .more-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .task-name-wrapper {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            padding-right: 28px;
+        }
+
+        .collapse-btn {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            margin-right: 4px;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+            border-radius: 4px;
+        }
+
+        .collapse-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .action-dropdown {
+            position: fixed;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+            border-radius: 8px;
+            padding: 4px;
+            z-index: 10000;
+            min-width: 140px;
+            display: none;
+            animation: fadeIn 0.1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .action-dropdown.show {
+            display: block;
+        }
+
+        .action-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-main);
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .action-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .action-item.danger {
+            color: var(--danger);
+        }
+        
+        .action-item.danger:hover {
+            background: var(--bg-danger-light);
+        }
+
+        /* Hide old buttons */
+        .add-btn, .delete-btn, .edit-btn {
+            display: none !important;
+        }
+
+        .date-picker-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .date-picker-modal.show {
+            display: flex;
+        }
+
+        .date-picker-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .date-picker-content h3 {
+            margin-bottom: 20px;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .date-range-group {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .date-range-group > div {
+            flex: 1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-surface);
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-surface);
+            border-color: var(--border-color);
+        }
+
+        .time-range-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-range-inputs input[type="date"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-surface);
+        }
+
+        .time-range-separator {
+            color: var(--text-secondary);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .color-preview {
+            height: 36px;
+            min-width: 80px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .is-panning {
+            cursor: grabbing !important;
+        }
     </style>
 </head>
 <body>
@@ -218,24 +795,33 @@
 
         let ganttData = {
             tasks: [
-                { id:1, name:'客户调研', category:'触达', startDay:0, duration:90, color:'#87ceeb', assignee:'武清高俊喜', description:'特变电业二总部筹组配置', type:'parent', subtasks:[
-                    { id:11, name:'分层走访', startDay:0, duration:30, color:'#87ceeb', assignee:'武清高俊喜' },
-                    { id:12, name:'获取商机', startDay:30, duration:30, color:'#87ceeb', assignee:'武清高俊喜' }
+                { id:1, name:'客户调研', category:'触达', startDay:0, duration:90, color:'var(--primary)', assignee:'武清高俊喜', description:'特变电业二总部筹组配置', type:'parent', subtasks:[
+                    { id:11, name:'分层走访', startDay:0, duration:30, color:'var(--primary)', assignee:'武清高俊喜' },
+                    { id:12, name:'获取商机', startDay:30, duration:30, color:'var(--primary)', assignee:'武清高俊喜' }
                 ]},
-                { id:2, name:'孵育', category:'孵育', startDay:90, duration:180, color:'#ff6b6b', assignee:'企要斯冰栋', description:'撰写方案', type:'parent', subtasks:[
-                    { id:21, name:'制定方案', startDay:90, duration:60, color:'#98d982', assignee:'企要斯冰栋' },
-                    { id:22, name:'沟通交流', startDay:150, duration:90, color:'#feca57', assignee:'企要斯冰栋', description:'撰写招标文件多轮议价' }
+                { id:2, name:'孵育', category:'孵育', startDay:90, duration:180, color:'var(--danger)', assignee:'企要斯冰栋', description:'撰写方案', type:'parent', subtasks:[
+                    { id:21, name:'制定方案', startDay:90, duration:60, color:'var(--success)', assignee:'企要斯冰栋' },
+                    { id:22, name:'沟通交流', startDay:150, duration:90, color:'var(--warning)', assignee:'企要斯冰栋', description:'撰写招标文件多轮议价' }
                 ]},
-                { id:3, name:'转化', category:'转化', startDay:210, duration:510, color:'#48dbfb', assignee:'集团教科刘保伟', type:'parent', subtasks:[
-                    { id:31, name:'应标签约', startDay:210, duration:90, color:'#ff9ff3', assignee:'集团教科刘保伟', description:'应标签约' },
-                    { id:32, name:'建设交付', startDay:300, duration:300, color:'#98d982', assignee:'集团教科刘保伟', description:'项目总体建设完成 95%' },
-                    { id:33, name:'工单起租', startDay:600, duration:90, color:'#98d982', assignee:'集团教科刘保伟', description:'项目终验完成' },
-                    { id:34, name:'计收回款', startDay:690, duration:30, color:'#feca57', assignee:'武清高俊喜', description:'项目计收82%，项目回款43%' }
+                { id:3, name:'转化', category:'转化', startDay:210, duration:510, color:'var(--primary)', assignee:'集团教科刘保伟', type:'parent', subtasks:[
+                    { id:31, name:'应标签约', startDay:210, duration:90, color:'var(--primary)', assignee:'集团教科刘保伟', description:'应标签约' },
+                    { id:32, name:'建设交付', startDay:300, duration:300, color:'var(--success)', assignee:'集团教科刘保伟', description:'项目总体建设完成 95%' },
+                    { id:33, name:'工单起租', startDay:600, duration:90, color:'var(--success)', assignee:'集团教科刘保伟', description:'项目终验完成' },
+                    { id:34, name:'计收回款', startDay:690, duration:30, color:'var(--warning)', assignee:'武清高俊喜', description:'项目计收82%，项目回款43%' }
                 ]}
             ],
             timeColumns: [],
             assignees: []
         };
+
+        function resolveColor(color) {
+            if (!color) return '#ffffff';
+            if (color.startsWith('var(')) {
+                const varName = color.match(/var\(([^)]+)\)/)[1];
+                return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+            }
+            return color;
+        }
 
         function init() {
             try {
@@ -434,24 +1020,104 @@
                 const parentDiv = document.createElement('div');
                 parentDiv.className='task-row parent-task';
                 parentDiv.style.backgroundColor=getCategoryColor(task.category);
+                
+                const collapseIcon = `<div class="collapse-btn ${task.collapsed?'collapsed':''}" onclick="toggleTask(event, ${taskIndex})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>`;
+                
                 parentDiv.innerHTML=`
-                    <div class="task-name"><div class="task-title">${task.name}</div></div>
-                    <button class="add-btn" onclick="addSubtask(${taskIndex})" title="新增子任务">+</button>
-                    <button class="edit-btn" onclick="editTask(${taskIndex}, -1)" title="编辑">✎</button>
-                    <button class="delete-btn" onclick="deleteTask(${taskIndex}, -1)" title="删除">×</button>
+                    <div class="task-name-wrapper">
+                        ${collapseIcon}
+                        <div class="task-name"><div class="task-title">${task.name}</div></div>
+                    </div>
+                    <button class="more-btn" onclick="showTaskMenu(event, ${taskIndex}, -1)" title="更多操作">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
                 `;
                 taskList.appendChild(parentDiv);
-                if (task.subtasks) task.subtasks.forEach((subtask, subtaskIndex) => {
-                    const div = document.createElement('div');
-                    div.className='task-row subtask';
-                    div.innerHTML=`
-                        <div class="task-name"><div class="task-title">${subtask.name}</div></div>
-                        <button class="edit-btn" onclick="editTask(${taskIndex}, ${subtaskIndex})" title="编辑">✎</button>
-                        <button class="delete-btn" onclick="deleteTask(${taskIndex}, ${subtaskIndex})" title="删除">×</button>
-                    `;
-                    taskList.appendChild(div);
-                });
+                
+                if (!task.collapsed && task.subtasks) {
+                    task.subtasks.forEach((subtask, subtaskIndex) => {
+                        const div = document.createElement('div');
+                        div.className='task-row subtask';
+                        div.innerHTML=`
+                            <div class="task-name-wrapper">
+                                <div class="task-name"><div class="task-title">${subtask.name}</div></div>
+                            </div>
+                            <button class="more-btn" onclick="showTaskMenu(event, ${taskIndex}, ${subtaskIndex})" title="更多操作">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                            </button>
+                        `;
+                        taskList.appendChild(div);
+                    });
+                }
             });
+        }
+        
+        function toggleTask(e, taskIndex) {
+            e.stopPropagation();
+            const task = ganttData.tasks[taskIndex];
+            task.collapsed = !task.collapsed;
+            renderAll();
+        }
+
+        let currentActionTarget = null;
+        
+        function showTaskMenu(e, taskIndex, subtaskIndex) {
+            e.stopPropagation();
+            hideAllDropdowns();
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'action-dropdown show';
+            dropdown.id = 'activeTaskDropdown';
+            
+            const isParent = subtaskIndex === -1;
+            
+            dropdown.innerHTML = `
+                ${isParent ? `<div class="action-item" onclick="handleAction('add', ${taskIndex})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    新增子任务
+                </div>` : ''}
+                <div class="action-item" onclick="handleAction('edit', ${taskIndex}, ${subtaskIndex})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    编辑
+                </div>
+                <div class="action-item danger" onclick="handleAction('delete', ${taskIndex}, ${subtaskIndex})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    删除
+                </div>
+            `;
+            
+            document.body.appendChild(dropdown);
+            
+            // Position logic
+            const rect = e.currentTarget.getBoundingClientRect();
+            const dropdownHeight = isParent ? 110 : 76; // Approx height
+            const windowHeight = window.innerHeight;
+            
+            let top = rect.bottom + 4;
+            if (top + dropdownHeight > windowHeight) {
+                top = rect.top - dropdownHeight - 4;
+            }
+            
+            dropdown.style.left = (rect.left - 100) + 'px'; // Align slightly left
+            dropdown.style.top = top + 'px';
+            
+            // Close on click outside
+            setTimeout(() => {
+                document.addEventListener('click', closeActionMenu);
+            }, 0);
+        }
+
+        function closeActionMenu() {
+            const el = document.getElementById('activeTaskDropdown');
+            if (el) el.remove();
+            document.removeEventListener('click', closeActionMenu);
+        }
+
+        function handleAction(action, taskIndex, subtaskIndex) {
+            if (action === 'add') addSubtask(taskIndex);
+            else if (action === 'edit') editTask(taskIndex, subtaskIndex);
+            else if (action === 'delete') deleteTask(taskIndex, subtaskIndex);
+            closeActionMenu();
         }
 
         function renderTimeline() {
@@ -463,13 +1129,16 @@
                 const taskBar = createTaskBar(task, taskIndex, -1);
                 parentTimeDiv.appendChild(taskBar);
                 timeline.appendChild(parentTimeDiv);
-                if (task.subtasks) task.subtasks.forEach((subtask, subtaskIndex) => {
-                    const subtaskTimeDiv = document.createElement('div');
-                    subtaskTimeDiv.className='task-row-timeline';
-                    const subtaskBar = createTaskBar(subtask, taskIndex, subtaskIndex);
-                    subtaskTimeDiv.appendChild(subtaskBar);
-                    timeline.appendChild(subtaskTimeDiv);
-                });
+                
+                if (!task.collapsed && task.subtasks) {
+                    task.subtasks.forEach((subtask, subtaskIndex) => {
+                        const subtaskTimeDiv = document.createElement('div');
+                        subtaskTimeDiv.className='task-row-timeline';
+                        const subtaskBar = createTaskBar(subtask, taskIndex, subtaskIndex);
+                        subtaskTimeDiv.appendChild(subtaskBar);
+                        timeline.appendChild(subtaskTimeDiv);
+                    });
+                }
             });
         }
 
@@ -493,34 +1162,34 @@
         function renderAssigneeList() {
             const assigneeList = document.getElementById('assigneeList');
             assigneeList.innerHTML='';
-            let rowIndex = 0;
-            ganttData.tasks.forEach((task) => {
+            ganttData.tasks.forEach((task, taskIndex) => {
                 const parentDiv = document.createElement('div');
                 parentDiv.className='assignee-row';
                 parentDiv.innerHTML=`
                     <div class="assignee-avatar">${getInitials(task.assignee)}</div>
                     <span class="assignee-name">${task.assignee}</span>
-                    <button class="edit-btn" onclick="editAssignee(${rowIndex})" title="编辑">✎</button>
-                    <button class="delete-btn" onclick="deleteAssigneeRow(${rowIndex})" title="删除">×</button>
+                    <button class="edit-btn" onclick="editAssignee(${taskIndex}, -1)" title="编辑">✎</button>
+                    <button class="delete-btn" onclick="deleteAssigneeRow(${taskIndex}, -1)" title="删除">×</button>
                 `;
                 assigneeList.appendChild(parentDiv);
-                rowIndex++;
-                if (task.subtasks) task.subtasks.forEach((subtask)=>{
-                    const div = document.createElement('div');
-                    div.className='assignee-row';
-                    div.innerHTML=`
-                        <div class="assignee-avatar">${getInitials(subtask.assignee)}</div>
-                        <span class="assignee-name">${subtask.assignee}</span>
-                        <button class="edit-btn" onclick="editAssignee(${rowIndex})" title="编辑">✎</button>
-                        <button class="delete-btn" onclick="deleteAssigneeRow(${rowIndex})" title="删除">×</button>
-                    `;
-                    assigneeList.appendChild(div);
-                    rowIndex++;
-                });
+                
+                if (!task.collapsed && task.subtasks) {
+                    task.subtasks.forEach((subtask, subtaskIndex)=>{
+                        const div = document.createElement('div');
+                        div.className='assignee-row';
+                        div.innerHTML=`
+                            <div class="assignee-avatar">${getInitials(subtask.assignee)}</div>
+                            <span class="assignee-name">${subtask.assignee}</span>
+                            <button class="edit-btn" onclick="editAssignee(${taskIndex}, ${subtaskIndex})" title="编辑">✎</button>
+                            <button class="delete-btn" onclick="deleteAssigneeRow(${taskIndex}, ${subtaskIndex})" title="删除">×</button>
+                        `;
+                        assigneeList.appendChild(div);
+                    });
+                }
             });
         }
 
-        function getCategoryColor(category) { const colors = { '触达':'#e6f7ff','孵育':'#fff2e8','转化':'#f6ffed' }; return colors[category] || '#f5f5f5'; }
+        function getCategoryColor(category) { const colors = { '触达':'var(--category-touch)','孵育':'var(--category-incubate)','转化':'var(--category-convert)' }; return colors[category] || 'var(--category-default)'; }
         function getInitials(name) { if (!name) return 'NA'; return name.length>2 ? name.slice(-2) : name; }
         function updateAssigneeSelect() {
             const select = document.getElementById('itemAssigneeSelect');
@@ -537,7 +1206,10 @@
             document.getElementById('modalTitle').textContent = subtaskIndex===-1 ? '编辑一级任务' : '编辑二级任务';
             document.getElementById('itemName').value = task.name || '';
             document.getElementById('itemDescription').value = task.description || '';
-            document.getElementById('itemColor').value = task.color || '#409EFF';
+            const resolvedColor = resolveColor(task.color || 'var(--primary)');
+            const colorInput = document.getElementById('itemColor');
+            colorInput.value = resolvedColor;
+            colorInput.dataset.originalVar = task.color || 'var(--primary)';
             const taskStartDate = new Date(startDate); taskStartDate.setDate(taskStartDate.getDate() + (task.startDay||0)); const taskEndDate = new Date(taskStartDate); taskEndDate.setDate(taskEndDate.getDate() + (task.duration||1));
             document.getElementById('itemStartDate').value = formatDate(taskStartDate);
             document.getElementById('itemEndDate').value = formatDate(taskEndDate);
@@ -546,20 +1218,10 @@
             updateColorPreview();
             document.getElementById('editModal').classList.add('show');
         }
-        function editAssignee(rowIndex) {
-            editMode='edit'; editType='assignee'; currentEditElement={rowIndex};
-            let current=0; let target=null;
-            for (let i=0;i<ganttData.tasks.length;i++) {
-                if (current===rowIndex) { target=ganttData.tasks[i]; break; }
-                current++;
-                if (ganttData.tasks[i].subtasks) {
-                    for (let j=0;j<ganttData.tasks[i].subtasks.length;j++) {
-                        if (current===rowIndex) { target=ganttData.tasks[i].subtasks[j]; break; }
-                        current++;
-                    }
-                }
-                if (target) break;
-            }
+        function editAssignee(taskIndex, subtaskIndex) {
+            editMode='edit'; editType='assignee'; currentEditElement={taskIndex, subtaskIndex};
+            const target = subtaskIndex === -1 ? ganttData.tasks[taskIndex] : ganttData.tasks[taskIndex].subtasks[subtaskIndex];
+            
             document.getElementById('modalTitle').textContent='编辑负责人';
             document.getElementById('itemAssigneeSelect').value = target ? target.assignee : '';
             document.getElementById('itemAssigneeInput').value = '';
@@ -567,19 +1229,10 @@
             showFormGroups(['assigneeSelectGroup','assigneeInputGroup']);
             document.getElementById('editModal').classList.add('show');
         }
-        function deleteAssigneeRow(rowIndex) {
+        function deleteAssigneeRow(taskIndex, subtaskIndex) {
             if (!confirm('确定要清空这个负责人吗？(任务本身不会被删除)')) return;
-            let current=0; let updated=false;
-            for (let i=0;i<ganttData.tasks.length && !updated;i++) {
-                if (current===rowIndex) { ganttData.tasks[i].assignee=''; updated=true; break; }
-                current++;
-                if (ganttData.tasks[i].subtasks) {
-                    for (let j=0;j<ganttData.tasks[i].subtasks.length;j++) {
-                        if (current===rowIndex) { ganttData.tasks[i].subtasks[j].assignee=''; updated=true; break; }
-                        current++;
-                    }
-                }
-            }
+            const target = subtaskIndex === -1 ? ganttData.tasks[taskIndex] : ganttData.tasks[taskIndex].subtasks[subtaskIndex];
+            if (target) target.assignee = '';
             renderAll(); alert('负责人已清空！');
         }
         function addNewTask() {
@@ -587,7 +1240,10 @@
             document.getElementById('modalTitle').textContent='新增一级任务';
             document.getElementById('itemName').value='';
             document.getElementById('itemDescription').value='';
-            document.getElementById('itemColor').value='#409EFF';
+            const defaultColorVar = 'var(--primary)';
+            const colorInput = document.getElementById('itemColor');
+            colorInput.value = resolveColor(defaultColorVar);
+            colorInput.dataset.originalVar = defaultColorVar;
             const today=new Date(); const defaultEnd=new Date(today); defaultEnd.setDate(today.getDate()+30);
             document.getElementById('itemStartDate').value=formatDate(today);
             document.getElementById('itemEndDate').value=formatDate(defaultEnd);
@@ -601,7 +1257,10 @@
             document.getElementById('modalTitle').textContent='新增二级任务';
             document.getElementById('itemName').value='';
             document.getElementById('itemDescription').value='';
-            document.getElementById('itemColor').value=ganttData.tasks[taskIndex].color;
+            const parentColor = ganttData.tasks[taskIndex].color;
+            const colorInput = document.getElementById('itemColor');
+            colorInput.value = resolveColor(parentColor);
+            colorInput.dataset.originalVar = parentColor;
             const today=new Date(); const defaultEnd=new Date(today); defaultEnd.setDate(today.getDate()+15);
             document.getElementById('itemStartDate').value=formatDate(today);
             document.getElementById('itemEndDate').value=formatDate(defaultEnd);
@@ -618,7 +1277,15 @@
             const assigneeSelect = document.getElementById('itemAssigneeSelect').value;
             const assigneeInput = document.getElementById('itemAssigneeInput').value.trim();
             const assignee = assigneeInput || assigneeSelect;
-            const color = document.getElementById('itemColor').value;
+            
+            const colorInput = document.getElementById('itemColor');
+            const pickedColor = colorInput.value;
+            const originalVar = colorInput.dataset.originalVar;
+            let color = pickedColor;
+            if (originalVar && resolveColor(originalVar).toLowerCase() === pickedColor.toLowerCase()) {
+                color = originalVar;
+            }
+
             let calculatedStartDay = 0; let calculatedDuration = 30;
             if (editMode==='add') {
                 const itemStartDate = document.getElementById('itemStartDate').value;
@@ -632,17 +1299,9 @@
             }
             if (editMode==='edit') {
                 if (editType==='assignee') {
-                    const { rowIndex } = currentEditElement; let current=0; let updated=false;
-                    for (let i=0;i<ganttData.tasks.length && !updated;i++) {
-                        if (current===rowIndex) { ganttData.tasks[i].assignee=assignee; updated=true; break; }
-                        current++;
-                        if (ganttData.tasks[i].subtasks) {
-                            for (let j=0;j<ganttData.tasks[i].subtasks.length;j++) {
-                                if (current===rowIndex) { ganttData.tasks[i].subtasks[j].assignee=assignee; updated=true; break; }
-                                current++;
-                            }
-                        }
-                    }
+                    const { taskIndex, subtaskIndex } = currentEditElement;
+                    const task = subtaskIndex===-1 ? ganttData.tasks[taskIndex] : ganttData.tasks[taskIndex].subtasks[subtaskIndex];
+                    if (task) task.assignee = assignee;
                     alert('负责人已保存！');
                 } else if (editType==='task') {
                     const { taskIndex, subtaskIndex } = currentEditElement;

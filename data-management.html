@@ -4,26 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>数据管理 · 导出到Excel</title>
+  <link rel="stylesheet" href="assets/modern-theme.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
-    .top { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; gap:12px; }
-    .panel { border:1px solid #e5e7eb; border-radius: 8px; padding: 16px; background:#fff; }
-    .grid { display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap:12px; }
-    .row { display:flex; flex-direction:column; gap:6px; }
-    .row label { color:#374151; font-size:13px; }
-    .row input, .row select { padding:8px 10px; border:1px solid #e5e7eb; border-radius:6px; }
-    .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
-    .btn { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; }
-    .btn-selected { background:#2563eb; color:#fff; border:1px solid #2563eb; }
+    /* Page specific overrides */
+    .top { display:flex; justify-content: space-between; align-items:center; margin-bottom: 24px; }
+    .panel { border:1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; background:var(--bg-surface); box-shadow: var(--shadow-sm); }
+    .row { display:flex; flex-direction:column; gap:8px; margin-bottom: 16px; }
+    .row label { color:var(--text-main); font-weight: 500; font-size:14px; }
+    .actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
     .project-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; max-height: 300px; overflow-y: auto; }
-    .hint { color:#6b7280; font-size:12px; margin-top: 8px; }
+    .hint { color:var(--text-secondary); font-size:13px; margin-top: 12px; }
+    .selected-area { margin-bottom: 16px; padding: 12px; background: #eff6ff; border-radius: var(--radius-md); border: 1px dashed #bfdbfe; }
+    .selected-area-label { font-size: 13px; color: var(--primary); margin-bottom: 8px; font-weight: 500; }
   </style>
 </head>
 <body>
   <div id="left-sidebar"></div>
 
   <div class="top">
-    <h2>项目数据导出</h2>
+    <div style="font-size:20px; font-weight:600;">项目数据导出</div>
     <div id="headerRight" style="display:flex; align-items:center; gap:12px;"><div id="userMenuContainer"></div></div>
   </div>
 
@@ -34,23 +33,23 @@
       
       <!-- Search Input -->
       <div style="margin-bottom: 8px;">
-          <input id="projSearchInput" type="text" placeholder="输入项目名称或编号搜索..." style="width: 100%; box-sizing: border-box;" />
+          <input id="projSearchInput" type="text" class="form-input" placeholder="输入项目名称或编号搜索..." />
       </div>
 
       <!-- Selected Projects Area -->
-      <div id="selectedArea" style="display:none; margin-bottom: 12px; padding: 8px; background: #f0f9ff; border-radius: 6px; border: 1px dashed #bae6fd;">
-          <div style="font-size: 12px; color: #0284c7; margin-bottom: 4px;">已选项目：</div>
+      <div id="selectedArea" class="selected-area" style="display:none;">
+          <div class="selected-area-label">已选项目：</div>
           <div id="selectedChips" class="project-list" style="margin-top:0;"></div>
       </div>
 
       <!-- Search Results Area -->
-      <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">可选项目：</div>
+      <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">可选项目：</div>
       <div id="projChips" class="project-list">正在加载项目...</div>
     </div>
     
     <div class="actions">
-      <button class="btn btn-ghost" id="resetBtn">重置选择</button>
-      <button class="btn btn-primary" id="exportBtn">导出Excel</button>
+      <button class="ghost-btn" id="resetBtn">重置选择</button>
+      <button class="primary-btn" id="exportBtn">导出Excel</button>
     </div>
     <div class="hint" id="hint">导出内容包含：Jobs, Tasks, 及工时汇总。可在Excel中进行筛选和透视。</div>
   </div>
@@ -107,7 +106,7 @@
           const chip=document.createElement('button'); 
           let label = p.name || `Project ${p.id}`;
           if(p.code) label = `[${p.code}] ${label}`;
-          chip.className = isSelected ? 'btn btn-selected' : 'btn btn-ghost'; 
+          chip.className = isSelected ? 'primary-btn' : 'ghost-btn'; 
           chip.textContent=label; 
           chip.title=label;
           chip.dataset.id = String(p.id);
@@ -142,7 +141,7 @@
             const chip=document.createElement('button'); 
             let label = p.name || `Project ${p.id}`;
             if(p.code) label = `[${p.code}] ${label}`;
-            chip.className = 'btn btn-selected'; 
+            chip.className = 'primary-btn'; 
             chip.textContent = label + ' ✕'; // Add X to indicate removal
             chip.title = "点击移除";
             
@@ -156,7 +155,7 @@
                 // For simplicity, just update the hidden input. Visual update in "Available" might lag until next interaction, which is fine.
                 // Better: find the chip in projChips and update class.
                 const availChip = document.querySelector(`#projChips button[data-id="${p.id}"]`);
-                if(availChip) availChip.className = 'btn btn-ghost';
+                if(availChip) availChip.className = 'ghost-btn';
                 updateHiddenInput();
             };
             container.appendChild(chip);
@@ -187,7 +186,7 @@
         // Reset all available chips to ghost
         const chips = document.getElementById('projChips').children;
         for(let chip of chips) {
-            chip.className = 'btn btn-ghost';
+            chip.className = 'ghost-btn';
         }
         // Optionally reset search
         document.getElementById('projSearchInput').value = '';

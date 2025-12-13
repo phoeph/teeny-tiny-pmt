@@ -13,11 +13,16 @@ class WorkItemCreate(BaseModel):
     planned_end_date: Optional[date] = None
     description: Optional[str] = Field(None, max_length=2000)
     estimated_hours: Optional[float] = None
+    assignee_id: Optional[int] = None
+    assignee_prefix: Optional[str] = Field(None, min_length=1, max_length=100)
+    assignee_email: Optional[str] = Field(None, min_length=3, max_length=200)
 
 
 class WorkItemUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=500)
+    description: Optional[str] = Field(None, max_length=2000)
     status: Optional[str] = Field(None, pattern="^(todo|doing|blocked|done|cancelled|deleted)$")
+    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
     assignee_id: Optional[int] = None
     assignee_prefix: Optional[str] = Field(None, min_length=1, max_length=100)
     assignee_email: Optional[str] = Field(None, min_length=3, max_length=200)
@@ -39,7 +44,9 @@ class WorkItemResponse(BaseModel):
     project_id: int
     parent_id: Optional[int]
     title: str
+    description: Optional[str]
     status: str
+    priority: Optional[str]
     assignee_id: Optional[int]
     planned_start_date: Optional[date]
     planned_end_date: Optional[date]
@@ -58,7 +65,9 @@ class WorkItemBatchUpdateItem(BaseModel):
     id: int
     # 允许更新的一组字段，与 WorkItemUpdate 对齐（可选）
     title: Optional[str] = Field(None, min_length=1, max_length=500)
+    description: Optional[str] = Field(None, max_length=2000)
     status: Optional[str] = Field(None, pattern="^(todo|doing|blocked|done|cancelled|deleted)$")
+    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
     assignee_id: Optional[int] = None
     assignee_prefix: Optional[str] = Field(None, min_length=1, max_length=100)
     assignee_email: Optional[str] = Field(None, min_length=3, max_length=200)

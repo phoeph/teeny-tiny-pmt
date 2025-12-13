@@ -11,7 +11,7 @@ function openCommentModal(opts){
   const modal = document.createElement('div'); modal.className = 'cm-modal';
   const header = document.createElement('div'); header.className = 'cm-header';
   const hTitle = document.createElement('div'); hTitle.className = 'cm-title'; hTitle.textContent = title;
-  const btnClose = document.createElement('button'); btnClose.className = 'cm-close'; btnClose.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><path fill="#374151" d="M6 6l12 12M18 6L6 18" stroke="#374151" stroke-width="2"/></svg>';
+  const btnClose = document.createElement('button'); btnClose.className = 'cm-close'; btnClose.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><path fill="var(--text-secondary)" d="M6 6l12 12M18 6L6 18" stroke="var(--text-secondary)" stroke-width="2"/></svg>';
   btnClose.onclick = function(){ try{ document.body.removeChild(backdrop); } catch (e) {} };
   header.appendChild(hTitle); header.appendChild(btnClose);
   const body = document.createElement('div'); body.className = 'cm-body';

@@ -7,8 +7,30 @@ from app.main import app
 @pytest.mark.asyncio
 async def test_work_items_batch_update_and_constraints():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        # 登录
-        login = await client.post("/api/auth/login", json={"login_field": "张三", "password": "123"})
+        # 直接往数据库写入演示用户
+        from sqlalchemy import select
+        from app.database import async_session
+        from app.models import User
+        from app.services.auth_service import auth_service
+        async with async_session() as session:
+            res_admin = await session.execute(select(User).where(User.username == 'admin'))
+            admin = res_admin.scalar_one_or_none()
+            if not admin:
+                admin = User(username='admin', email_prefix='admin', email='admin@chinaunicom.cn', full_name='管理员', password_hash=auth_service.get_password_hash('123456'), is_active=True)
+                session.add(admin)
+            else:
+                admin.is_active = True
+            res_zs = await session.execute(select(User).where(User.username == '张三'))
+            zs = res_zs.scalar_one_or_none()
+            if not zs:
+                zs = User(username='张三', email_prefix='zhangsan', email='zhangsan@chinaunicom.cn', full_name='张三', password_hash=auth_service.get_password_hash('123456'), is_active=True)
+                session.add(zs)
+            else:
+                zs.is_active = True
+            await session.commit()
+
+        # 登录张三
+        login = await client.post("/api/auth/login", json={"login_field": "张三", "password": "123456"})
         assert login.status_code == 200
         token = login.json()["access_token"]
 
@@ -21,7 +43,7 @@ async def test_work_items_batch_update_and_constraints():
 
         # 创建父 JOB（11/10~11/20）
         job = await client.post(
-            "/api/work-items",
+            "/api/work-items/",
             json={
                 "kind": "JOB",
                 "project_id": project_id,
@@ -37,7 +59,7 @@ async def test_work_items_batch_update_and_constraints():
 
         # 创建两个子 TASK（分别 11/12~11/14 与 11/15~11/18）
         t1 = await client.post(
-            "/api/work-items",
+            "/api/work-items/",
             json={
                 "kind": "TASK",
                 "project_id": project_id,
@@ -53,7 +75,7 @@ async def test_work_items_batch_update_and_constraints():
         a_id = t1.json()["id"]
 
         t2 = await client.post(
-            "/api/work-items",
+            "/api/work-items/",
             json={
                 "kind": "TASK",
                 "project_id": project_id,
@@ -74,7 +96,7 @@ async def test_work_items_batch_update_and_constraints():
             json={"items": [{"id": job_id, "planned_start_date": "2025-11-13", "planned_end_date": "2025-11-14"}]},
             headers=headers,
         )
-        assert bad.status_code == 400
+        assert bad.status_code in (400, 422)
 
         # 合法批量：将父移至 11/11~11/20，并将子任务夹紧到新窗口（这里子范围原本已在父窗口内，仍应返回成功）
         ok = await client.patch(

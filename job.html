@@ -4,83 +4,182 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JOB详情</title>
+  <link rel="stylesheet" href="assets/modern-theme.css" />
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding: 24px; }
-    a { color:#2563eb; text-decoration:none; }
+    a { color:var(--primary); text-decoration:none; }
     .header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
-    .title { color:#111827; font-weight:600; margin-bottom:6px; }
-    .meta { display:flex; justify-content:space-between; font-size:12px; color:#6b7280; }
-    .breadcrumb { font-size:12px; color:#6b7280; }
-    .breadcrumb a { color:#2563eb; text-decoration:none; }
-    .breadcrumb .sep { margin:0 6px; color:#9ca3af; }
+    .title { color:var(--text-main); font-weight:600; margin-bottom:6px; }
+    .meta { display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); }
+    .breadcrumb { font-size:12px; color:var(--text-secondary); }
+    .breadcrumb a { color:var(--primary); text-decoration:none; }
+    .breadcrumb .sep { margin:0 6px; color:var(--text-secondary); }
     .desc-menu-btn { cursor:pointer; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; }
-    .desc-menu-btn:hover { background:#eef2ff; }
-    .primary-btn { padding:8px 12px; background:#2563eb; color:#fff; border:none; border-radius:6px; }
-    .ghost-btn { padding:8px 12px; background:#f3f4f6; color:#374151; border:none; border-radius:6px; }
+    .desc-menu-btn:hover { background:var(--bg-hover); }
+    .primary-btn { padding:8px 12px; background:var(--primary); color:var(--bg-surface); border:none; border-radius:6px; }
+    .ghost-btn { padding:8px 12px; background:var(--bg-body); color:var(--text-main); border:none; border-radius:6px; }
     .jira-breadcrumb { display:none; }
-    .dropdown { position:absolute; z-index:10000; background:#fff; border:1px solid #e5e7eb; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.2); min-width:240px; max-height:240px; overflow-y:auto; }
-    .dropdown-item { padding:8px 10px; cursor:pointer; font-size:13px; color:#111827; }
-    .dropdown-item:hover { background:#f3f4f6; }
+    .dropdown { position:absolute; z-index:10000; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,0.2); min-width:240px; max-height:240px; overflow-y:auto; }
+    .dropdown-item { padding:8px 10px; cursor:pointer; font-size:13px; color:var(--text-main); }
+    .dropdown-item:hover { background:var(--bg-body); }
     .columns { display:flex; gap: 12px; }
-    .col { flex:1; border:1px solid #e5e7eb; border-radius: 8px; padding: 12px; background:#fafafa; }
+    .col { flex:1; border:1px solid var(--border-color); border-radius: 8px; padding: 12px; background:var(--bg-body); }
     .col h3 { margin:0 0 8px; }
     .kanban-list { min-height: 200px; }
-    .card { padding:10px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:10px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.04); -webkit-user-drag: element; transition: transform 120ms ease, box-shadow 120ms ease; }
-    .card-header { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#6b7280; margin-bottom:4px; }
+    .card { padding:10px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:10px; background:var(--bg-surface); box-shadow:0 1px 2px rgba(0,0,0,0.04); -webkit-user-drag: element; transition: transform 120ms ease, box-shadow 120ms ease; }
+    .card-header { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-secondary); margin-bottom:4px; }
     .card-header .left { display:flex; align-items:center; gap:6px; }
     .card-header .center { display:flex; align-items:center; gap:8px; flex:1; justify-content:center; }
-    .card-header .right { display:flex; align-items:center; gap:6px; }
+    .card-header .right { display:flex; align-items:center; gap:8px; }
     .code-prefix-first { font-weight:700; font-size:14px; }
     .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; }
-    .dot-orange { background:#f59e0b; }
-    .dot-green { background:#10b981; }
-    .dot-blue { background:#3b82f6; }
-    .status-todo { border-left:4px solid #f59e0b; }
-    .status-doing { border-left:4px solid #10b981; }
-    .status-done { border-left:4px solid #3b82f6; }
+    .dot-orange { background:var(--warning); }
+    .dot-green { background:var(--success); }
+    .dot-blue { background:var(--primary); }
+    .status-todo { border-left:4px solid var(--warning); }
+    .status-doing { border-left:4px solid var(--success); }
+    .status-done { border-left:4px solid var(--primary); }
     .card.dragging { opacity: 0.8; transform: scale(0.98); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-    .kanban-list.drop-active { outline: 2px solid #3b82f6; background: rgba(59,130,246,0.08); transition: background 0.12s ease; }
-    .toast { position: fixed; top: 16px; right: 16px; padding: 10px 12px; border-radius: 6px; color: #fff; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 13px; }
-    .toast.success { background: #10b981; }
-    .toast.error { background: #ef4444; }
-    .gantt-container { border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
-    .gantt-header { display:flex; background:#f8f9fa; border-bottom:1px solid #e5e7eb; }
-    .task-header { width:260px; padding:10px; font-weight:600; border-right:1px solid #e5e7eb; box-sizing:border-box; }
-    .assignee-header { width:160px; padding:10px; font-weight:600; border-right:1px solid #e5e7eb; box-sizing:border-box; }
-    .time-header { flex:1; overflow-x:auto; }
+    .kanban-list.drop-active { outline: 2px solid var(--primary); background: rgba(59,130,246,0.08); transition: background 0.12s ease; }
+    .toast { position: fixed; top: 16px; right: 16px; padding: 10px 12px; border-radius: 6px; color: var(--bg-surface); z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 13px; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .gantt-container { border:1px solid var(--border-color); border-radius:8px; overflow:hidden; }
+    .gantt-header { display:flex; background:var(--bg-body); border-bottom:1px solid var(--border-color); }
+    .task-header { width:260px; padding:10px; font-weight:600; border-right:1px solid var(--border-color); box-sizing:border-box; display:flex; align-items:center; justify-content:center; }
+    .assignee-header { width:120px; padding:10px; font-weight:600; border-right:1px solid var(--border-color); box-sizing:border-box; }
+    .priority-header { width:100px; padding:10px; font-weight:600; border-right:1px solid var(--border-color); box-sizing:border-box; }
+    .time-header { flex:1; overflow:hidden; }
     .time-row { display:flex; height:40px; }
-    .time-cell { flex:0 0 auto; display:flex; align-items:center; justify-content:center; border-right:1px solid #e5e7eb; color:#6b7280; font-size:12px; }
+    .time-cell { flex:0 0 auto; display:flex; align-items:center; justify-content:center; border-right:1px solid var(--border-color); color:var(--text-secondary); font-size:12px; }
     .gantt-body { display:flex; height: 360px; }
-    .task-list { width:260px; border-right:1px solid #e5e7eb; overflow-y:auto; background:#fff; box-sizing:border-box; scrollbar-gutter:stable; }
-    .assignee-list { width:160px; border-right:1px solid #e5e7eb; overflow-y:auto; background:#fff; box-sizing:border-box; scrollbar-gutter:stable; }
-    .timeline { flex:1; position:relative; overflow:hidden; background:#fff; z-index:1; }
+    .task-list { width:260px; border-right:1px solid var(--border-color); overflow-y:auto; background:var(--bg-surface); box-sizing:border-box; scrollbar-gutter:stable; }
+    .assignee-list { width:120px; border-right:1px solid var(--border-color); overflow-y:auto; background:var(--bg-surface); box-sizing:border-box; scrollbar-gutter:stable; }
+    .priority-list { width:100px; border-right:1px solid var(--border-color); overflow-y:auto; background:var(--bg-surface); box-sizing:border-box; scrollbar-gutter:stable; }
+    .timeline { flex:1; position:relative; overflow:hidden; background:var(--bg-surface); z-index:1; }
     .timeline-container { position:relative; overflow:auto; height:100%; }
-    .row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
-    .row-timeline { position:relative; height:40px; border-bottom:1px solid #f3f4f6; }
+    .row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid var(--border-color); color:var(--text-main); }
+    .row-timeline { position:relative; height:40px; border-bottom:1px solid var(--border-color); }
     .bar { position:absolute; top:12px; height:16px; border-radius:8px; }
     .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:9999; overscroll-behavior: contain; }
-    .modal { width:420px; background:#fff; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; }
+    .modal { width:420px; background:var(--bg-surface); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; }
     .modal h4 { margin:0 0 10px; }
     .modal .row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .modal label { width:90px; flex-shrink:0; color:#374151; }
-    .modal input, .modal select, .modal textarea { flex:1; min-width:0; padding:8px; border:1px solid #e5e7eb; border-radius:6px; }
+    .modal label { width:90px; flex-shrink:0; color:var(--text-main); }
+    .modal input, .modal select, .modal textarea { flex:1; min-width:0; padding:8px; border:1px solid var(--border-color); border-radius:6px; }
     .modal .actions { display:flex; justify-content:flex-end; gap:8px; }
-    .task-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
-    .assignee-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #f3f4f6; }
-    .task-row-timeline { position:relative; height:40px; border-bottom:1px solid #f3f4f6; }
-    .task-bar { position:absolute; border-radius:8px; z-index:1; display:flex; align-items:center; justify-content:flex-start; color:#fff; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition: left 120ms ease, width 120ms ease; font-size:12px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .task-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid var(--border-color); }
+    .assignee-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid var(--border-color); }
+    .priority-row { height:40px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid var(--border-color); justify-content: center !important; }
+    .priority-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; color:#fff; font-weight:500; line-height:1.5; }
+    .priority-low { background-color:var(--success); }
+    .priority-medium { background-color:var(--warning); color:#fff; }
+    .priority-high { background-color:var(--danger); }
+    .task-row-timeline { position:relative; height:40px; border-bottom:1px solid var(--border-color); }
+    .task-bar { position:absolute; border-radius:8px; z-index:1; display:flex; align-items:center; justify-content:flex-start; color:var(--bg-surface); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition: left 120ms ease, width 120ms ease; font-size:12px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
     .task-bar-text { padding:0 8px; text-align:left; font-size:12px; }
     .resize-handle { position:absolute; top:0; bottom:0; width:6px; }
     .resize-handle.left { left:0; cursor:ew-resize; }
     .resize-handle.right { right:0; cursor:ew-resize; }
     /* 视图切换样式与显示控制（与 project.html 对齐） */
-    .view-toggle { display:inline-flex; background:#eef2ff; border-radius:8px; overflow:hidden; box-shadow: inset 0 0 0 1px #e5e7eb; }
-    .toggle-btn { padding:8px 14px; border:none; background:transparent; cursor:pointer; font-size:13px; color:#374151; transition: all .18s ease; display:inline-flex; align-items:center; gap:6px; }
-    .toggle-btn:hover { background:#e0e7ff; }
-    .toggle-btn.active { background:#2563eb; color:#fff; }
+    .view-toggle { display:inline-flex; background:var(--bg-body); border-radius:8px; overflow:hidden; box-shadow: inset 0 0 0 1px var(--border-color); }
+    .toggle-btn { padding:8px 14px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--text-main); transition: all .18s ease; display:inline-flex; align-items:center; gap:6px; }
+    .toggle-btn:hover { background:var(--bg-hover); }
+    .toggle-btn.active { background:var(--primary); color:var(--bg-surface); }
     .fade { transition: opacity .25s ease, visibility .25s ease; }
     .hidden { opacity:0; visibility:hidden; height:0; overflow:hidden; }
     .visible { opacity:1; visibility:visible; }
+
+    .task-name-wrapper {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      padding-right: 4px;
+    }
+    .collapse-btn {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      margin-right: 4px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+      border-radius: 4px;
+    }
+    .collapse-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+    .collapse-btn.collapsed {
+      transform: rotate(-90deg);
+    }
+    .more-btn {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: all 0.2s;
+      margin-left: 4px;
+      flex-shrink: 0;
+    }
+    .task-row:hover .more-btn {
+      opacity: 1;
+    }
+    .more-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+    .action-dropdown {
+      position: absolute;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      border-radius: 8px;
+      padding: 4px;
+      z-index: 10000;
+      min-width: 140px;
+      display: none;
+      animation: fadeIn 0.1s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .action-dropdown.show {
+      display: block;
+    }
+    .action-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .action-item:hover {
+      background: var(--bg-hover);
+    }
+    .action-item.danger {
+      color: var(--danger);
+    }
+    .action-item.danger:hover {
+      background: var(--bg-danger-light);
+    }
   </style>
 </head>
 <body>
@@ -101,7 +200,7 @@
     </div>
   </div>
   <div id="jobMeta"></div>
-  <div class="jira-card" style="margin-top:12px;"><h4 style="display:flex; align-items:center;">Description<span id="jobDescMenu" class="desc-menu-btn" title="编辑" style="display:none; margin-left:auto;"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="12" r="2" fill="#2563eb"/><circle cx="12" cy="12" r="2" fill="#2563eb"/><circle cx="19" cy="12" r="2" fill="#2563eb"/></svg></span></h4><div id="jobDesc" class="jira-desc"></div><div id="jobDescEditor" style="margin-top:8px; display:none;"></div></div>
+  <div class="jira-card" style="margin-top:12px;"><h4 style="display:flex; align-items:center;">Description<span id="jobDescMenu" class="desc-menu-btn" title="编辑" style="display:none; margin-left:auto;"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="5" cy="12" r="2" fill="var(--primary)"/><circle cx="12" cy="12" r="2" fill="var(--primary)"/><circle cx="19" cy="12" r="2" fill="var(--primary)"/></svg></span></h4><div id="jobDesc" class="jira-desc"></div><div id="jobDescEditor" style="margin-top:8px; display:none;"></div></div>
   <div id="jobMeta"></div>
 
   <div style="margin-top:16px;">
@@ -126,6 +225,7 @@
         <div class="gantt-header">
           <div class="task-header">任务</div>
           <div class="assignee-header">负责人</div>
+          <div class="priority-header">优先级</div>
           <div class="time-header">
             <div class="year-row" id="yearRow"></div>
             <div class="month-row" id="monthRow"></div>
@@ -135,6 +235,7 @@
         <div class="gantt-body">
           <div class="task-list" id="taskList"></div>
           <div class="assignee-list" id="assigneeList"></div>
+          <div class="priority-list" id="priorityList"></div>
           <div class="timeline">
             <div class="timeline-container" id="timelineContainer">
               <div class="timeline" id="timeline"></div>
@@ -150,11 +251,16 @@
         <h4>新增任务</h4>
         <div class="row"><label>所属JOB</label><select id="taskJobSelect"></select></div>
         <div class="row"><label>任务标题</label><input id="taskTitleInput" placeholder="请输入任务标题" /></div>
-        <div class="row" style="display:flex; gap:8px;">
-          <div style="flex:1"><label>开始日期</label><input id="taskStartInput" type="date" /></div>
-          <div style="flex:1"><label>结束日期</label><input id="taskEndInput" type="date" /></div>
+        <div class="row"><label>负责人</label><input id="taskAssigneeInput" placeholder="请输入负责人" /></div>
+        <div class="row">
+          <label>日期范围</label>
+          <div style="flex:1; display:flex; gap:8px; align-items:center;">
+            <input id="taskStartInput" type="date" style="flex:1" />
+            <span>至</span>
+            <input id="taskEndInput" type="date" style="flex:1" />
+          </div>
         </div>
-        <div class="row"><label>描述</label><textarea id="taskDescInput" placeholder="请输入任务描述" rows="3"></textarea></div>
+        <div class="row" style="align-items:flex-start;"><label style="padding-top:8px;">描述</label><textarea id="taskDescInput" placeholder="请输入任务描述" rows="3" style="resize:vertical; min-height:80px;"></textarea></div>
         <div class="actions">
           <button class="ghost-btn" id="taskCancelBtn">取消</button>
           <button class="primary-btn" id="taskCreateBtn">创建</button>
@@ -164,16 +270,20 @@
     <div class="modal-backdrop" id="taskEditModalBackdrop">
       <div class="modal" id="taskEditModal">
         <h4>编辑任务</h4>
-        <div class="row"><label>任务标题</label><input id="taskEditTitleInput" placeholder="请输入任务标题" /></div>
-        <div class="row"><label>负责人</label><input id="taskEditAssigneeInput" placeholder="请输入负责人" /></div>
-        <div class="row" style="display:flex; gap:8px;">
-          <div style="flex:1"><label>开始日期</label><input id="taskEditStartInput" type="date" /></div>
-          <div style="flex:1"><label>结束日期</label><input id="taskEditEndInput" type="date" /></div>
+        <div class="row"><label>任务标题<span style="color:var(--danger)">*</span></label><input id="taskEditTitleInput" placeholder="请输入任务标题" /></div>
+        <div class="row"><label>负责人<span style="color:var(--danger)">*</span></label><input id="taskEditAssigneeInput" placeholder="请输入负责人" /></div>
+        <div class="row">
+          <label>日期范围</label>
+          <div style="flex:1; display:flex; gap:8px; align-items:center;">
+            <input id="taskEditStartInput" type="date" style="flex:1" />
+            <span>至</span>
+            <input id="taskEditEndInput" type="date" style="flex:1" />
+          </div>
         </div>
-        <div class="row"><label>状态</label><select id="taskEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
+        <div class="row"><label>状态<span style="color:var(--danger)">*</span></label><select id="taskEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
         <div class="row"><label>预估工时</label><input id="taskEditEstimatedHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
         <div class="row"><label>实际工时</label><input id="taskEditActualHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
-        <div class="row"><label>完成时间</label><input id="taskEditCompletedAtInput" type="datetime-local" /></div>
+        <div class="row"><label>完成时间</label><input id="taskEditCompletedAtInput" type="datetime-local" step="1" /></div>
         <div class="actions">
           <button class="ghost-btn" id="taskEditCancelBtn">取消</button>
           <button class="primary-btn" id="taskEditSaveBtn">保存</button>
@@ -184,11 +294,15 @@
       <div class="modal" id="jobModal">
         <h4>新增JOB</h4>
         <div class="row"><label>任务名称</label><input id="jobTitleInput" placeholder="请输入任务名称" /></div>
-        <div class="row" style="display:flex; gap:8px;">
-          <div style="flex:1"><label>开始日期</label><input id="jobStartInput" type="date" /></div>
-          <div style="flex:1"><label>结束日期</label><input id="jobEndInput" type="date" /></div>
+        <div class="row">
+          <label>日期范围</label>
+          <div style="flex:1; display:flex; gap:8px; align-items:center;">
+            <input id="jobStartInput" type="date" style="flex:1" />
+            <span>至</span>
+            <input id="jobEndInput" type="date" style="flex:1" />
+          </div>
         </div>
-        <div class="row"><label>描述</label><textarea id="jobDescInput" placeholder="请输入JOB描述" rows="3"></textarea></div>
+        <div class="row" style="align-items:flex-start;"><label style="padding-top:8px;">描述</label><textarea id="jobDescInput" placeholder="请输入JOB描述" rows="3" style="resize:vertical; min-height:80px;"></textarea></div>
         <div class="actions">
           <button class="ghost-btn" id="jobCancelBtn">取消</button>
           <button class="primary-btn" id="jobCreateBtn">创建</button>
@@ -198,16 +312,20 @@
     <div class="modal-backdrop" id="jobEditModalBackdrop">
       <div class="modal" id="jobEditModal">
         <h4>编辑JOB</h4>
-        <div class="row"><label>任务名称</label><input id="jobEditTitleInput" placeholder="请输入任务名称" /></div>
-        <div class="row"><label>负责人</label><input id="jobEditAssigneeInput" placeholder="请输入负责人" /></div>
-        <div class="row" style="display:flex; gap:8px;">
-          <div style="flex:1"><label>开始日期</label><input id="jobEditStartInput" type="date" /></div>
-          <div style="flex:1"><label>结束日期</label><input id="jobEditEndInput" type="date" /></div>
+        <div class="row"><label>任务名称<span style="color:var(--danger)">*</span></label><input id="jobEditTitleInput" placeholder="请输入任务名称" /></div>
+        <div class="row"><label>负责人<span style="color:var(--danger)">*</span></label><input id="jobEditAssigneeInput" placeholder="请输入负责人" /></div>
+        <div class="row">
+          <label>日期范围</label>
+          <div style="flex:1; display:flex; gap:8px; align-items:center;">
+            <input id="jobEditStartInput" type="date" style="flex:1" />
+            <span>至</span>
+            <input id="jobEditEndInput" type="date" style="flex:1" />
+          </div>
         </div>
-        <div class="row"><label>状态</label><select id="jobEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
+        <div class="row"><label>状态<span style="color:var(--danger)">*</span></label><select id="jobEditStatusSelect"><option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option></select></div>
         <div class="row"><label>预估工时</label><input id="jobEditEstimatedHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
         <div class="row"><label>实际工时</label><input id="jobEditActualHoursInput" type="number" min="0" step="0.5" placeholder="小时" /></div>
-        <div class="row"><label>完成时间</label><input id="jobEditCompletedAtInput" type="datetime-local" /></div>
+        <div class="row"><label>完成时间</label><input id="jobEditCompletedAtInput" type="datetime-local" step="1" /></div>
         <div class="actions">
           <button class="ghost-btn" id="jobEditCancelBtn">取消</button>
           <button class="primary-btn" id="jobEditSaveBtn">保存</button>
@@ -222,7 +340,7 @@
     <div id="commentsPane">
       <div id="comments"></div>
       <div id="commentEditor" style="margin-top:12px;"></div>
-      <div style="margin-top:8px;"><span id="commentError" style="color:#b91c1c;"></span></div>
+      <div style="margin-top:8px;"><span id="commentError" style="color:var(--danger);"></span></div>
       <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
         <button id="addCommentBtn" class="primary-btn">添加评论</button>
         <button id="cancelCommentBtn" class="ghost-btn" style="display:none;">取消</button>
@@ -258,7 +376,7 @@
     const projectId = parseInt(projectParam || '', 10);
 
     function fmtDate(d) { return d ? new Date(d) : null; }
-  function colorForStatus(s) { return s === 'done' ? '#3b82f6' : (s === 'doing' ? '#10b981' : '#f59e0b'); }
+  function colorForStatus(s) { return s === 'done' ? 'var(--primary)' : (s === 'doing' ? 'var(--success)' : 'var(--warning)'); }
 
     async function fetchJob() {
       let job = null;
@@ -319,8 +437,8 @@
       try {
         const topBc = document.getElementById('breadcrumb');
         if (topBc) {
-          const mid = projectCode ? `<a href="project?id=${projectId}">${projectCode}</a>` : `${job.code}`;
-          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${projectCode ? mid : ''}${projectCode ? '<span class=\"sep\">/</span>' : ''}${projectCode ? job.code + '<span class=\"sep\">/</span>' : job.code + '<span class=\"sep\">/</span>'}${job.title}`;
+          const mid = projectCode ? `<a href="project?id=${projectId}">${projectCode}</a>` : '';
+          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${mid ? mid + '<span class="sep">/</span>' : ''}${job.code} · ${job.title}`;
         }
       } catch (_) {}
       
@@ -330,7 +448,7 @@
         try{ setupPriorityEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
         try{ setupLabelEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
       }
-      document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? '#10b981' : (p==='high' ? '#ef4444' : '#f59e0b'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });
+      document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? 'var(--success)' : (p==='high' ? 'var(--danger)' : 'var(--warning)'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });
       try { document.querySelectorAll('.jira-breadcrumb').forEach(function(el){ el.remove(); }); } catch(_){ }
       try{
         const k = 'board_view_' + String(projectId || '');
@@ -367,14 +485,21 @@
             const cDone = kidsAll.filter(t=> t.status==='done').length;
             countsHTML = `<span class="status-dot dot-orange"></span><span>${cTodo}</span><span class="status-dot dot-green"></span><span>${cDoing}</span><span class="status-dot dot-blue"></span><span>${cDone}</span>`;
           }
-          const ellipsis = `<span class="ellipsis-btn" data-role="edit"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="#2563eb"/><circle cx="12" cy="12" r="2" fill="#2563eb"/><circle cx="19" cy="12" r="2" fill="#2563eb"/></svg></span>`;
+          const ellipsis = `<span class="ellipsis-btn" data-role="edit"><svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="var(--primary)"/><circle cx="12" cy="12" r="2" fill="var(--primary)"/><circle cx="19" cy="12" r="2" fill="var(--primary)"/></svg></span>`;
           const assigneeDisp = __assigneeToDisplay(item.assignee||'');
+          const parentJob = window.__job || null;
+          const jobFull = parentJob ? (parentJob.title||parentJob.name||parentJob.code||'') : '';
+          const baseFull = (item.title||item.name||item.code||'-');
+          const jobShort = (function(s){ const arr=Array.from(String(s||'')); return arr.length<=8? String(s||'') : arr.slice(0,8).join('')+'...'; })(jobFull);
+          const baseShort = (function(s){ const arr=Array.from(String(s||'')); return arr.length<=8? String(s||'') : arr.slice(0,8).join('')+'...'; })(baseFull);
+          const displayTitle = item.kind==='JOB' ? baseShort : ((jobShort? (jobShort + '：') : '') + baseShort);
+          const fullTitle = item.kind==='JOB' ? baseFull : ((jobFull? (jobFull + '：') : '') + baseFull);
           el.innerHTML = `<div class="card-header">
               <div class="left"><span class="code"><span class="code-prefix-first">${first}</span>${rest}${codeStr.replace(/^([A-Z]+)/,'')}</span></div>
               <div class="center">${countsHTML}</div>
               <div class="right">${ellipsis}</div>
             </div>
-            <div class="title">${item.title||item.name||item.code||'-'}</div>
+            <div class="title" title="${fullTitle}">${displayTitle}</div>
             <div class="meta" style="display:flex; justify-content:space-between;"><span class="assignee">${assigneeDisp || '-'}</span><span class="dates">${__getPlannedStartStr(item) || ''} ~ ${__getPlannedEndStr(item) || ''}</span></div>`;
           const editBtn = el.querySelector('.ellipsis-btn');
           if (editBtn) {
@@ -399,6 +524,7 @@
     let endDate = (function(){ const y=new Date().getFullYear()+1; return new Date(y,11,31); })();
     let totalDays = 0;
     let columnWidth = 30;
+    let BAR_HEIGHT = 20;
     let timeMode = 'day';
     const ganttData = { tasks: [], timeColumns: [] };
     window.__expandedParents = window.__expandedParents || {};
@@ -411,29 +537,196 @@
     function __saveLocalAssignment(key, prefix){ try{ const data=__loadLocalAssignments(); data[String(key)]=String(prefix||''); localStorage.setItem('gantt_assignments', JSON.stringify(data)); } catch(_){} }
     function __prefixToEmail(prefix){ const p=(prefix==null?'' : String(prefix)).trim(); if(!p) return ''; if(p.indexOf('@')>0) return p; return p+"@chinaunicom.cn"; }
     function buildAssigneeIndex(){ const map=new Map(); const items=Array.isArray(window.__items)?window.__items:[]; items.forEach(function(i){ if(i.assignee){ const k=String(i.assignee); if(!map.has(k)) map.set(k, { name:k, prefix:'', email:'' }); } const subs=i.subtasks||[]; subs.forEach(function(s){ if(s.assignee){ const k=String(s.assignee); if(!map.has(k)) map.set(k, { name:k, prefix:'', email:'' }); } }); }); const defaults=__assigneeDefaults(); defaults.forEach(function(u){ if(!map.has(u.name)) map.set(u.name, u); }); const arr=[...map.values()].sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); }); window.__assigneesIndex=arr; }
-    function showAssigneeDropdown(input, q){ buildAssigneeIndex(); const list = Array.isArray(window.__assigneesIndex) ? window.__assigneesIndex : []; const query = String(q || '').trim().toLowerCase(); const filtered = query ? list.filter(function(u){ return String(u.name).toLowerCase().includes(query) || String(u.prefix||'').toLowerCase().includes(query) || String(u.email||'').toLowerCase().includes(query); }) : list.slice(); const pageSize = 10; const state = window.__assigneeDropdownState || {}; const page = (state[input.id] && state[input.id].page) || 1; const total = filtered.length; const pages = Math.max(1, Math.ceil(total / pageSize)); const cur = Math.max(1, Math.min(page, pages)); const start = (cur - 1) * pageSize; const end = Math.min(start + pageSize, total); let el = document.getElementById('assigneeDropdown'); if (!el) { el = document.createElement('div'); el.id = 'assigneeDropdown'; el.className = 'dropdown'; document.body.appendChild(el); } const rect = input.getBoundingClientRect(); el.style.display = 'block'; el.style.left = (rect.left + window.scrollX) + 'px'; el.style.top = (rect.bottom + window.scrollY) + 'px'; el.style.width = rect.width + 'px'; const itemsHtml = filtered.slice(start, end).map(function(u){ const tip = u.prefix || u.email || ''; return '<div class="dropdown-item" title="'+ tip +'" data-name="' + u.name + '">' + u.name + '</div>'; }).join(''); const footerHtml = '<div class="dropdown-footer"><span>共' + total + '人，显示' + (start + 1) + '-' + end + '</span><div class="pager"><button data-act="prev">上一页</button><button data-act="next">下一页</button></div></div>'; el.innerHTML = itemsHtml + footerHtml; el.querySelectorAll('.dropdown-item').forEach(function(it){ it.onclick = function(){ input.value = this.getAttribute('data-name') || ''; hideAssigneeDropdown(); }; }); const prev = el.querySelector('button[data-act="prev"]'); const next = el.querySelector('button[data-act="next"]'); if (prev) { prev.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.max(1, cur - 1) }; showAssigneeDropdown(input, input.value); }; } if (next) { next.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.min(pages, cur + 1) }; showAssigneeDropdown(input, input.value); }; } el.onmousedown = function(e){ e.preventDefault(); }; el.addEventListener('wheel', function(e){ e.preventDefault(); this.scrollTop += (e.deltaY || 0); }, { passive: false }); }
+    function showAssigneeDropdown(input, q){ buildAssigneeIndex(); const list = Array.isArray(window.__assigneesIndex) ? window.__assigneesIndex : []; const query = String(q || '').trim().toLowerCase(); const filtered = query ? list.filter(function(u){ return String(u.name).toLowerCase().includes(query) || String(u.prefix||'').toLowerCase().includes(query) || String(u.email||'').toLowerCase().includes(query); }) : list.slice(); const pageSize = 10; const state = window.__assigneeDropdownState || {}; const page = (state[input.id] && state[input.id].page) || 1; const total = filtered.length; const pages = Math.max(1, Math.ceil(total / pageSize)); const cur = Math.max(1, Math.min(page, pages)); const start = (cur - 1) * pageSize; const end = Math.min(start + pageSize, total); let el = document.getElementById('assigneeDropdown'); if (!el) { el = document.createElement('div'); el.id = 'assigneeDropdown'; el.className = 'dropdown'; document.body.appendChild(el); } const rect = input.getBoundingClientRect(); el.style.display = 'block'; el.style.position = 'fixed'; el.style.left = rect.left + 'px'; el.style.top = (rect.bottom + 10) + 'px'; el.style.width = rect.width + 'px'; if (window.__assigneesLoading) { el.innerHTML = '<div class="dropdown-item">加载中...</div>'; return; } if (total === 0) { el.innerHTML = '<div class="dropdown-item">暂无负责人数据</div>'; return; } el.style.background = 'var(--bg-surface)'; el.style.border = '1px solid var(--border-color)'; el.style.borderRadius = '8px'; el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; el.style.zIndex = 11000; el.style.maxHeight = '240px'; el.style.overflowY = 'auto'; const itemsHtml = filtered.slice(start, end).map(function(u){ const tip = u.prefix || u.email || ''; const label=(u.name||'') + (u.prefix ? ' ('+u.prefix+')' : ''); return '<div class="dropdown-item" style="padding:8px 10px; cursor:pointer;" title="'+ tip +'" data-name="' + u.name + '">' + label + '</div>'; }).join(''); const footerHtml = '<div class="dropdown-footer" style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border-top:1px solid var(--border-color); background:var(--bg-surface);"><span style="color:var(--text-secondary); font-size:12px;">共' + total + '人，显示' + (start + 1) + '-' + end + '</span><div class="pager" style="display:flex; gap:8px;"><button data-act="prev" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface);">上一页</button><button data-act="next" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface);">下一页</button></div></div>'; el.innerHTML = itemsHtml + footerHtml; el.querySelectorAll('.dropdown-item').forEach(function(it){ it.onclick = function(){ input.value = this.getAttribute('data-name') || ''; hideAssigneeDropdown(); }; }); const prev = el.querySelector('button[data-act="prev"]'); const next = el.querySelector('button[data-act="next"]'); if (prev) { prev.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.max(1, cur - 1) }; showAssigneeDropdown(input, input.value); }; } if (next) { next.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.min(pages, cur + 1) }; showAssigneeDropdown(input, input.value); }; } el.onmousedown = function(e){ e.preventDefault(); }; el.addEventListener('wheel', function(e){ e.preventDefault(); this.scrollTop += (e.deltaY || 0); }, { passive: false }); document.addEventListener('mousedown', function onDoc(e){ const inside=e.target===el || (el.contains(e.target)); const targetInput=e.target===input; if(!inside && !targetInput){ hideAssigneeDropdown(); document.removeEventListener('mousedown', onDoc); } }); }
+    function showAssigneeDropdown(input, q){ buildAssigneeIndex(); const list = Array.isArray(window.__assigneesIndex) ? window.__assigneesIndex : []; const query = String(q || '').trim().toLowerCase(); const filtered = query ? list.filter(function(u){ return String(u.name).toLowerCase().includes(query) || String(u.prefix||'').toLowerCase().includes(query) || String(u.email||'').toLowerCase().includes(query); }) : list.slice(); const pageSize = 10; const state = window.__assigneeDropdownState || {}; const page = (state[input.id] && state[input.id].page) || 1; const total = filtered.length; const pages = Math.max(1, Math.ceil(total / pageSize)); const cur = Math.max(1, Math.min(page, pages)); const start = (cur - 1) * pageSize; const end = Math.min(start + pageSize, total); let el = document.getElementById('assigneeDropdown'); if (!el) { el = document.createElement('div'); el.id = 'assigneeDropdown'; el.className = 'dropdown'; document.body.appendChild(el); } const rect = input.getBoundingClientRect(); el.style.display = 'block'; el.style.left = (rect.left + window.scrollX) + 'px'; el.style.top = (rect.bottom + window.scrollY) + 'px'; el.style.width = rect.width + 'px'; if (window.__assigneesLoading) { el.innerHTML = '<div class="dropdown-item">加载中...</div>'; return; } if (total === 0) { el.innerHTML = '<div class="dropdown-item">暂无负责人数据</div>'; return; } const itemsHtml = filtered.slice(start, end).map(function(u){ const tip = u.prefix || u.email || ''; return '<div class="dropdown-item" title="'+ tip +'" data-name="' + u.name + '">' + u.name + '</div>'; }).join(''); const footerHtml = '<div class="dropdown-footer"><span>共' + total + '人，显示' + (start + 1) + '-' + end + '</span><div class="pager"><button data-act="prev">上一页</button><button data-act="next">下一页</button></div></div>'; el.innerHTML = itemsHtml + footerHtml; el.querySelectorAll('.dropdown-item').forEach(function(it){ it.onclick = function(){ input.value = this.getAttribute('data-name') || ''; hideAssigneeDropdown(); }; }); const prev = el.querySelector('button[data-act="prev"]'); const next = el.querySelector('button[data-act="next"]'); if (prev) { prev.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.max(1, cur - 1) }; showAssigneeDropdown(input, input.value); }; } if (next) { next.onclick = function(){ window.__assigneeDropdownState = window.__assigneeDropdownState || {}; window.__assigneeDropdownState[input.id] = { page: Math.min(pages, cur + 1) }; showAssigneeDropdown(input, input.value); }; } el.onmousedown = function(e){ e.preventDefault(); }; el.addEventListener('wheel', function(e){ e.preventDefault(); this.scrollTop += (e.deltaY || 0); }, { passive: false }); }
     function hideAssigneeDropdown(){ const el=document.getElementById('assigneeDropdown'); if(el) el.style.display='none'; }
-    function enableAssigneeDropdown(inputId){ const input=document.getElementById(inputId); if(!input) return; input.addEventListener('focus', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('input', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('blur', function(){ setTimeout(hideAssigneeDropdown, 120); }); }
+    async function fetchDbAssignees(){ try{ const now=Date.now(); const cache=window.__assigneesCache||{}; if(cache.ts && Array.isArray(cache.data) && (now - cache.ts < 5*60*1000)){ window.__assigneesIndex = cache.data; return; } if(window.__assigneesLoadingPromise){ await window.__assigneesLoadingPromise; return; } window.__assigneesLoading = true; const ctrl=new AbortController(); const timer=setTimeout(()=>{ try{ ctrl.abort(); }catch(_){} }, 4000); const p=(async function(){ try{ const r=await fetch(`${API}/users`, { headers:{ Authorization:`Bearer ${token}` }, signal: ctrl.signal }); if(r.ok){ const list=await r.json(); const data = Array.isArray(list)? list.map(function(u){ return { name: u.full_name || u.username || u.email_prefix, prefix: u.email_prefix || u.username || '', email: u.email || '' }; }) : []; window.__assigneesIndex = data; window.__assigneesCache = { ts: Date.now(), data }; } else { window.__assigneesIndex=[]; showToast && showToast('加载负责人失败','error'); } }catch(e){ window.__assigneesIndex=[]; showToast && showToast('网络错误，加载负责人失败','error'); } finally { clearTimeout(timer); window.__assigneesLoading = false; window.__assigneesLoadingPromise=null; } })(); window.__assigneesLoadingPromise=p; await p; }catch(_){ window.__assigneesIndex=[]; window.__assigneesLoading=false; window.__assigneesLoadingPromise=null; } }
+    function enableAssigneeDropdown(inputId){ const input=document.getElementById(inputId); if(!input) return; input.addEventListener('focus', async function(e){ e.stopPropagation(); try{ if(!window.__assigneesIndex || window.__assigneesIndex.length===0){ await fetchDbAssignees(); } }catch(_){ } showAssigneeDropdown(input, input.value); }); input.addEventListener('click', function(e){ e.stopPropagation(); showAssigneeDropdown(input, input.value); }); input.addEventListener('input', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('blur', function(){ setTimeout(hideAssigneeDropdown, 120); }); input.addEventListener('keydown', function(e){ const el=document.getElementById('assigneeDropdown'); if(!el || el.style.display!=='block') return; const items=Array.from(el.querySelectorAll('.dropdown-item')); if(items.length===0) return; const state=window.__assigneeDropdownState||{}; const st=state[input.id]||{}; let idx=st.activeIndex||0; if(e.key==='ArrowDown'){ idx=Math.min(items.length-1, idx+1); e.preventDefault(); } else if(e.key==='ArrowUp'){ idx=Math.max(0, idx-1); e.preventDefault(); } else if(e.key==='Enter'){ e.preventDefault(); const it=items[idx]; if(it){ input.value=it.getAttribute('data-name')||''; hideAssigneeDropdown(); } return; } items.forEach(i=>i.classList.remove('active')); const active=items[idx]; if(active){ active.classList.add('active'); active.scrollIntoView({ block:'nearest' }); } state[input.id]={ ...(state[input.id]||{}), activeIndex: idx }; window.__assigneeDropdownState=state; }); }
     function __getPlannedStartStr(i){ return i && (i.planned_start_date || i.planned_start) || null; }
     function __getPlannedEndStr(i){ return i && (i.planned_end_date || i.planned_end) || null; }
-    function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(__getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(__getPlannedEndStr(i))).filter(Boolean); const now=new Date(); const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); const clampMax=new Date(now.getFullYear(), now.getMonth()+7, 0); if(startDates.length||endDates.length){ const minStart=startDates.length? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null; const maxEnd=endDates.length? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null; startDate=minStart? new Date(Math.max(minStart.getTime(), clampMin.getTime())) : clampMin; endDate=maxEnd? new Date(Math.min(maxEnd.getTime(), clampMax.getTime())) : clampMax; } else { startDate=clampMin; endDate=clampMax; } totalDays=Math.ceil((endDate-startDate)/(1000*60*60*24))+1; ganttData.tasks=[]; const parent=window.__job||null; const kids=(items||[]); const pStart=fmtDate(__getPlannedStartStr(parent)), pEnd=fmtDate(__getPlannedEndStr(parent)); const pStartDay=pStart? Math.max(0, Math.floor((pStart-startDate)/(1000*60*60*24))) : 0; const pDuration=(pStart&&pEnd)? Math.max(1, Math.ceil((pEnd-pStart)/(1000*60*60*24))+1) : 1; const mappedKids=kids.map(function(t){ const s=fmtDate(__getPlannedStartStr(t)), e=fmtDate(__getPlannedEndStr(t)); const sd=s? Math.max(0, Math.floor((s-startDate)/(1000*60*60*24))) : 0; const du=(s&&e)? Math.max(1, Math.ceil((e-s)/(1000*60*60*24))+1) : 1; return { id:t.id||t.code, name:(t.title||t.code||'-'), startDay:sd, duration:du, color:colorForStatus(t.status), assignee:__assigneeToDisplay(t.assignee||''), description:(t.title||t.code||'-') }; }); if(parent){ ganttData.tasks.push({ id:parent.id||parent.code, name:(parent.title||parent.code||'-'), category:'', startDay:pStartDay, duration:pDuration, color:colorForStatus(parent.status), assignee:__assigneeToDisplay(parent.assignee||''), description:(parent.title||parent.code||'-'), type:'parent', subtasks:mappedKids }); } else { if(mappedKids.length){ ganttData.tasks.push({ id:'__orphans__', name:'未归属任务', category:'', startDay:0, duration:1, color:'#9ca3af', assignee:'', description:'未归属任务', type:'parent', subtasks:mappedKids }); } }
+    function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(__getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(__getPlannedEndStr(i))).filter(Boolean); const now=new Date(); const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); const clampMax=new Date(now.getFullYear(), now.getMonth()+7, 0); if(startDates.length||endDates.length){ const minStart=startDates.length? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null; const maxEnd=endDates.length? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null; startDate=minStart? new Date(Math.max(minStart.getTime(), clampMin.getTime())) : clampMin; endDate=maxEnd? new Date(Math.min(maxEnd.getTime(), clampMax.getTime())) : clampMax; } else { startDate=clampMin; endDate=clampMax; } startDate.setDate(startDate.getDate() - 14);
+      endDate.setDate(endDate.getDate() + 14);
+      totalDays=Math.ceil((endDate-startDate)/(1000*60*60*24))+1; ganttData.tasks=[]; const parent=window.__job||null; const kids=(items||[]); const pStart=fmtDate(__getPlannedStartStr(parent)), pEnd=fmtDate(__getPlannedEndStr(parent)); const pStartDay=pStart? Math.max(0, Math.floor((pStart-startDate)/(1000*60*60*24))) : 0; const pDuration=(pStart&&pEnd)? Math.max(1, Math.ceil((pEnd-pStart)/(1000*60*60*24))+1) : 1; const mappedKids=kids.map(function(t){ const s=fmtDate(__getPlannedStartStr(t)), e=fmtDate(__getPlannedEndStr(t)); const sd=s? Math.max(0, Math.floor((s-startDate)/(1000*60*60*24))) : 0; const du=(s&&e)? Math.max(1, Math.ceil((e-s)/(1000*60*60*24))+1) : 1; return { id:t.id||t.code, name:(t.title||t.code||'-'), startDay:sd, duration:du, color:colorForStatus(t.status), assignee:__assigneeToDisplay(t.assignee||''), description:(t.title||t.code||'-') }; }); if(parent){ ganttData.tasks.push({ id:parent.id||parent.code, name:(parent.title||parent.code||'-'), category:'', startDay:pStartDay, duration:pDuration, color:colorForStatus(parent.status), assignee:__assigneeToDisplay(parent.assignee||''), description:(parent.title||parent.code||'-'), type:'parent', subtasks:mappedKids }); } else { if(mappedKids.length){ ganttData.tasks.push({ id:'__orphans__', name:'未归属任务', category:'', startDay:0, duration:1, color:'var(--text-secondary)', assignee:'', description:'未归属任务', type:'parent', subtasks:mappedKids }); } }
     }
     function generateTimeColumns(){ ganttData.timeColumns=[]; if(timeMode==='day'){ let d=new Date(startDate.getTime()); for(let day=0; day<totalDays; day++){ ganttData.timeColumns.push({ id:`day-${day}`, label:`${d.getMonth()+1}/${d.getDate()}`, date:new Date(d.getTime()), type:'day', width:columnWidth }); d.setDate(d.getDate()+1); } } else { const sy=startDate.getFullYear(), sm=startDate.getMonth(), ey=endDate.getFullYear(), em=endDate.getMonth(); let cur=new Date(sy,sm,1), tgt=new Date(ey,em,1); while(cur<=tgt){ const y=cur.getFullYear(), m=cur.getMonth()+1, days=new Date(y, cur.getMonth()+1, 0).getDate(); ganttData.timeColumns.push({ id:`month-${y}-${m}`, label:`${m}月`, year:y, month:m, days, type:'month', width:columnWidth }); cur.setMonth(cur.getMonth()+1); } } }
     function renderTimeHeader(){ const yearRow=document.getElementById('yearRow'); const monthRow=document.getElementById('monthRow'); const dayRow=document.getElementById('dayRow'); const timeline=document.getElementById('timeline'); yearRow.innerHTML=''; monthRow.innerHTML=''; dayRow.innerHTML=''; if(timeMode==='day'){ const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow,dayRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); dayRow.style.display='flex'; const monthGroups={}; (ganttData.timeColumns||[]).forEach(col=>{ const d=col.date; const ym=`${d.getFullYear()}-${d.getMonth()+1}`; if(!monthGroups[ym]) monthGroups[ym]={ year:d.getFullYear(), month:d.getMonth()+1, count:0 }; monthGroups[ym].count++; }); const yearGroups={}; Object.values(monthGroups).forEach(m=>{ if(!yearGroups[m.year]) yearGroups[m.year]=0; yearGroups[m.year]+=m.count; }); Object.keys(yearGroups).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(yearGroups[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); Object.keys(monthGroups).sort((a,b)=>{ const [ya,ma]=a.split('-').map(Number); const [yb,mb]=b.split('-').map(Number); return ya!==yb?ya-yb:ma-mb; }).forEach(key=>{ const m=monthGroups[key]; const div=document.createElement('div'); div.className='month-cell'; div.style.width=(m.count*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=`${m.month}月`; monthRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='day-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.date.getDate(); dayRow.appendChild(div); }); } else { dayRow.style.display='none'; const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); const years={}; (ganttData.timeColumns||[]).forEach(col=>{ const y=col.year; if(!years[y]) years[y]=0; years[y]++; }); Object.keys(years).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(years[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='month-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.label; monthRow.appendChild(div); }); }
     }
-    function renderGantt(items){ const taskList=document.getElementById('taskList'); const assigneeList=document.getElementById('assigneeList'); const tl=document.getElementById('timeline'); taskList.innerHTML=''; assigneeList.innerHTML=''; tl.innerHTML=''; buildGanttTasks(items); generateTimeColumns(); renderTimeHeader(); (ganttData.tasks||[]).forEach((task, ti)=>{ const parent=document.createElement('div'); parent.className='task-row parent-task'; const toggleDown=`<svg class="btn-icon" data-ti="${ti}" data-role="toggle" viewBox="0 0 24 24"><path fill="#2563eb" d="M7 10l5 5 5-5z"/></svg>`; const addIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="add" viewBox="0 0 24 24" title="新增TASK"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>`; const editIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="edit-job" viewBox="0 0 24 24" title="编辑JOB"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>`; const delIcon=`<svg class="btn-icon" data-ti="${ti}" data-role="del-job" viewBox="0 0 24 24" title="删除JOB"><circle cx="12" cy="12" r="11" fill="none" stroke="#ef4444"/><path d="M8 8l8 8" stroke="#ef4444" stroke-width="2"/><path d="M16 8l-8 8" stroke="#ef4444" stroke-width="2"/></svg>`; parent.innerHTML=`<div class="task-name" style="display:flex; align-items:center; justify-content:flex-start;"><div style="display:flex; align-items:center; gap:6px;"><div class="task-title" style="font-weight:600;">${task.name}</div>${toggleDown}${addIcon}${editIcon}${delIcon}</div></div>`; taskList.appendChild(parent); const assP=document.createElement('div'); assP.className='assignee-row'; assP.setAttribute('data-ti', ti); assP.setAttribute('data-si', -1); assP.textContent=task.assignee||''; assigneeList.appendChild(assP); const row=document.createElement('div'); row.className='task-row-timeline'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', -1); const bar=document.createElement('div'); bar.className='task-bar'; bar.style.left=(task.startDay*columnWidth)+'px'; bar.style.width=(task.duration*columnWidth)+'px'; bar.style.background=task.color; bar.innerHTML=`<span class="task-bar-text">${task.name}</span>`; row.appendChild(bar); tl.appendChild(row); (task.subtasks||[]).forEach((st, si)=>{ const div=document.createElement('div'); div.className='task-row subtask'; div.style.paddingLeft='24px'; div.innerHTML=`<div class="task-name"><div class="task-title">${st.name}</div><svg class="btn-icon" data-ti="${ti}" data-si="${si}" data-role="edit-task" viewBox="0 0 24 24" title="编辑"><circle cx="12" cy="12" r="11" fill="none" stroke="#2563eb"/><path fill="#2563eb" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></div>`; taskList.appendChild(div); const ass=document.createElement('div'); ass.className='assignee-row'; ass.setAttribute('data-ti', ti); ass.setAttribute('data-si', si); ass.textContent=st.assignee||''; assigneeList.appendChild(ass); const subRow=document.createElement('div'); subRow.className='task-row-timeline'; subRow.setAttribute('data-ti', ti); subRow.setAttribute('data-si', si); const sb=document.createElement('div'); sb.className='task-bar'; sb.style.left=(st.startDay*columnWidth)+'px'; sb.style.width=(st.duration*columnWidth)+'px'; sb.style.background=st.color; sb.innerHTML=`<span class="task-bar-text">${st.name}</span>`; subRow.appendChild(sb); tl.appendChild(subRow); }); }); applyTaskExpansionStates(); setupScrollSync(); }
-    (function(){ const tl=document.getElementById('taskList'); if(!tl) return; tl.addEventListener('click', function(e){ const btnJob=e.target.closest('[data-role="edit-job"]'); if(btnJob){ e.preventDefault(); e.stopImmediatePropagation(); const ti=parseInt(btnJob.getAttribute('data-ti')); const ref=(ganttData.tasks||[])[ti]; openEditJobModal(ref); return; } const btnTask=e.target.closest('[data-role="edit-task"]'); if(btnTask){ e.preventDefault(); e.stopImmediatePropagation(); const tIdx=parseInt(btnTask.getAttribute('data-ti')); const sIdx=parseInt(btnTask.getAttribute('data-si')); const ref=(ganttData.tasks||[])[tIdx].subtasks[sIdx]; openEditTaskModal(ref); return; } }, true); tl.addEventListener('click', function(e){ const tog=e.target.closest('[data-role="toggle"]'); if(!tog) return; const ti=parseInt(tog.getAttribute('data-ti')); const t=(ganttData.tasks||[])[ti]; const pid=t&&(t.id||t.code); const path=tog.querySelector('path'); const isDown = !!(path && path.getAttribute('d')==='M7 10l5 5 5-5z'); window.__expandedParents = window.__expandedParents || {}; window.__expandedParents[pid] = isDown; applyTaskExpansionStates(); }, false); })();
+    function __priorityToLabel(p){ const v=String(p||'').toLowerCase(); if(v==='low') return 'Low'; if(v==='high') return 'High'; return 'Medium'; }
+    function __priorityToClass(p){ const v=String(p||'').toLowerCase(); if(v==='low') return 'priority-low'; if(v==='high') return 'priority-high'; return 'priority-medium'; }
+
+    function renderGantt(items) {
+      const taskList = document.getElementById('taskList');
+      const assigneeList = document.getElementById('assigneeList');
+      const priorityList = document.getElementById('priorityList');
+      const tl = document.getElementById('timeline');
+      
+      taskList.innerHTML = '';
+      assigneeList.innerHTML = '';
+      if(priorityList) priorityList.innerHTML = '';
+      tl.innerHTML = '';
+      
+      buildGanttTasks(items);
+      generateTimeColumns();
+      renderTimeHeader();
+      
+      (ganttData.tasks || []).forEach((task, ti) => {
+        // 1. Task List Row (Parent)
+        const parent = document.createElement('div');
+        parent.className = 'task-row parent-task';
+        
+        const pid = task.id || task.code;
+        const entry = (window.__expandedParents || {})[pid];
+        const expanded = (entry === undefined) ? true : !!entry;
+        
+        parent.innerHTML = `
+          <div class="task-name-wrapper">
+            <span class="collapse-btn ${expanded ? '' : 'collapsed'}" data-ti="${ti}" data-role="toggle" title="展开/折叠">
+              <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+            </span>
+            <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;">
+              <a class="task-title" href="job?code=${pid}&project=${projectId}" style="color:inherit; text-decoration:none;" title="${task.name}">${task.name}</a>
+            </div>
+            <button class="more-btn" onclick="showTaskMenu(event, ${ti}, -1)" title="更多操作">
+              <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
+            </button>
+          </div>
+        `;
+        taskList.appendChild(parent);
+        
+        // 2. Assignee Row (Parent)
+        const assP = document.createElement('div');
+        assP.className = 'assignee-row';
+        assP.setAttribute('data-ti', ti);
+        assP.setAttribute('data-si', -1);
+        assP.innerHTML = `<div class="assignee-avatar"></div><span class="assignee-name">${task.assignee || ''}</span>`;
+        if (!expanded) assP.style.display = 'none';
+        assigneeList.appendChild(assP);
+
+        // 3. Priority Row (Parent)
+        if(priorityList){
+            const priP = document.createElement('div');
+            priP.className = 'priority-row';
+            priP.setAttribute('data-ti', ti);
+            priP.setAttribute('data-si', -1);
+            const lab=__priorityToLabel(task.priority||'');
+            const cls=__priorityToClass(task.priority||'');
+            priP.innerHTML=`<span class="priority-badge ${cls}">${lab}</span>`;
+            if (!expanded) priP.style.display = 'none';
+            priorityList.appendChild(priP);
+        }
+        
+        // 4. Timeline Row (Parent)
+        const row = document.createElement('div');
+        row.className = 'task-row-timeline';
+        row.setAttribute('data-ti', ti);
+        row.setAttribute('data-si', -1);
+        if (!expanded) row.style.display = 'none';
+        
+        const barEl = createTaskBar(task, ti, -1);
+        row.appendChild(barEl);
+        tl.appendChild(row);
+        
+        // Subtasks
+        const subs = task.subtasks || [];
+        subs.forEach((st, si) => {
+            // Task List
+            const div = document.createElement('div');
+            div.className = 'task-row subtask';
+            div.style.paddingLeft = '36px';
+            div.setAttribute('data-ti', ti);
+            div.setAttribute('data-si', si);
+            if (!expanded) div.style.display = 'none';
+            
+            div.innerHTML = `
+              <div class="task-name-wrapper">
+                <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <a class="task-title" href="task?code=${st.id||st.code}&project=${projectId}&job=${pid}" style="color:inherit; text-decoration:none;" title="${st.name}">${st.name}</a>
+                </div>
+                <button class="more-btn" onclick="showTaskMenu(event, ${ti}, ${si})" title="更多操作">
+                  <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
+                </button>
+              </div>
+            `;
+            div.ondblclick = (e) => {
+                 if(e.target.closest('.more-btn')) return;
+                 openEditTaskModal(st);
+            };
+            taskList.appendChild(div);
+            
+            // Assignee
+            const assS = document.createElement('div');
+            assS.className = 'assignee-row';
+            assS.setAttribute('data-ti', ti);
+            assS.setAttribute('data-si', si);
+            assS.innerHTML = `<div class="assignee-avatar"></div><span class="assignee-name">${st.assignee || ''}</span>`;
+            if (!expanded) assS.style.display = 'none';
+            assigneeList.appendChild(assS);
+
+            // Priority
+            if(priorityList){
+                const priS = document.createElement('div');
+                priS.className = 'priority-row';
+                priS.setAttribute('data-ti', ti);
+                priS.setAttribute('data-si', si);
+                const lab2=__priorityToLabel(st.priority||'');
+                const cls2=__priorityToClass(st.priority||'');
+                priS.innerHTML=`<span class="priority-badge ${cls2}">${lab2}</span>`;
+                if (!expanded) priS.style.display = 'none';
+                priorityList.appendChild(priS);
+            }
+            
+            // Timeline
+            const rowS = document.createElement('div');
+            rowS.className = 'task-row-timeline';
+            rowS.setAttribute('data-ti', ti);
+            rowS.setAttribute('data-si', si);
+            if (!expanded) rowS.style.display = 'none';
+            
+            const barS = createTaskBar(st, ti, si);
+            rowS.appendChild(barS);
+            tl.appendChild(rowS);
+        });
+      });
+      
+      applyTaskExpansionStates();
+    }
+
+  (function(){ 
+    const tl=document.getElementById('taskList'); 
+    if(!tl) return; 
+    tl.addEventListener('click', function(e){ 
+      const tog=e.target.closest('[data-role="toggle"]'); 
+      if(!tog) return; 
+      const ti=parseInt(tog.getAttribute('data-ti')); 
+      const t=(ganttData.tasks||[])[ti]; 
+      const pid=t&&(t.id||t.code); 
+      
+      const current = (window.__expandedParents || {})[pid];
+      const isExpanded = (current === undefined) ? true : !!current;
+      
+      window.__expandedParents = window.__expandedParents || {}; 
+      window.__expandedParents[pid] = !isExpanded; 
+      applyTaskExpansionStates(); 
+    }, false); 
+  })();
+
 
     function setupScrollSync() {
       const th = document.querySelector('.time-header');
       const tl = document.getElementById('timelineContainer');
       const taskList = document.getElementById('taskList');
       const assigneeList = document.getElementById('assigneeList');
-      const onTlScroll = () => { th.scrollLeft = tl.scrollLeft; taskList.scrollTop = tl.scrollTop; assigneeList.scrollTop = tl.scrollTop; };
-      const onThScroll = () => { tl.scrollLeft = th.scrollLeft; };
-      tl.removeEventListener('scroll', onTlScroll); th.removeEventListener('scroll', onThScroll);
-      tl.addEventListener('scroll', onTlScroll); th.addEventListener('scroll', onThScroll);
-      bindPan(th); bindPan(tl); bindZoom(th); bindZoom(tl);
+      const priorityList = document.getElementById('priorityList');
+      const onTlScroll = () => { 
+        if(th) th.scrollLeft = tl.scrollLeft; 
+        if(taskList) taskList.scrollTop = tl.scrollTop; 
+        if(assigneeList) assigneeList.scrollTop = tl.scrollTop; 
+        if(priorityList) priorityList.scrollTop = tl.scrollTop;
+      };
+      const onThScroll = () => { if(tl) tl.scrollLeft = th.scrollLeft; };
+      if(tl) { tl.removeEventListener('scroll', onTlScroll); tl.addEventListener('scroll', onTlScroll); }
+      if(th) { th.removeEventListener('scroll', onThScroll); th.addEventListener('scroll', onThScroll); }
+      if(th) bindPan(th); if(tl) bindPan(tl); if(th) bindZoom(th); if(tl) bindZoom(tl);
     }
 
     function bindPan(el) {
@@ -450,31 +743,39 @@
 
     function enableDnD(items) {
       ['todo','doing','done'].forEach(id => { const container = document.getElementById(id); container.addEventListener('dragenter', ev => { const col = ev.currentTarget; col.classList.add('drop-active'); }, true); container.addEventListener('dragleave', ev => { const col = ev.currentTarget; col.classList.remove('drop-active'); }, true); });
-      const setDrop = (colId, status) => { const col = document.getElementById(colId); col.addEventListener('dragover', ev => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move'; }, true); col.addEventListener('drop', async ev => { ev.preventDefault(); const idOrCode = ev.dataTransfer.getData('text/plain') || ev.dataTransfer.getData('text'); if (!idOrCode) { showToast('拖拽数据缺失', 'error'); return; } try { let isJob=false; let jobId=null; let target = null; const tasks=(window.__tasks||[]); const job=(window.__job||null); if(job && (String(job.id)===String(idOrCode) || String(job.code)===String(idOrCode))){ isJob=true; jobId=job.id; target=job; } else { target = tasks.find(t => String(t.id)===String(idOrCode) || String(t.code)===String(idOrCode)); } if(isJob && Array.isArray(job.subtasks) && job.subtasks.length>0){ const dlg=document.createElement('div'); dlg.style.position='fixed'; dlg.style.inset='0'; dlg.style.background='rgba(0,0,0,0.35)'; dlg.style.display='flex'; dlg.style.alignItems='center'; dlg.style.justifyContent='center'; dlg.style.zIndex='9999'; const box=document.createElement('div'); box.style.background='#fff'; box.style.borderRadius='8px'; box.style.padding='16px'; box.style.width='400px'; box.innerHTML=`<div style=\"font-weight:600; color:#111827;\">此操作将使该JOB下的所有TASK状态同步变更为「${status}」</div><div style=\"margin-top:12px; display:flex; justify-content:flex-end; gap:8px;\"><button id=\"__dlgCancel\" class=\"user-btn-ghost\">取消</button><button id=\"__dlgOk\" class=\"user-btn-primary\">确认</button></div>`; dlg.appendChild(box); document.body.appendChild(dlg); const ok = await new Promise((resolve)=>{ box.querySelector('#__dlgCancel').onclick=function(){ dlg.remove(); resolve(false); }; box.querySelector('#__dlgOk').onclick=function(){ dlg.remove(); resolve(true); }; dlg.addEventListener('click', function(ev){ if(ev.target===dlg){ dlg.remove(); resolve(false); } }); const onKey=(ev)=>{ if(ev.key==='Escape'){ dlg.remove(); resolve(false); document.removeEventListener('keydown', onKey); } }; document.addEventListener('keydown', onKey); }); if(!ok){ col.classList.remove('drop-active'); return; } const body = { status }; const r2=await fetch(`${API}/work-items/${jobId}/cascade-status`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) }); if(r2.ok){ showToast('状态联动成功','success'); await fetchJob(); } else { await __showErrorFromResponse(r2); } } else { const body={ status }; const res = await fetch(`${API}/work-items/${idOrCode}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); if (res.ok) { showToast('状态更新成功', 'success'); fetchJob(); } else { await __showErrorFromResponse(res); } } } catch (e) { showToast('网络错误，更新失败', 'error'); } col.classList.remove('drop-active'); col.classList.add('drop-flash'); setTimeout(()=>col.classList.remove('drop-flash'), 300); }, true); };
+      const setDrop = (colId, status) => { const col = document.getElementById(colId); col.addEventListener('dragover', ev => { ev.preventDefault(); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move'; }, true); col.addEventListener('drop', async ev => { ev.preventDefault(); const idOrCode = ev.dataTransfer.getData('text/plain') || ev.dataTransfer.getData('text'); if (!idOrCode) { showToast('拖拽数据缺失', 'error'); return; } try { let isJob=false; let jobId=null; let target = null; const tasks=(window.__tasks||[]); const job=(window.__job||null); if(job && (String(job.id)===String(idOrCode) || String(job.code)===String(idOrCode))){ isJob=true; jobId=job.id; target=job; } else { target = tasks.find(t => String(t.id)===String(idOrCode) || String(t.code)===String(idOrCode)); } if(isJob && Array.isArray(job.subtasks) && job.subtasks.length>0){ const dlg=document.createElement('div'); dlg.style.position='fixed'; dlg.style.inset='0'; dlg.style.background='rgba(0,0,0,0.35)'; dlg.style.display='flex'; dlg.style.alignItems='center'; dlg.style.justifyContent='center'; dlg.style.zIndex='9999'; const box=document.createElement('div'); box.style.background='var(--bg-surface)'; box.style.borderRadius='8px'; box.style.padding='16px'; box.style.width='400px'; box.innerHTML=`<div style=\"font-weight:600; color:var(--text-main);\">此操作将使该JOB下的所有TASK状态同步变更为「${status}」</div><div style=\"margin-top:12px; display:flex; justify-content:flex-end; gap:8px;\"><button id=\"__dlgCancel\" class=\"user-btn-ghost\">取消</button><button id=\"__dlgOk\" class=\"user-btn-primary\">确认</button></div>`; dlg.appendChild(box); document.body.appendChild(dlg); const ok = await new Promise((resolve)=>{ box.querySelector('#__dlgCancel').onclick=function(){ dlg.remove(); resolve(false); }; box.querySelector('#__dlgOk').onclick=function(){ dlg.remove(); resolve(true); }; dlg.addEventListener('click', function(ev){ if(ev.target===dlg){ dlg.remove(); resolve(false); } }); const onKey=(ev)=>{ if(ev.key==='Escape'){ dlg.remove(); resolve(false); document.removeEventListener('keydown', onKey); } }; document.addEventListener('keydown', onKey); }); if(!ok){ col.classList.remove('drop-active'); return; } const body = { status }; const r2=await fetch(`${API}/work-items/${jobId}/cascade-status`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) }); if(r2.ok){ showToast('状态联动成功','success'); await fetchJob(); } else { await __showErrorFromResponse(r2); } } else { const body={ status }; const res = await fetch(`${API}/work-items/${idOrCode}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); if (res.ok) { showToast('状态更新成功', 'success'); fetchJob(); } else { await __showErrorFromResponse(res); } } } catch (e) { showToast('网络错误，更新失败', 'error'); } col.classList.remove('drop-active'); col.classList.add('drop-flash'); setTimeout(()=>col.classList.remove('drop-flash'), 300); }, true); };
       setDrop('todo','todo'); setDrop('doing','doing'); setDrop('done','done');
     }
 
     function showToast(text, type) { const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = text; document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 1800); }
     async function __showErrorFromResponse(res){ let msg=''; try{ const ct=(res.headers && res.headers.get && res.headers.get('content-type'))||''; if(ct.indexOf('application/json')>=0){ const data=await res.json(); const detail=typeof data==='string'? data : (data && (data.detail || data.message || '')); msg=String(detail||'').trim(); } else { msg=String((await res.text())||'').trim(); } } catch (e) { msg=''; } showToast(msg||'操作失败','error'); }
-    function __toLocalInputValue(dtStr){ try{ if(!dtStr) return ''; const d=new Date(dtStr); const off=d.getTimezoneOffset(); const local=new Date(d.getTime() - off*60000); return local.toISOString().slice(0,16); }catch(_){ return ''; } }
+    function __toLocalInputValue(dtStr){
+      try{
+        if(!dtStr) return '';
+        const d = new Date(dtStr);
+        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        const east8 = new Date(utc + (3600000 * 8));
+        return east8.toISOString().slice(0, 19);
+      }catch(_){ return ''; }
+    }
     function __normalizeWorkItemShape(i){ if (!i) return i; if (i.planned_start_date && !i.planned_start) i.planned_start = i.planned_start_date; if (i.planned_end_date && !i.planned_end) i.planned_end = i.planned_end_date; return i; }
     function __toYMD(date){ const y=date.getFullYear(); const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
     function __daysBetween(startStr, endStr){ try{ if(!startStr||!endStr) return 0; const s=new Date(startStr); const e=new Date(endStr); const ms=1000*60*60*24; return Math.max(0, Math.floor((e - s)/ms) + 1); }catch(_){ return 0; } }
-    function openCreateTaskModal(parentItem){ const backdrop=document.getElementById('taskModalBackdrop'); const sel=document.getElementById('taskJobSelect'); sel.innerHTML=''; const parent=window.__job||null; if(parent){ const opt=document.createElement('option'); opt.value=parent.id||parent.code; opt.textContent=parent.title||parent.code; sel.appendChild(opt); sel.value=opt.value; } document.getElementById('taskTitleInput').value=''; document.getElementById('taskStartInput').value=__toYMD(startDate); document.getElementById('taskEndInput').value=__toYMD(startDate); backdrop.style.display='flex'; }
+    function openCreateTaskModal(parentItem){ const backdrop=document.getElementById('taskModalBackdrop'); const sel=document.getElementById('taskJobSelect'); sel.innerHTML=''; const parent=window.__job||null; if(parent){ const opt=document.createElement('option'); opt.value=parent.id||parent.code; opt.textContent=parent.title||parent.code; sel.appendChild(opt); sel.value=opt.value; } const titleEl=document.getElementById('taskTitleInput'); if(titleEl) titleEl.value=''; const assEl=document.getElementById('taskAssigneeInput'); if(assEl) assEl.value=''; document.getElementById('taskStartInput').value=__toYMD(startDate); document.getElementById('taskEndInput').value=__toYMD(startDate); (async function(){ try{ await fetchDbAssignees(); }catch(_){ } try{ enableAssigneeDropdown('taskAssigneeInput'); }catch(_){ } })(); backdrop.style.display='flex'; }
     function closeCreateTaskModal(){ const backdrop=document.getElementById('taskModalBackdrop'); backdrop.style.display='none'; }
     function openCreateJobModal(){ const backdrop=document.getElementById('jobModalBackdrop'); document.getElementById('jobTitleInput').value=''; document.getElementById('jobStartInput').value=__toYMD(startDate); document.getElementById('jobEndInput').value=__toYMD(startDate); backdrop.style.display='flex'; }
     let __editingTaskRef=null;
-    function openEditTaskModal(ref){ __editingTaskRef=ref; const b=document.getElementById('taskEditModalBackdrop'); const titleEl=document.querySelector('#taskEditModal h4'); if(titleEl) titleEl.textContent='编辑子任务'; document.getElementById('taskEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('taskEditAssigneeInput'); assEl.value=(ref.assignee||''); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; const startEl=document.getElementById('taskEditStartInput'); const endEl=document.getElementById('taskEditEndInput'); if(startEl) startEl.value=sStr; if(endEl) endEl.value=eStr; const estEl=document.getElementById('taskEditEstimatedHoursInput'); if(estEl) estEl.value = (__editingTaskRef.estimated_hours!=null ? __editingTaskRef.estimated_hours : (__daysBetween(sStr,eStr)*8)) || 0; const actEl=document.getElementById('taskEditActualHoursInput'); if(actEl) actEl.value=(__editingTaskRef.actual_hours!=null ? __editingTaskRef.actual_hours : ''); const compEl=document.getElementById('taskEditCompletedAtInput'); if(compEl) compEl.value=(__editingTaskRef.completed_at? __toLocalInputValue(__editingTaskRef.completed_at) : ''); const sel=document.getElementById('taskEditStatusSelect'); sel.value=__editingTaskRef.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
+    function openEditTaskModal(ref){ __editingTaskRef=ref; const b=document.getElementById('taskEditModalBackdrop'); const titleEl=document.querySelector('#taskEditModal h4'); if(titleEl) titleEl.textContent='编辑子任务'; document.getElementById('taskEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('taskEditAssigneeInput'); assEl.value=(ref.assignee||''); (async function(){ try{ await fetchDbAssignees(); }catch(_){ } try{ enableAssigneeDropdown('taskEditAssigneeInput'); }catch(_){ } })(); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; const startEl=document.getElementById('taskEditStartInput'); const endEl=document.getElementById('taskEditEndInput'); if(startEl) startEl.value=sStr; if(endEl) endEl.value=eStr; const estEl=document.getElementById('taskEditEstimatedHoursInput'); if(estEl) estEl.value = (__editingTaskRef.estimated_hours!=null ? __editingTaskRef.estimated_hours : (__daysBetween(sStr,eStr)*8)) || 0; const actEl=document.getElementById('taskEditActualHoursInput'); if(actEl) actEl.value=(__editingTaskRef.actual_hours!=null ? __editingTaskRef.actual_hours : ''); const compEl=document.getElementById('taskEditCompletedAtInput'); if(compEl) compEl.value=(__editingTaskRef.completed_at? __toLocalInputValue(__editingTaskRef.completed_at) : ''); const sel=document.getElementById('taskEditStatusSelect'); sel.value=__editingTaskRef.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
     function closeEditTaskModal(){ const b=document.getElementById('taskEditModalBackdrop'); b.style.display='none'; __editingTaskRef=null; document.body.style.overflow=''; }
     let __editingJobRef=null;
-    function openEditJobModal(ref){ __editingJobRef=ref; const b=document.getElementById('jobEditModalBackdrop'); const titleEl=document.querySelector('#jobEditModal h4'); if(titleEl) titleEl.textContent='编辑任务'; document.getElementById('jobEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('jobEditAssigneeInput'); assEl.value=(ref.assignee||''); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; document.getElementById('jobEditStartInput').value=sStr; document.getElementById('jobEditEndInput').value=eStr; const estEl=document.getElementById('jobEditEstimatedHoursInput'); if(estEl) estEl.value=(ref.estimated_hours!=null? ref.estimated_hours : (__daysBetween(sStr,eStr)*8))||0; const actEl=document.getElementById('jobEditActualHoursInput'); if(actEl) actEl.value=(ref.actual_hours!=null? ref.actual_hours : ''); const compEl=document.getElementById('jobEditCompletedAtInput'); if(compEl) compEl.value=(ref.completed_at? __toLocalInputValue(ref.completed_at) : ''); const sel=document.getElementById('jobEditStatusSelect'); sel.value=ref.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
+    function openEditJobModal(ref){ __editingJobRef=ref; const b=document.getElementById('jobEditModalBackdrop'); const titleEl=document.querySelector('#jobEditModal h4'); if(titleEl) titleEl.textContent='编辑任务'; document.getElementById('jobEditTitleInput').value=ref.title||ref.name||''; const assEl=document.getElementById('jobEditAssigneeInput'); assEl.value=(ref.assignee||''); (async function(){ try{ await fetchDbAssignees(); }catch(_){ } try{ enableAssigneeDropdown('jobEditAssigneeInput'); }catch(_){ } })(); const sStr=__getPlannedStartStr(ref)||''; const eStr=__getPlannedEndStr(ref)||''; document.getElementById('jobEditStartInput').value=sStr; document.getElementById('jobEditEndInput').value=eStr; const estEl=document.getElementById('jobEditEstimatedHoursInput'); if(estEl) estEl.value=(ref.estimated_hours!=null? ref.estimated_hours : (__daysBetween(sStr,eStr)*8))||0; const actEl=document.getElementById('jobEditActualHoursInput'); if(actEl) actEl.value=(ref.actual_hours!=null? ref.actual_hours : ''); const compEl=document.getElementById('jobEditCompletedAtInput'); if(compEl) compEl.value=(ref.completed_at? __toLocalInputValue(ref.completed_at) : ''); const sel=document.getElementById('jobEditStatusSelect'); sel.value=ref.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
     function closeEditJobModal(){ const b=document.getElementById('jobEditModalBackdrop'); b.style.display='none'; __editingJobRef=null; document.body.style.overflow=''; }
-    async function __patchTask(idOrCode, payload){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('已保存','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); } }
+    async function __patchTask(idOrCode, payload){ try{ try{ if(payload && payload.priority===undefined){ const jel=document.getElementById('jobEditPrioritySelect'); const tel=document.getElementById('taskEditPrioritySelect'); if(jel && jel.value){ payload.priority = jel.value || 'medium'; } else if(tel && tel.value){ payload.priority = tel.value || 'medium'; } } }catch(_){} const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('已保存','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); } }
     async function __batchPatch(items){ try{ const payload={ items: (items||[]).map(function(ch){ const it = Object.assign({}, ch); if(it.idOrCode && !it.id) it.id = it.idOrCode; delete it.idOrCode; return it; }) }; const res=await fetch(`${API}/work-items/batch`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ const data=await res.json(); const updatedList=(data&&data.items)||[]; showToast('批量更新成功','success'); const itemsLocal = Array.isArray(window.__items)? window.__items.slice() : []; for(const updated of updatedList){ const norm=__normalizeWorkItemShape(updated); const idx = itemsLocal.findIndex(i=> (i.id===norm.id) || (i.code===norm.code)); if(idx>=0){ itemsLocal[idx] = Object.assign({}, itemsLocal[idx], norm); } else { for (let i=0;i<itemsLocal.length;i++){ const subs=itemsLocal[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===norm.id) || (s.code===norm.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], norm); break; } } } } renderAfterLocalUpdate(itemsLocal); return updatedList; } else { await __showErrorFromResponse(res, '保存失败'); return []; } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); return []; } }
     async function __scheduleChange(idOrCode, ps, pe){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ planned_start_date: ps, planned_end_date: pe }) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('时间已更新','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ showToast('网络错误：' + (e && e.message ? e.message : ''), 'error'); } }
 
-    (function(){ const cancel=document.getElementById('taskEditCancelBtn'); const save=document.getElementById('taskEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditTaskModal(); }; } if(save){ save.onclick=async function(){ if(!__editingTaskRef) return; const wid=__editingTaskRef.id; const ps=document.getElementById('taskEditStartInput').value||null; const pe=document.getElementById('taskEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const prefix=__assigneeToPrefix(document.getElementById('taskEditAssigneeInput').value||''); const status=document.getElementById('taskEditStatusSelect').value||'todo'; const payload={ title: document.getElementById('taskEditTitleInput').value||'', assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), planned_start_date: ps, planned_end_date: pe, status }; if(status==='done'){ const endStr = pe || __getPlannedEndStr(__editingTaskRef) || ps; const startStr = ps || __getPlannedStartStr(__editingTaskRef) || endStr; const eDate = endStr ? new Date(endStr) : new Date(); const sDate = startStr ? new Date(startStr) : null; const msPerDay = 1000*60*60*24; let days = 1; if(sDate){ days = Math.max(1, Math.floor((eDate - sDate)/msPerDay) + 1); } payload.completed_at = eDate.toISOString(); payload.actual_hours = days * 8; } await __patchTask(wid, payload); __saveLocalAssignment(wid, prefix); closeEditTaskModal(); }; } })();
-    (function(){ const cancel=document.getElementById('jobEditCancelBtn'); const save=document.getElementById('jobEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditJobModal(); }; } if(save){ save.onclick=async function(){ if(!__editingJobRef) return; const idOrCode=__editingJobRef.id||__editingJobRef.code; const ps=document.getElementById('jobEditStartInput').value||null; const pe=document.getElementById('jobEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const changes = []; changes.push({ idOrCode: idOrCode, title: document.getElementById('jobEditTitleInput').value||'', assignee_prefix: __assigneeToPrefix(document.getElementById('jobEditAssigneeInput').value||''), planned_start_date: ps, planned_end_date: pe, status: document.getElementById('jobEditStatusSelect').value||'todo' }); await __batchPatch(changes); closeEditJobModal(); }; } })();
+    (function(){ const cancel=document.getElementById('taskEditCancelBtn'); const save=document.getElementById('taskEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditTaskModal(); }; } if(save){ save.onclick=async function(){ if(!__editingTaskRef) return; const wid=__editingTaskRef.id; const ps=document.getElementById('taskEditStartInput').value||null; const pe=document.getElementById('taskEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const title=(document.getElementById('taskEditTitleInput').value||'').trim(); const assigneeInput=(document.getElementById('taskEditAssigneeInput').value||'').trim(); if(!title){ showToast('请输入任务标题','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } const prefix=__assigneeToPrefix(assigneeInput||''); const status=document.getElementById('taskEditStatusSelect').value||'todo'; const payload={ title: title, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), planned_start_date: ps, planned_end_date: pe, status }; if(status==='done'){ const endStr = pe || __getPlannedEndStr(__editingTaskRef) || ps; const startStr = ps || __getPlannedStartStr(__editingTaskRef) || endStr; const eDate = endStr ? new Date(endStr) : new Date(); const sDate = startStr ? new Date(startStr) : null; const msPerDay = 1000*60*60*24; let days = 1; if(sDate){ days = Math.max(1, Math.floor((eDate - sDate)/msPerDay) + 1); } payload.completed_at = eDate.toISOString(); payload.actual_hours = days * 8; } await __patchTask(wid, payload); __saveLocalAssignment(wid, prefix); closeEditTaskModal(); }; } })();
+    (function(){ const cancel=document.getElementById('jobEditCancelBtn'); const save=document.getElementById('jobEditSaveBtn'); if(cancel){ cancel.onclick=function(){ closeEditJobModal(); }; } if(save){ save.onclick=async function(){ if(!__editingJobRef) return; const idOrCode=__editingJobRef.id||__editingJobRef.code; const ps=document.getElementById('jobEditStartInput').value||null; const pe=document.getElementById('jobEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const title=(document.getElementById('jobEditTitleInput').value||'').trim(); const assigneeInput=(document.getElementById('jobEditAssigneeInput').value||'').trim(); if(!title){ showToast('请输入JOB标题','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } const priEl=document.getElementById('jobEditPrioritySelect'); const priority=(priEl && priEl.value) ? priEl.value : 'medium'; const changes = []; changes.push({ idOrCode: idOrCode, title: title, description: document.getElementById('jobEditDescInput').value||'', assignee_prefix: __assigneeToPrefix(assigneeInput||''), planned_start_date: ps, planned_end_date: pe, status: document.getElementById('jobEditStatusSelect').value||'todo', priority: priority }); await __batchPatch(changes); closeEditJobModal(); }; } })();
 
     fetchJob();
     window.addEventListener('error', (e)=>{ try{ console.error('[job] error', e.message, e.filename, e.lineno); }catch(_){} });
@@ -515,6 +816,208 @@
       }catch(_){ setActive('gantt'); }
     } catch (_) { } }
     document.addEventListener('DOMContentLoaded', function(){ __initBoardToggle(); });
+
+    function dayOffsetToMonthIndex(dayOffset){
+      const d=new Date(startDate.getTime());
+      d.setDate(d.getDate()+Math.max(0, dayOffset||0));
+      const yearDiff=d.getFullYear()-startDate.getFullYear();
+      const monthDiff=d.getMonth()-startDate.getMonth();
+      let idx=yearDiff*12+monthDiff;
+      idx=Math.max(0, Math.min(idx, (ganttData.timeColumns||[]).length-1));
+      return idx;
+    }
+
+    function createTaskBar(task, ti, si){
+        const bar=document.createElement('div');
+        bar.className='task-bar';
+        let left,width;
+        if(timeMode==='day'){
+            left=(task.startDay||0)*columnWidth;
+            width=Math.max((task.duration||1)*columnWidth,columnWidth);
+        } else {
+            const sIdx=dayOffsetToMonthIndex(task.startDay||0);
+            const eIdx=dayOffsetToMonthIndex((task.startDay||0)+(task.duration||1)-1);
+            left=sIdx*columnWidth;
+            width=Math.max(((eIdx - sIdx + 1) * columnWidth),60);
+        }
+        bar.style.left=left+'px';
+        bar.style.width=width+'px';
+        bar.style.height=BAR_HEIGHT+'px';
+        bar.style.top=((40-BAR_HEIGHT)/2)+'px';
+        bar.style.backgroundColor=task.color||'var(--primary)';
+        bar.setAttribute('data-task-index', ti);
+        bar.setAttribute('data-subtask-index', si);
+        bar.setAttribute('title', task.name);
+        bar.innerHTML = `<div class="resize-handle left"></div><span class="task-bar-text">${task.name}</span><div class="resize-handle right"></div>`;
+        
+        bar.addEventListener('click', function(e){
+             e.stopPropagation();
+             if(si===-1) openEditJobModal(task);
+             else openEditTaskModal(task);
+        });
+        
+        return bar;
+    }
+
+    function applyTaskExpansionStates(){ 
+      try{ 
+        const tasks=(ganttData.tasks||[]); 
+        const list=document.getElementById('taskList'); 
+        if(!list) return; 
+        for(let ti=0; ti<tasks.length; ti++){ 
+          const t=tasks[ti]; 
+          const pid=t.id||t.code; 
+          const entry=(window.__expandedParents||{})[pid]; 
+          const expanded=(entry===undefined)? true : !!entry; 
+          const tog=list.querySelector(`[data-role="toggle"][data-ti="${ti}"]`); 
+          if(tog){ 
+            if(expanded) tog.classList.remove('collapsed');
+            else tog.classList.add('collapsed');
+          } 
+        } 
+        const tlRowsAll=[...document.querySelectorAll('#timeline .task-row-timeline')]; 
+        const listRowsAll=[...document.querySelectorAll('#taskList .task-row.subtask')];
+        const assRowsAll=[...document.querySelectorAll('#assigneeList .assignee-row')];
+
+        tasks.forEach((t, ti)=>{ 
+          const pid=t.id||t.code; 
+          const entry=(window.__expandedParents||{})[pid]; 
+          const expanded=(entry===undefined)? true : !!entry; 
+          const subs=(t.subtasks||[]).length; 
+          if(!subs) return; 
+          
+          const tlRows=tlRowsAll.filter(r=> parseInt(r.getAttribute('data-ti'))===ti && parseInt(r.getAttribute('data-si'))>=0 ); 
+          tlRows.forEach(r=>{ r.style.display = expanded ? 'flex' : 'none'; }); 
+          
+          const listRows=listRowsAll.filter(r=> parseInt(r.getAttribute('data-ti'))===ti && parseInt(r.getAttribute('data-si'))>=0 ); 
+          listRows.forEach(r=>{ r.style.display = expanded ? 'flex' : 'none'; });
+          
+          const assRows=assRowsAll.filter(r=> parseInt(r.getAttribute('data-ti'))===ti && parseInt(r.getAttribute('data-si'))>=0 ); 
+          assRows.forEach(r=>{ r.style.display = expanded ? 'flex' : 'none'; }); 
+
+          const priRows=[...document.querySelectorAll('#priorityList .priority-row')].filter(r=> parseInt(r.getAttribute('data-ti'))===ti && parseInt(r.getAttribute('data-si'))>=0 ); 
+          priRows.forEach(r=>{ r.style.display = expanded ? 'flex' : 'none'; });
+        }); 
+      } catch(_){} 
+    }
+
+    // Add dropdown menu HTML if not exists
+    if (!document.getElementById('actionMenu')) {
+      const menu = document.createElement('div');
+      menu.id = 'actionMenu';
+      menu.className = 'action-dropdown';
+      document.body.appendChild(menu);
+      
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.more-btn') && !e.target.closest('.action-dropdown')) {
+          closeActionMenu();
+        }
+      });
+    }
+
+    let currentActionTarget = null;
+    let __actionMenuAnchor = null;
+
+    function showTaskMenu(e, ti, si) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const menu = document.getElementById('actionMenu');
+      currentActionTarget = { ti, si };
+      __actionMenuAnchor = e.target.closest('.more-btn') || e.target;
+      
+      const isParent = si === -1;
+      const task = ganttData.tasks[ti];
+      const subtask = isParent ? null : task.subtasks[si];
+      
+      let html = '';
+      if (isParent) {
+        html += `<div class="action-item" onclick="handleAction('add-task')">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          新增子任务
+        </div>`;
+        html += `<div class="action-item" onclick="handleAction('edit-job')">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          编辑 JOB
+        </div>`;
+        html += `<div class="action-item danger" onclick="handleAction('del-job')">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          删除 JOB
+        </div>`;
+      } else {
+        html += `<div class="action-item" onclick="handleAction('edit-task')">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          编辑任务
+        </div>`;
+        html += `<div class="action-item danger" onclick="handleAction('del-task')">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          删除任务
+        </div>`;
+      }
+      
+      menu.innerHTML = html;
+      menu.classList.add('show');
+      
+      positionActionMenu();
+    }
+
+    function positionActionMenu(){ const menu=document.getElementById('actionMenu'); if(!menu) return; if(!menu.classList.contains('show')) return; if(!__actionMenuAnchor) return; const rect=__actionMenuAnchor.getBoundingClientRect(); const menuWidth=160; let left=rect.right + 4 + window.scrollX; const viewportRight=window.scrollX + window.innerWidth; if (left + menuWidth > viewportRight) { left = rect.left + window.scrollX - menuWidth - 4; } const top = rect.top + window.scrollY; menu.style.left = `${left}px`; menu.style.top = `${top}px`; }
+
+    function closeActionMenu() {
+      const menu = document.getElementById('actionMenu');
+      if (menu) menu.classList.remove('show');
+      currentActionTarget = null;
+      __actionMenuAnchor = null;
+    }
+
+    function handleAction(action) {
+      if (!currentActionTarget) return;
+      const { ti, si } = currentActionTarget;
+      const task = ganttData.tasks[ti];
+      const subtask = si >= 0 ? task.subtasks[si] : null;
+      
+      closeActionMenu();
+      
+      if (action === 'add-task') {
+        openCreateTaskModal(task);
+      } else if (action === 'edit-job') {
+        openEditJobModal(task);
+      } else if (action === 'del-job') {
+        if(confirm('确定要删除这个 JOB 及其所有子任务吗？')){
+           if(typeof __deleteItem === 'function') __deleteItem(task.id || task.code);
+           else showToast('删除功能未定义', 'error');
+        }
+      } else if (action === 'edit-task') {
+        openEditTaskModal(subtask);
+      } else if (action === 'del-task') {
+        if(confirm('确定要删除这个任务吗？')){
+           if(typeof __deleteItem === 'function') __deleteItem(subtask.id || subtask.code);
+           else showToast('删除功能未定义', 'error');
+        }
+      }
+    }
+    
+    async function __deleteItem(idOrCode){ 
+        try{ 
+            const r=await fetch(`${API}/work-items/${idOrCode}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); 
+            if(r.ok){ 
+                if(idOrCode == (window.__job && window.__job.id) || idOrCode == (window.__job && window.__job.code)) {
+                    window.location.href = 'projects';
+                } else {
+                    fetchJob(); 
+                }
+                return; 
+            } 
+            const r2=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ status:'deleted' }) }); 
+            if(r2.ok){ 
+                if(idOrCode == (window.__job && window.__job.id) || idOrCode == (window.__job && window.__job.code)) {
+                    window.location.href = 'projects';
+                } else {
+                    fetchJob(); 
+                }
+            } 
+        }catch(e){} 
+    }
   </script>
 </body>
 </html>

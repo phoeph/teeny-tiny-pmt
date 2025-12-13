@@ -11,7 +11,7 @@ from app.utils.html import sanitize_html
 
 
 class WorkItemService:
-    async def create(self, session: AsyncSession, *, project_id: int, kind: str, parent_id: Optional[int], title: str, status: str, creator_id: int, planned_start_date, planned_end_date, description: Optional[str] = None) -> WorkItem:
+    async def create(self, session: AsyncSession, *, project_id: int, kind: str, parent_id: Optional[int], title: str, status: str, creator_id: int, planned_start_date, planned_end_date, description: Optional[str] = None, assignee_id: Optional[int] = None, assignee_prefix: Optional[str] = None, assignee_email: Optional[str] = None) -> WorkItem:
         project = await session.get(Project, project_id)
         if not project or project.deleted_at is not None:
             raise NotFoundException("项目不存在")
@@ -51,6 +51,21 @@ class WorkItemService:
         code = await sequence_service.generate_code(session, 'JOB' if kind == 'JOB' else 'TASK')
         from app.utils.html import sanitize_html
         est_hours = compute_estimated_hours(planned_start_date, planned_end_date)
+        # 解析负责人
+        resolved_assignee_id = assignee_id
+        if not resolved_assignee_id:
+            lookup_prefix = None
+            if assignee_prefix:
+                lookup_prefix = assignee_prefix.strip()
+            elif assignee_email:
+                p = assignee_email.strip()
+                lookup_prefix = p.split("@", 1)[0] if "@" in p else p
+            if lookup_prefix:
+                res = await session.execute(select(User).where(User.email_prefix == lookup_prefix))
+                a_user = res.scalars().first()
+                if a_user:
+                    resolved_assignee_id = a_user.id
+
         wi = WorkItem(
             code=code,
             kind=kind,
@@ -63,6 +78,7 @@ class WorkItemService:
             creator_id=creator_id,
             description=sanitize_html(description) if description else None,
             estimated_hours=est_hours if est_hours > 0 else None,
+            assignee_id=resolved_assignee_id,
         )
         session.add(wi)
         await session.flush()
