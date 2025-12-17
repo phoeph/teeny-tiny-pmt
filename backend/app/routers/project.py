@@ -93,7 +93,7 @@ async def get_project(
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
-@router.get("/", response_model=ProjectListResponse)
+@router.get("", response_model=ProjectListResponse)
 async def list_projects(
     status: Optional[str] = Query(None, description="项目状态筛选"),
     archived: Optional[bool] = Query(None, description="归档状态筛选"),

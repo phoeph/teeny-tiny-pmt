@@ -44,7 +44,7 @@ async def update_me(payload: UpdateMeRequest, db: AsyncSession = Depends(get_db)
     return UserProfileResponse.model_validate(user)
 
 
-@router.get("/", response_model=list[dict])
+@router.get("", response_model=list[dict])
 async def list_users(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     stmt = select(User).where(User.is_active == True)
     res = await db.execute(stmt)

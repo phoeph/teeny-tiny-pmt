@@ -594,3 +594,30 @@ a:hover {
   gap: 12px;
   margin-top: 24px;
 }
+
+/* Dropdowns */
+.dropdown {
+  position: absolute;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  display: none;
+  min-width: 160px;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-main);
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-hover);
+}

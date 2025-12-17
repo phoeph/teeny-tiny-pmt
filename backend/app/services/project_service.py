@@ -371,8 +371,14 @@ class ProjectService:
         if not project:
             return None
         
-        # 权限验证：只有项目所有者可以删除项目
-        if project.owner_id != current_user_id:
+        # Check if user is admin
+        stmt_user = select(User).where(User.id == current_user_id)
+        result_user = await session.execute(stmt_user)
+        current_user_obj = result_user.scalars().first()
+        is_admin = bool(current_user_obj and current_user_obj.username in ("demo", "admin"))
+        
+        # 权限验证：只有项目所有者或管理员可以删除项目
+        if not is_admin and project.owner_id != current_user_id:
             raise ForbiddenException("只有项目所有者可以删除项目")
         
         # 软删除项目

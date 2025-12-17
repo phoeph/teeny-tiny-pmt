@@ -86,17 +86,30 @@ function setupLabelEditor(container, entity, extras){
           html += '<div style="padding:6px 10px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-color);">'+ (header || '&nbsp;') +'</div>';
           const list = levels[i] || [];
           html += list.map(function(n){
-            const leaf = !n.children || n.children.length===0;
-            const right = leaf ? '' : '<span style="float:right;color:var(--text-secondary);">›</span>';
+          const leaf = !n.children || n.children.length===0;
+            // For non-leaf nodes, add a specific "Select" button
+            const arrow = leaf ? '' : '<span class="arrow-area" style="padding-left:8px; color:var(--text-secondary); cursor:pointer;">›</span>';
+            const selectBtn = leaf ? '' : '<span class="select-btn" title="选择此项" style="margin-left:auto; margin-right:4px; padding:0 4px; color:var(--primary); font-size:16px; cursor:pointer;">◎</span>';
             const active = (trail[i] && trail[i].name===n.name) ? 'background:var(--category-touch);' : '';
-            return '<div class="dropdown-item" data-level="'+i+'" data-leaf="'+(leaf?'1':'0')+'" data-name="'+(n.name||'')+'" data-path="'+(n.path||'')+'" style="'+active+'">'+ (n.name||'') + right +'</div>';
+            
+            // Layout: [Name] [Spacer] [SelectBtn] [Arrow]
+            // We use flexbox in .dropdown-item
+            return '<div class="dropdown-item" data-level="'+i+'" data-leaf="'+(leaf?'1':'0')+'" data-name="'+(n.name||'')+'" data-path="'+(n.path||'')+'" style="'+active+'">' +
+                   '<span class="label-name" style="flex:1;">' + (n.name||'') + '</span>' +
+                   selectBtn +
+                   arrow +
+                   '</div>';
           }).join('');
           html += '</div>';
         }
         html += '</div>';
         menu.innerHTML = html;
         Array.prototype.forEach.call(menu.querySelectorAll('.dropdown-item'), function(it){
-          it.onclick = async function(){
+          it.onclick = async function(e){
+            // Check if clicked target is the Select Button or if it's a leaf node
+            const isSelectBtn = e.target.classList.contains('select-btn');
+            const isArrow = e.target.classList.contains('arrow-area');
+            
             const i = Number(this.getAttribute('data-level'))||0;
             const leaf = this.getAttribute('data-leaf')==='1';
             const name = this.getAttribute('data-name')||'';
@@ -104,7 +117,9 @@ function setupLabelEditor(container, entity, extras){
             const colList = levels[i] || [];
             const item = colList.find(function(n){ return n.name===name; }) || null;
             if (!item) return;
-            if (!leaf){
+
+            // If arrow is clicked, or it's a non-leaf item and NOT the select button -> Expand only
+            if (!leaf && (isArrow || !isSelectBtn)) {
               trail = trail.slice(0, i);
               trail[i] = item;
               levels = levels.slice(0, i+1);
@@ -112,13 +127,37 @@ function setupLabelEditor(container, entity, extras){
               render();
               return;
             }
+
+            // Otherwise (Leaf clicked OR Select Button clicked) -> Save
             menu.style.display='none';
-            const newPath = path || (trail.map(function(t){ return t.name; }).concat([name]).join('/'));
-            link.textContent = newPath;
+            
+            // Build path
+            // If leaf, path might be set. If constructed, we use trail.
+            // If picking non-leaf, we use trail up to i-1 + current name.
+            // Note: 'trail' might not include current item yet if we just clicked 'Select' on it without expanding first?
+            // Actually, if we click Select, we are at level i.
+            // Trail contains items 0..i-1.
+            
+            // Correct path construction:
+            const selectedPathSuffix = trail.slice(0, i).map(function(t){ return t.name; }).concat([name]).join('/');
+            
+            // Prepend prefix if exists
+            let finalPath = selectedPathSuffix;
+            if (window.__labelPathPrefix) {
+                // Handle slash carefully
+                const prefix = window.__labelPathPrefix.endsWith('/') ? window.__labelPathPrefix : (window.__labelPathPrefix + '/');
+                finalPath = prefix + selectedPathSuffix;
+            } else if (path) {
+                // If the node itself has a full path property (usually root nodes might, or if API provides it)
+                // But we must respect the prefix logic for tasks.
+                finalPath = path; 
+            }
+            
+            link.textContent = finalPath;
             try{
               const projId = (entity && entity.type==='project') ? (entity.id || 0) : ((extras && extras.project_id) || 0);
               const wid = Number(entity && entity.type!=='project' ? (entity.id||0) : 0);
-              const payload = { label_path: newPath };
+              const payload = { label_path: finalPath };
               if (entity.type==='project'){
                 const res = await fetch(API + '/projects/' + projId, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token }, body: JSON.stringify(payload) });
                 if(!res.ok){ const txt = await res.text(); alert('保存失败(' + res.status + '): ' + txt); }
@@ -141,7 +180,68 @@ function setupLabelEditor(container, entity, extras){
       const can = await resolveCanEdit();
       if (!can){ link.style.color = 'var(--text-secondary)'; link.style.cursor = 'not-allowed'; return; }
       const tree = await fetchTree();
-      const list = Array.isArray(tree.items) ? tree.items : [];
+      let list = Array.isArray(tree.items) ? tree.items : [];
+      
+      // Task restriction logic:
+      // If entity is a Task, restrict to sub-nodes of the parent Job's label
+      if (entity.type === 'task' && entity.parent_id) {
+          try {
+             // Fetch parent item (Job)
+             // We use entity.parent_id if available. 
+             // Note: normalizeEntity in meta-panel.js populates parent_id.
+             const pid = entity.parent_id;
+             if (pid) {
+                 const pRes = await fetch(API + '/work-items/' + pid, { headers:{ Authorization: 'Bearer ' + token } });
+                 if (pRes.ok) {
+                     const parentItem = await pRes.json();
+                     const pPath = parentItem.label_path;
+                     if (pPath) {
+                         // Find the node in the tree matching pPath
+                         const parts = pPath.split('/');
+                         let currentLevel = list;
+                         let foundNode = null;
+                         for (const part of parts) {
+                             if (!currentLevel) break;
+                             const node = currentLevel.find(n => n.name === part);
+                             if (node) {
+                                 foundNode = node;
+                                 currentLevel = node.children;
+                             } else {
+                                 foundNode = null;
+                                 break;
+                             }
+                         }
+                         
+                         // If found, restrict list to its children
+                         if (foundNode && foundNode.children && foundNode.children.length > 0) {
+                             list = foundNode.children;
+                             // We also need to prefix the path when saving? 
+                             // Wait, if I select 'China' (child of 'Asia'), the path should be 'Region/Asia/China'.
+                             // But if I restrict the root to 'China', the cascader might think 'China' is root.
+                             // The existing logic builds path from 'trail'.
+                             // If I start from a subtree, I need to prepend the parent path to the trail?
+                             // Yes.
+                             // Hack: Pre-fill 'trail' with the parent path nodes?
+                             // But 'trail' is visual.
+                             // If I set 'trail' to parent nodes, they will appear in the columns?
+                             // The render function iterates 'levels'.
+                             // If I want to hide the parent levels and only show children, 
+                             // I should set the *context* path prefix.
+                             window.__labelPathPrefix = pPath;
+                         } else {
+                             // Parent has label but no children, or label not found in tree.
+                             // If parent label is valid but has no children, task can't have sub-labels?
+                             // Or maybe we should show empty list?
+                             if (foundNode) list = []; 
+                         }
+                     }
+                 }
+             }
+          } catch(e) { console.error(e); }
+      } else {
+          window.__labelPathPrefix = '';
+      }
+
       openMenu(list);
     };
   } catch(_){}
