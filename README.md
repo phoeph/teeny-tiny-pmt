@@ -21,7 +21,11 @@
 git clone https://github.com/phoeph/teeny-tiny-pmt.git
 cd teeny-tiny-pmt
 ```
-- 启动前端（静态）
+- 一键启动（推荐）
+```bash
+./start.sh
+```
+- 或分别启动前端（静态）
 ```bash
 npm install
 npm run dev  # 默认 http://localhost:8080
@@ -46,6 +50,7 @@ pip install -r requirements.txt
 - `npm run dev`：本地静态服务（前端）
 - `npm start`：同上
 - `npm run build`：拷贝静态资源到 `dist/`
+- `./start.sh`：一键启动前后端服务
 - 后端：参考上文 uvicorn 命令启动
 
 ## 配置与部署
