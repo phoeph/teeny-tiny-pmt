@@ -7,6 +7,105 @@
   <link rel="stylesheet" href="assets/modern-theme.css" />
   <style>
     /* Page specific overrides if needed */
+    .card-actions { position: absolute; top: 12px; right: 12px; z-index: 10; opacity: 0; transition: opacity 0.2s; }
+    .project-card:hover .card-actions, .list-item:hover .card-actions { opacity: 1; }
+    .action-btn { background: rgba(255,255,255,0.8); border: 1px solid var(--border-color); padding: 4px; cursor: pointer; border-radius: 4px; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+    .action-btn:hover { background: var(--bg-surface); color: var(--text-main); box-shadow: var(--shadow-sm); }
+    .card-dropdown { position: absolute; top: 100%; right: 0; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: var(--shadow-md); min-width: 120px; display: none; z-index: 20; padding: 4px 0; margin-top: 4px; }
+    .card-dropdown.show { display: block; }
+    .card-dropdown-item { padding: 8px 12px; font-size: 13px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .card-dropdown-item:hover { background: var(--bg-input); }
+    .card-dropdown-item.danger { color: var(--danger); }
+    .card-dropdown-item.danger:hover { background: var(--bg-danger-light); }
+    
+    /* Ensure card has relative positioning */
+    .project-card { 
+      position: relative; 
+      background: var(--bg-surface); 
+      border: 1px solid var(--border-color); 
+      box-shadow: var(--shadow-sm); 
+      border-radius: var(--radius-md); 
+      padding: 12px; /* Reduced padding further */
+      transition: all 0.2s ease-in-out; 
+      display: flex;
+      flex-direction: column;
+      gap: 6px; /* Reduced gap further */
+      height: 100%; 
+      min-height: 120px; /* Reduced min-height further */
+      justify-content: space-between;
+    }
+    .project-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+    
+    .project-card .code {
+      font-size: 10px; /* Smaller code font */
+      color: var(--text-secondary);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .project-card .name {
+      font-size: 13px; /* Smaller name font */
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.4;
+      margin-bottom: 2px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .project-card .description {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      opacity: 0.9;
+    }
+    .project-card .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      font-size: 10px; /* Smaller meta font */
+      color: var(--text-secondary);
+      border-top: 1px solid var(--bg-element);
+      padding-top: 6px; /* Reduced padding */
+    }
+    
+    .card-grid { 
+      display: grid; 
+      grid-template-columns: repeat(5, 1fr); 
+      row-gap: 32px; /* Increased row spacing */
+      column-gap: 20px;
+      padding-bottom: 32px; 
+    }
+    
+    /* Responsive adjustments if screen is too narrow for 5 columns */
+    @media (max-width: 1400px) {
+      .card-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 1100px) {
+      .card-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 800px) {
+      .card-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    /* List View Tweaks */
+    .list-item { position: relative; padding-right: 48px; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 16px; background: var(--bg-surface); transition: all 0.2s; } 
+    .list-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .list-item .card-actions { top: 50%; transform: translateY(-50%); right: 16px; }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; padding-bottom: 48px; }
+    .page-info { font-size: 14px; color: var(--text-secondary); }
+    .page-btn { padding: 6px 12px; border: 1px solid var(--border-color); background: var(--bg-surface); border-radius: 4px; cursor: pointer; color: var(--text-main); font-size: 14px; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .page-btn:hover:not(:disabled) { background: var(--bg-input); }
   </style>
 </head>
 <body>
@@ -28,6 +127,11 @@
     </div>
   </div>
   <div id="list"></div>
+  <div class="pagination" id="pagination">
+    <button class="page-btn" id="prevPageBtn">上一页</button>
+    <span class="page-info" id="pageInfo">第 1 页</span>
+    <button class="page-btn" id="nextPageBtn">下一页</button>
+  </div>
 
   <div id="projectCreateBackdrop" class="modal-backdrop">
     <div class="modal">
@@ -37,6 +141,17 @@
       <div class="row"><label>负责人</label><input id="projOwnerInput" placeholder="输入邮箱或前缀，例如 zhangsan" /></div>
       <div id="projError" style="color:var(--danger); font-size:12px; margin-top:8px;"></div>
       <div class="actions"><button id="projCancelBtn" class="btn-ghost">取消</button><button id="projCreateBtn" class="btn-primary">创建</button></div>
+    </div>
+  </div>
+
+  <div id="deleteConfirmBackdrop" class="modal-backdrop">
+    <div class="modal" style="max-width: 400px;">
+      <h4 style="color:var(--danger)">删除项目</h4>
+      <p style="margin-bottom:24px; color:var(--text-secondary)">确定要删除项目 <strong id="deleteProjName" style="color:var(--text-main)"></strong> 吗？<br>此操作不可恢复，请谨慎操作。</p>
+      <div class="actions">
+        <button id="deleteCancelBtn" class="btn-ghost">取消</button>
+        <button id="deleteConfirmBtn" class="btn-primary" style="background-color:var(--danger)">确认删除</button>
+      </div>
     </div>
   </div>
 
@@ -51,6 +166,20 @@
 
     let viewMode = localStorage.getItem('projectsViewMode') || 'card';
     let projectsData = null;
+    let currentUser = null;
+    let currentPage = 1;
+    let pageSize = 20;
+    let totalItems = 0;
+
+    async function fetchCurrentUser() {
+      try {
+        const r = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+           const raw = await r.json();
+           currentUser = (raw && raw.user) ? raw.user : raw;
+        }
+      } catch (e) { console.error(e); }
+    }
 
     function applyViewMode(mode) {
       viewMode = mode;
@@ -65,32 +194,161 @@
       container.className = viewMode === 'card' ? 'card-grid' : 'list-view';
       container.innerHTML = '';
       if (!projectsData) return;
+      
+      const isAdmin = currentUser && currentUser.username === 'admin';
+
       projectsData.forEach(p => {
         const el = document.createElement('div');
+        
+        let html = '';
         if (viewMode === 'card') {
           el.className = 'card project-card';
-          el.innerHTML = `<div class="code">${p.code}</div><div class="name">${p.name}</div>`;
-          el.onclick = () => location.href = `project?id=${p.id}`;
+          html = `
+            <div>
+              <div class="code">${p.code}</div>
+              <div class="name">${p.name}</div>
+              <div class="description" title="${p.description || ''}">${p.description || ''}</div>
+            </div>
+            <div class="meta">
+              <div style="display:flex; align-items:center; gap:6px;">
+                 <span style="width:8px; height:8px; border-radius:50%; background:${p.status==='active'?'var(--success)':'var(--text-secondary)'};"></span>
+                 ${p.status==='active'?'进行中':'已归档'}
+              </div>
+              <div>${(p.created_at||'').substring(0,10)}</div>
+            </div>
+          `;
         } else {
           el.className = 'list-item';
-          el.innerHTML = `<div class="code">${p.code}</div><div class="name">${p.name}</div>`;
-          el.onclick = () => location.href = `project?id=${p.id}`;
+          html = `
+            <div style="flex:1; display:flex; align-items:center; gap:24px;">
+              <div class="code" style="width:100px; font-family:monospace; font-weight:600;">${p.code}</div>
+              <div class="name" style="width:200px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+              <div class="description" style="flex:1; color:var(--text-secondary); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.description || ''}">${p.description || ''}</div>
+              <div style="width:100px; color:var(--text-secondary); font-size:13px;">${(p.created_at||'').substring(0,10)}</div>
+              <div style="width:80px; display:flex; align-items:center; gap:6px; font-size:13px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:${p.status==='active'?'var(--success)':'var(--text-secondary)'};"></span>
+                ${p.status==='active'?'进行中':'已归档'}
+              </div>
+            </div>
+          `;
         }
+
+        if (isAdmin) {
+            html += `
+            <div class="card-actions" onclick="event.stopPropagation()">
+              <button class="action-btn" onclick="toggleCardMenu(this, ${p.id})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+              </button>
+              <div class="card-dropdown" id="menu-${p.id}">
+                <div class="card-dropdown-item danger" onclick="confirmDeleteProject(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  删除项目
+                </div>
+              </div>
+            </div>`;
+        }
+        el.innerHTML = html;
+        el.onclick = (e) => {
+           if (e.target.closest('.card-actions')) return;
+           location.href = `project?id=${p.id}`;
+        };
+        
         container.appendChild(el);
       });
+      
+      updatePaginationUI();
     }
 
+    function updatePaginationUI() {
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${totalItems} 个项目`;
+      document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+      document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+    }
+    
+    document.getElementById('prevPageBtn').onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        fetchProjects();
+      }
+    };
+    
+    document.getElementById('nextPageBtn').onclick = () => {
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      if (currentPage < totalPages) {
+        currentPage++;
+        fetchProjects();
+      }
+    };
+
+    // Menu logic
+    window.toggleCardMenu = function(btn, pid) {
+      const menu = document.getElementById(`menu-${pid}`);
+      if (!menu) return;
+      document.querySelectorAll('.card-dropdown').forEach(m => {
+         if (m !== menu) m.classList.remove('show');
+      });
+      menu.classList.toggle('show');
+    };
+    
+    document.addEventListener('click', (e) => {
+       if (!e.target.closest('.card-actions')) {
+         document.querySelectorAll('.card-dropdown').forEach(m => m.classList.remove('show'));
+       }
+    });
+
+    // Delete Logic
+    let projectToDelete = null;
+    window.confirmDeleteProject = function(pid, pname) {
+       projectToDelete = pid;
+       document.getElementById('deleteProjName').textContent = pname;
+       document.getElementById('deleteConfirmBackdrop').style.display = 'flex';
+    };
+    
+    document.getElementById('deleteCancelBtn').onclick = () => {
+       document.getElementById('deleteConfirmBackdrop').style.display = 'none';
+       projectToDelete = null;
+    };
+    
+    document.getElementById('deleteConfirmBtn').onclick = async () => {
+       if (!projectToDelete) return;
+       const btn = document.getElementById('deleteConfirmBtn');
+       btn.disabled = true;
+       btn.textContent = '删除中...';
+       try {
+         const res = await fetch(`${API}/projects/${projectToDelete}`, { 
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+         });
+         if (res.ok) {
+            document.getElementById('deleteConfirmBackdrop').style.display = 'none';
+            await fetchProjects();
+         } else {
+            alert('删除失败');
+         }
+       } catch (e) {
+          alert('网络错误');
+       } finally {
+          btn.disabled = false;
+          btn.textContent = '确认删除';
+          projectToDelete = null;
+       }
+    };
+
     async function fetchProjects() {
+      if (!currentUser) await fetchCurrentUser();
       try {
-        const res = await fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API}/projects?page=${currentPage}&size=${pageSize}`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error('backend unavailable');
         const data = await res.json();
         projectsData = data.items;
+        totalItems = data.total;
       } catch (e) {
         projectsData = [
           { id: 1, code: 'PRO-0001', name: '官网改版 2025Q4' },
           { id: 2, code: 'PRO-0002', name: '移动App 1.2发布（演示）' }
         ];
+        totalItems = 2;
       } finally {
         renderProjects();
       }
