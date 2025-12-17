@@ -7,3 +7,34 @@ dist/
 **/scripts/
 # ignore build artifacts
 target_gantt/
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.coverage.*
+.gitignore
+
+# Database
+*.db
+*.sqlite3
+
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
