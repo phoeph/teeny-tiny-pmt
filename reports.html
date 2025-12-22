@@ -345,13 +345,14 @@
     // 加载项目列表
     async function loadProjects() {
       try {
-        const response = await fetch(`${API}/projects/`, {
+        const response = await fetch(`${API}/projects?page=1&size=100`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         if (!response.ok) throw new Error('Failed to fetch projects');
         
-        allProjects = await response.json();
+        const data = await response.json();
+        allProjects = data.items || [];
         renderProjectSelector();
       } catch (error) {
         console.error('Error loading projects:', error);
@@ -478,13 +479,14 @@
     
     // 获取项目数据
     async function fetchProjectData(projectId, startDate, endDate) {
-      const response = await fetch(`${API}/projects/${projectId}/work-items/`, {
+      const response = await fetch(`${API}/work-items/by-project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (!response.ok) throw new Error(`Failed to fetch project ${projectId} data`);
       
-      const workItems = await response.json();
+      const data = await response.json();
+      const workItems = data.items || [];
       const project = allProjects.find(p => p.id === projectId);
       
       return {
