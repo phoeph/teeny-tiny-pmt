@@ -5,101 +5,241 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>汇报管理 - 项目管理系统</title>
   <link rel="stylesheet" href="assets/modern-theme.css" />
+  <link rel="stylesheet" href="assets/header-user-menu.css" />
+  <link rel="stylesheet" href="assets/left-sidebar.css" />
   <style>
-    .reports-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    
-    .filter-section {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 24px;
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 24px;
     }
     
-    .filter-row {
+    .page-title {
       display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .page-title h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+    
+    .page-title .type-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    /* Filter Card */
+    .filter-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .filter-card-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+    }
+    
+    .filter-card-header .icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary-light);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+    
+    /* Filter Grid */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      align-items: end;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     
     .filter-group {
-      flex: 1;
-    }
-    
-    .filter-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--text-main);
-    }
-    
-    .filter-group select,
-    .filter-group input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background: var(--bg-input);
-      color: var(--text-main);
-    }
-    
-    .project-selector {
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      background: var(--bg-input);
-    }
-    
-    .project-item {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border-light);
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 8px;
     }
     
-    .project-item:last-child {
-      border-bottom: none;
+    .filter-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    .filter-group select,
+    .filter-group input[type="date"] {
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-group select:focus,
+    .filter-group input[type="date"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    /* Project Selector */
+    .project-selector-container {
+      margin-top: 16px;
+    }
+    
+    .project-selector-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .project-selector-header label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    .select-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .select-actions button {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .select-actions button:hover {
+      background: var(--bg-hover);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .project-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    
+    .project-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
     
     .project-item:hover {
       background: var(--bg-hover);
+      border-color: var(--primary-light);
+    }
+    
+    .project-item.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
     }
     
     .project-item input[type="checkbox"] {
-      margin: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
     }
     
-    .actions {
+    .project-item .project-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .project-item .project-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .project-item .project-code {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Generate Button */
+    .filter-actions {
       display: flex;
-      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-light);
     }
     
-    .report-content {
+    /* Report Content */
+    .report-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 32px;
-      margin-bottom: 24px;
-      min-height: 600px;
+      box-shadow: var(--shadow-sm);
+      min-height: 500px;
     }
     
     .report-header {
       text-align: center;
       margin-bottom: 32px;
+      padding-bottom: 24px;
       border-bottom: 2px solid var(--border-color);
-      padding-bottom: 16px;
     }
     
     .report-title {
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: 700;
       color: var(--text-main);
       margin-bottom: 8px;
     }
@@ -107,156 +247,308 @@
     .report-period {
       font-size: 16px;
       color: var(--text-secondary);
+      font-weight: 500;
     }
     
-    .report-section {
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
       margin-bottom: 32px;
     }
     
-    .section-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 16px;
-      border-left: 4px solid var(--primary);
-      padding-left: 12px;
-    }
-    
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    
-    .summary-card {
-      background: var(--bg-hover);
+    .kpi-card {
+      background: linear-gradient(135deg, var(--bg-subtle) 0%, var(--bg-surface) 100%);
       border: 1px solid var(--border-light);
-      border-radius: 8px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 20px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
     
-    .summary-number {
-      font-size: 24px;
-      font-weight: 600;
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+    
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 800;
       color: var(--primary);
       margin-bottom: 4px;
     }
     
-    .summary-label {
-      font-size: 14px;
+    .kpi-label {
+      font-size: 13px;
       color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Section */
+    .report-section {
+      margin-bottom: 32px;
     }
     
-    .task-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     
-    .task-table th,
-    .task-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-light);
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+      padding-left: 12px;
+      border-left: 4px solid var(--primary);
     }
     
-    .task-table th {
-      background: var(--bg-hover);
+    /* Category Card */
+    .category-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .category-name {
+      font-size: 16px;
       font-weight: 600;
       color: var(--text-main);
     }
     
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
+    .category-stats {
+      display: flex;
+      gap: 16px;
+    }
+    
+    .category-stat {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .category-stat strong {
+      color: var(--text-main);
+    }
+    
+    /* Task Table */
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .task-table th {
+      background: var(--bg-element);
+      color: var(--text-secondary);
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .task-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 14px;
+      color: var(--text-main);
+    }
+    
+    .task-table tr:hover {
+      background: var(--bg-hover);
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
     
     .status-todo {
-      background: var(--warning);
-      color: white;
+      background: var(--warning-light);
+      color: #d97706;
     }
     
     .status-doing {
-      background: var(--success);
-      color: white;
+      background: var(--success-light);
+      color: #059669;
     }
     
     .status-done {
-      background: var(--primary);
-      color: white;
+      background: var(--primary-light);
+      color: var(--primary);
     }
-    
+
+    /* Priority Badge */
     .priority-badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
       font-size: 11px;
-      font-weight: 500;
+      font-weight: 600;
     }
     
     .priority-high {
-      background: var(--danger);
-      color: white;
+      background: var(--danger-light);
+      color: #dc2626;
     }
     
     .priority-medium {
-      background: var(--warning);
-      color: white;
+      background: var(--warning-light);
+      color: #d97706;
     }
     
     .priority-low {
-      background: var(--success);
-      color: white;
+      background: var(--success-light);
+      color: #059669;
     }
     
+    /* Export Actions */
     .export-actions {
       display: flex;
       justify-content: center;
       gap: 12px;
       margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-light);
     }
     
-    .loading {
+    /* Empty State */
+    .empty-state {
       text-align: center;
-      padding: 40px;
+      padding: 80px 20px;
       color: var(--text-secondary);
     }
     
-    .empty-state {
+    .empty-state .icon {
+      width: 80px;
+      height: 80px;
+      background: var(--bg-subtle);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    
+    .empty-state .icon svg {
+      width: 40px;
+      height: 40px;
+      color: var(--text-muted);
+    }
+    
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0 0 8px 0;
+    }
+    
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    
+    /* Loading */
+    .loading {
       text-align: center;
       padding: 60px 20px;
       color: var(--text-secondary);
     }
     
-    .empty-state svg {
-      margin-bottom: 16px;
-      opacity: 0.7;
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .project-list {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
   <div id="left-sidebar"></div>
   
   <div class="header">
     <div class="header-left">
-      <h1>汇报管理</h1>
+      <div class="page-title">
+        <h2>汇报管理</h2>
+        <span class="type-badge" id="reportTypeBadge">周报</span>
+      </div>
     </div>
     <div class="header-right">
       <div id="userMenuContainer"></div>
     </div>
   </div>
 
-  <div class="reports-container">
-    <!-- 筛选区域 -->
-    <div class="filter-section">
-      <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--text-main);">报告配置</h3>
+  <div class="main-content">
+    <!-- 筛选配置 -->
+    <div class="filter-card">
+      <div class="filter-card-header">
+        <div class="icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+        </div>
+        <h3>报告配置</h3>
+      </div>
       
-      <div class="filter-row">
+      <div class="filter-grid">
         <div class="filter-group">
           <label>报告类型</label>
           <select id="reportType">
@@ -276,29 +568,46 @@
           <input type="date" id="endDate" />
         </div>
         
-        <div class="actions">
-          <button class="primary-btn" id="generateBtn">生成报告</button>
+        <div class="filter-group" style="justify-content: flex-end;">
+          <button class="primary-btn" id="generateBtn" style="height: 42px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14,2 14,8 20,8"></polyline>
+            </svg>
+            生成报告
+          </button>
         </div>
       </div>
       
-      <div class="filter-group">
-        <label>选择项目</label>
-        <div class="project-selector" id="projectSelector">
-          <div class="loading">加载项目中...</div>
+      <div class="project-selector-container">
+        <div class="project-selector-header">
+          <label>选择项目</label>
+          <div class="select-actions">
+            <button id="selectAllBtn">全选</button>
+            <button id="clearAllBtn">清空</button>
+          </div>
+        </div>
+        <div class="project-list" id="projectList">
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>加载项目中...</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 报告内容区域 -->
-    <div class="report-content" id="reportContent">
+    <!-- 报告内容 -->
+    <div class="report-card" id="reportContent">
       <div class="empty-state">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14,2 14,8 20,8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-        </svg>
-        <h3>请配置报告参数并生成报告</h3>
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14,2 14,8 20,8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <h3>请配置报告参数</h3>
         <p>选择报告类型、时间范围和项目，然后点击"生成报告"按钮</p>
       </div>
     </div>
@@ -307,8 +616,9 @@
     <div class="export-actions" id="exportActions" style="display: none;">
       <button class="primary-btn" id="exportWordBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14,2 14,8 20,8"></polyline>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7,10 12,15 17,10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
         导出Word文档
       </button>
@@ -323,8 +633,6 @@
     </div>
   </div>
 
-  <link rel="stylesheet" href="assets/header-user-menu.css" />
-  <link rel="stylesheet" href="assets/left-sidebar.css" />
   <script src="assets/header-user-menu.js"></script>
   <script src="assets/left-sidebar.js"></script>
   
@@ -353,43 +661,61 @@
         
         const data = await response.json();
         allProjects = data.items || [];
-        renderProjectSelector();
+        renderProjectList();
       } catch (error) {
         console.error('Error loading projects:', error);
-        document.getElementById('projectSelector').innerHTML = 
-          '<div style="padding: 16px; color: var(--danger);">加载项目失败</div>';
+        document.getElementById('projectList').innerHTML = 
+          '<div style="padding: 20px; text-align: center; color: var(--danger);">加载项目失败，请刷新重试</div>';
       }
     }
-    
-    // 渲染项目选择器
-    function renderProjectSelector() {
-      const container = document.getElementById('projectSelector');
+
+    // 渲染项目列表
+    function renderProjectList() {
+      const container = document.getElementById('projectList');
       
       if (!allProjects.length) {
-        container.innerHTML = '<div style="padding: 16px; color: var(--text-secondary);">暂无项目</div>';
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">暂无项目</div>';
         return;
       }
       
       const html = allProjects.map(project => `
-        <div class="project-item">
-          <input type="checkbox" id="project-${project.id}" value="${project.id}" />
-          <label for="project-${project.id}" style="margin: 0; cursor: pointer; flex: 1;">
-            ${project.name || project.title || `项目 ${project.id}`}
-          </label>
+        <div class="project-item" onclick="toggleProject(this, ${project.id})">
+          <input type="checkbox" id="project-${project.id}" value="${project.id}" onclick="event.stopPropagation()" onchange="updateProjectItemStyle(this)" />
+          <div class="project-info">
+            <div class="project-name">${project.name || project.title || `项目 ${project.id}`}</div>
+            <div class="project-code">${project.code || `#${project.id}`}</div>
+          </div>
         </div>
       `).join('');
       
       container.innerHTML = html;
     }
     
+    // 切换项目选择
+    function toggleProject(el, projectId) {
+      const checkbox = el.querySelector('input[type="checkbox"]');
+      checkbox.checked = !checkbox.checked;
+      updateProjectItemStyle(checkbox);
+    }
+    
+    // 更新项目项样式
+    function updateProjectItemStyle(checkbox) {
+      const item = checkbox.closest('.project-item');
+      if (checkbox.checked) {
+        item.classList.add('selected');
+      } else {
+        item.classList.remove('selected');
+      }
+    }
+    
     // 初始化日期输入
     function initDateInputs() {
       const today = new Date();
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay() + 1); // 本周一
+      startOfWeek.setDate(today.getDate() - today.getDay() + 1);
       
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6); // 本周日
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
       
       document.getElementById('startDate').value = formatDate(startOfWeek);
       document.getElementById('endDate').value = formatDate(endOfWeek);
@@ -397,12 +723,41 @@
     
     // 绑定事件
     function bindEvents() {
-      document.getElementById('reportType').addEventListener('change', updateDateRange);
+      document.getElementById('reportType').addEventListener('change', function() {
+        updateDateRange();
+        updateTypeBadge();
+      });
       document.getElementById('generateBtn').addEventListener('click', generateReport);
       document.getElementById('exportWordBtn').addEventListener('click', exportToWord);
       document.getElementById('printBtn').addEventListener('click', printReport);
+      document.getElementById('selectAllBtn').addEventListener('click', selectAllProjects);
+      document.getElementById('clearAllBtn').addEventListener('click', clearAllProjects);
     }
     
+    // 更新类型徽章
+    function updateTypeBadge() {
+      const type = document.getElementById('reportType').value;
+      const badge = document.getElementById('reportTypeBadge');
+      const names = { weekly: '周报', monthly: '月报', yearly: '年报' };
+      badge.textContent = names[type];
+    }
+    
+    // 全选项目
+    function selectAllProjects() {
+      document.querySelectorAll('#projectList input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+        updateProjectItemStyle(cb);
+      });
+    }
+    
+    // 清空选择
+    function clearAllProjects() {
+      document.querySelectorAll('#projectList input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        updateProjectItemStyle(cb);
+      });
+    }
+
     // 更新日期范围
     function updateDateRange() {
       const reportType = document.getElementById('reportType').value;
@@ -448,32 +803,42 @@
       }
       
       try {
-        document.getElementById('reportContent').innerHTML = '<div class="loading">正在生成报告...</div>';
+        document.getElementById('reportContent').innerHTML = `
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>正在生成报告...</div>
+          </div>
+        `;
         
-        // 获取项目数据
         const projectsData = await Promise.all(
           selectedProjects.map(projectId => fetchProjectData(projectId, startDate, endDate))
         );
         
-        // 生成报告数据
         reportData = processReportData(projectsData, reportType, startDate, endDate);
-        
-        // 渲染报告
         renderReport(reportData);
-        
-        // 显示导出按钮
         document.getElementById('exportActions').style.display = 'flex';
         
       } catch (error) {
         console.error('Error generating report:', error);
-        document.getElementById('reportContent').innerHTML = 
-          '<div class="empty-state"><h3>生成报告失败</h3><p>请检查网络连接并重试</p></div>';
+        document.getElementById('reportContent').innerHTML = `
+          <div class="empty-state">
+            <div class="icon" style="background: var(--danger-light);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <h3>生成报告失败</h3>
+            <p>请检查网络连接并重试</p>
+          </div>
+        `;
       }
     }
     
     // 获取选中的项目
     function getSelectedProjects() {
-      const checkboxes = document.querySelectorAll('#projectSelector input[type="checkbox"]:checked');
+      const checkboxes = document.querySelectorAll('#projectList input[type="checkbox"]:checked');
       return Array.from(checkboxes).map(cb => parseInt(cb.value));
     }
     
@@ -489,30 +854,27 @@
       const workItems = data.items || [];
       const project = allProjects.find(p => p.id === projectId);
       
-      return {
-        project,
-        workItems: workItems.filter(item => {
-          const itemDate = new Date(item.created_at || item.updated_at);
-          return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
-        })
-      };
+      // 不按日期过滤，获取所有工作项
+      return { project, workItems };
     }
-    
+
     // 处理报告数据
     function processReportData(projectsData, reportType, startDate, endDate) {
       const allWorkItems = projectsData.flatMap(pd => pd.workItems);
-      const jobs = allWorkItems.filter(item => item.kind === 'JOB');
-      const tasks = allWorkItems.filter(item => item.kind === 'TASK');
+      const jobs = allWorkItems.filter(item => item.kind === 'JOB' || !item.parent_id);
+      const tasks = allWorkItems.filter(item => item.kind === 'TASK' || item.parent_id);
       
       // 按Labels最后一个斜线分割值进行汇总
       const tasksByCategory = {};
       
       jobs.forEach(job => {
-        // 解析labels，取最后一个斜线后的值作为分类
         let category = '其他';
-        if (job.labels && job.labels.length > 0) {
+        if (job.labels && Array.isArray(job.labels) && job.labels.length > 0) {
           const lastLabel = job.labels[job.labels.length - 1];
-          const parts = lastLabel.split('/');
+          const parts = String(lastLabel).split('/');
+          category = parts[parts.length - 1] || '其他';
+        } else if (job.label) {
+          const parts = String(job.label).split('/');
           category = parts[parts.length - 1] || '其他';
         }
         
@@ -537,7 +899,7 @@
           case 'doing':
             tasksByCategory[category].doingJobs++;
             break;
-          case 'todo':
+          default:
             tasksByCategory[category].todoJobs++;
             break;
         }
@@ -558,60 +920,67 @@
         tasksByCategory: Object.values(tasksByCategory)
       };
     }
-    
+
     // 渲染报告
     function renderReport(data) {
-      const reportTypeNames = {
-        weekly: '周报',
-        monthly: '月报',
-        yearly: '年报'
-      };
+      const reportTypeNames = { weekly: '周报', monthly: '月报', yearly: '年报' };
+      const completionRate = data.summary.totalJobs > 0 
+        ? Math.round(data.summary.completedJobs / data.summary.totalJobs * 100) 
+        : 0;
       
-      const html = `
+      let html = `
         <div class="report-header">
           <div class="report-title">${reportTypeNames[data.reportType]}</div>
           <div class="report-period">${formatDateRange(data.startDate, data.endDate)}</div>
         </div>
         
         <div class="report-section">
-          <div class="section-title">项目概览</div>
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="summary-number">${data.summary.totalProjects}</div>
-              <div class="summary-label">涉及项目</div>
+          <div class="section-header">
+            <h3 class="section-title">项目概览</h3>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-value">${data.summary.totalProjects}</div>
+              <div class="kpi-label">涉及项目</div>
             </div>
-            <div class="summary-card">
-              <div class="summary-number">${data.summary.totalJobs}</div>
-              <div class="summary-label">总JOB数</div>
+            <div class="kpi-card">
+              <div class="kpi-value">${data.summary.totalJobs}</div>
+              <div class="kpi-label">总JOB数</div>
             </div>
-            <div class="summary-card">
-              <div class="summary-number">${data.summary.completedJobs}</div>
-              <div class="summary-label">已完成JOB</div>
+            <div class="kpi-card">
+              <div class="kpi-value">${data.summary.completedJobs}</div>
+              <div class="kpi-label">已完成JOB</div>
             </div>
-            <div class="summary-card">
-              <div class="summary-number">${Math.round(data.summary.completedJobs / data.summary.totalJobs * 100) || 0}%</div>
-              <div class="summary-label">完成率</div>
+            <div class="kpi-card">
+              <div class="kpi-value">${completionRate}%</div>
+              <div class="kpi-label">完成率</div>
             </div>
           </div>
         </div>
         
         <div class="report-section">
-          <div class="section-title">项目列表</div>
-          <ul style="margin: 0; padding-left: 20px;">
-            ${data.projects.map(p => `<li>${p.name || p.title || `项目 ${p.id}`}</li>`).join('')}
+          <div class="section-header">
+            <h3 class="section-title">项目列表</h3>
+          </div>
+          <ul style="margin: 0; padding-left: 24px; color: var(--text-main);">
+            ${data.projects.map(p => `<li style="margin-bottom: 8px;">${p.name || p.title || `项目 ${p.id}`}</li>`).join('')}
           </ul>
         </div>
         
         <div class="report-section">
-          <div class="section-title">任务完成情况</div>
-          ${data.tasksByCategory.map(category => `
-            <div style="margin-bottom: 24px;">
-              <h4 style="margin-bottom: 12px; color: var(--text-main);">${category.category}</h4>
-              <div style="margin-bottom: 12px; color: var(--text-secondary);">
-                总计: ${category.totalJobs} | 
-                已完成: ${category.completedJobs} | 
-                进行中: ${category.doingJobs} | 
-                待办: ${category.todoJobs}
+          <div class="section-header">
+            <h3 class="section-title">任务完成情况</h3>
+          </div>
+          ${data.tasksByCategory.length > 0 ? data.tasksByCategory.map(category => `
+            <div class="category-card">
+              <div class="category-header">
+                <div class="category-name">${category.category}</div>
+                <div class="category-stats">
+                  <span class="category-stat">总计: <strong>${category.totalJobs}</strong></span>
+                  <span class="category-stat">已完成: <strong style="color: var(--primary);">${category.completedJobs}</strong></span>
+                  <span class="category-stat">进行中: <strong style="color: var(--success);">${category.doingJobs}</strong></span>
+                  <span class="category-stat">待办: <strong style="color: var(--warning);">${category.todoJobs}</strong></span>
+                </div>
               </div>
               <table class="task-table">
                 <thead>
@@ -625,8 +994,8 @@
                 <tbody>
                   ${category.jobs.map(job => `
                     <tr>
-                      <td>${job.title || job.name || job.code}</td>
-                      <td><span class="status-badge status-${job.status}">${getStatusText(job.status)}</span></td>
+                      <td>${job.title || job.name || job.code || '-'}</td>
+                      <td><span class="status-badge status-${job.status || 'todo'}">${getStatusText(job.status)}</span></td>
                       <td><span class="priority-badge priority-${job.priority || 'medium'}">${getPriorityText(job.priority)}</span></td>
                       <td>${job.assignee || job.assignee_prefix || '-'}</td>
                     </tr>
@@ -634,18 +1003,17 @@
                 </tbody>
               </table>
             </div>
-          `).join('')}
+          `).join('') : '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无任务数据</div>'}
         </div>
       `;
       
       document.getElementById('reportContent').innerHTML = html;
     }
-    
+
     // 导出Word文档
     function exportToWord() {
       if (!reportData) return;
       
-      // 创建HTML内容用于导出
       const content = document.getElementById('reportContent').innerHTML;
       const fullHtml = `
         <!DOCTYPE html>
@@ -654,32 +1022,33 @@
           <meta charset="UTF-8">
           <title>工作报告</title>
           <style>
-            body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 40px; }
+            body { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; margin: 40px; line-height: 1.6; }
             .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
             .report-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
             .report-period { font-size: 16px; color: #666; }
-            .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 15px 0; border-left: 4px solid #007bff; padding-left: 12px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-            .summary-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
-            .summary-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 4px; }
-            .summary-label { font-size: 14px; color: #666; }
-            .task-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            .task-table th, .task-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-            .task-table th { background: #f5f5f5; font-weight: bold; }
-            .status-badge, .priority-badge { padding: 3px 6px; border-radius: 3px; font-size: 12px; font-weight: 500; }
-            .status-todo { background: #ffc107; color: white; }
-            .status-doing { background: #28a745; color: white; }
-            .status-done { background: #007bff; color: white; }
-            .priority-high { background: #dc3545; color: white; }
-            .priority-medium { background: #ffc107; color: white; }
-            .priority-low { background: #28a745; color: white; }
+            .section-title { font-size: 18px; font-weight: bold; margin: 24px 0 16px 0; border-left: 4px solid #4f46e5; padding-left: 12px; }
+            .kpi-grid { display: flex; gap: 20px; margin-bottom: 24px; }
+            .kpi-card { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center; }
+            .kpi-value { font-size: 28px; font-weight: bold; color: #4f46e5; margin-bottom: 4px; }
+            .kpi-label { font-size: 14px; color: #666; }
+            .category-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+            .category-name { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+            .task-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            .task-table th, .task-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+            .task-table th { background: #f3f4f6; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+            .status-badge, .priority-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+            .status-todo { background: #fef3c7; color: #d97706; }
+            .status-doing { background: #d1fae5; color: #059669; }
+            .status-done { background: #e0e7ff; color: #4f46e5; }
+            .priority-high { background: #fee2e2; color: #dc2626; }
+            .priority-medium { background: #fef3c7; color: #d97706; }
+            .priority-low { background: #d1fae5; color: #059669; }
           </style>
         </head>
         <body>${content}</body>
         </html>
       `;
       
-      // 创建Blob并下载
       const blob = new Blob([fullHtml], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -696,33 +1065,7 @@
     // 打印报告
     function printReport() {
       if (!reportData) return;
-      
-      const content = document.getElementById('reportContent').innerHTML;
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>工作报告</title>
-          <style>
-            body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 20px; }
-            .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-            .report-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
-            .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 15px 0; border-left: 4px solid #007bff; padding-left: 12px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-            .summary-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
-            .task-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            .task-table th, .task-table td { padding: 8px; text-align: left; border: 1px solid #ddd; }
-            .task-table th { background: #f5f5f5; font-weight: bold; }
-            @media print { body { margin: 0; } }
-          </style>
-        </head>
-        <body>${content}</body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
+      window.print();
     }
     
     // 工具函数
@@ -737,44 +1080,21 @@
     }
     
     function getStatusText(status) {
-      const statusMap = {
-        todo: '待办',
-        doing: '进行中',
-        done: '已完成',
-        blocked: '阻塞',
-        cancelled: '已取消'
-      };
-      return statusMap[status] || status;
+      const statusMap = { todo: '待办', doing: '进行中', done: '已完成', blocked: '阻塞', cancelled: '已取消' };
+      return statusMap[status] || '待办';
     }
     
     function getPriorityText(priority) {
-      const priorityMap = {
-        low: 'Low',
-        medium: 'Medium',
-        high: 'High'
-      };
+      const priorityMap = { low: 'Low', medium: 'Medium', high: 'High' };
       return priorityMap[priority] || 'Medium';
     }
     
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
-      toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
-        color: white;
-        border-radius: 6px;
-        z-index: 10000;
-        font-size: 14px;
-      `;
+      toast.className = `toast ${type}`;
       toast.textContent = message;
       document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.remove();
-      }, 3000);
+      setTimeout(() => toast.remove(), 3000);
     }
   </script>
 </body>
