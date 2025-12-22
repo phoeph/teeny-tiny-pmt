@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>汇报管理 - 项目管理系统</title>
+  <link rel="stylesheet" href="assets/modern-theme.css" />
+  <style>
+    .reports-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .filter-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .filter-row {
+      display: flex;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    
+    .filter-group {
+      flex: 1;
+    }
+    
+    .filter-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+    
+    .filter-group select,
+    .filter-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-input);
+      color: var(--text-main);
+    }
+    
+    .project-selector {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg-input);
+    }
+    
+    .project-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .project-item:last-child {
+      border-bottom: none;
+    }
+    
+    .project-item:hover {
+      background: var(--bg-hover);
+    }
+    
+    .project-item input[type="checkbox"] {
+      margin: 0;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .report-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      min-height: 600px;
+    }
+    
+    .report-header {
+      text-align: center;
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+    
+    .report-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+    
+    .report-period {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+    
+    .report-section {
+      margin-bottom: 32px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-card {
+      background: var(--bg-hover);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    
+    .summary-number {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    
+    .summary-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    
+    .task-table th,
+    .task-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .task-table th {
+      background: var(--bg-hover);
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status-todo {
+      background: var(--warning);
+      color: white;
+    }
+    
+    .status-doing {
+      background: var(--success);
+      color: white;
+    }
+    
+    .status-done {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .priority-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .priority-high {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .priority-medium {
+      background: var(--warning);
+      color: white;
+    }
+    
+    .priority-low {
+      background: var(--success);
+      color: white;
+    }
+    
+    .export-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state svg {
+      margin-bottom: 16px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div id="left-sidebar"></div>
+  
+  <div class="header">
+    <div class="header-left">
+      <h1>汇报管理</h1>
+    </div>
+    <div class="header-right">
+      <div id="userMenuContainer"></div>
+    </div>
+  </div>
+
+  <div class="reports-container">
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+      <h3 style="margin-top: 0; margin-bottom: 20px; color: var(--text-main);">报告配置</h3>
+      
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>报告类型</label>
+          <select id="reportType">
+            <option value="weekly">周报</option>
+            <option value="monthly">月报</option>
+            <option value="yearly">年报</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>开始日期</label>
+          <input type="date" id="startDate" />
+        </div>
+        
+        <div class="filter-group">
+          <label>结束日期</label>
+          <input type="date" id="endDate" />
+        </div>
+        
+        <div class="actions">
+          <button class="primary-btn" id="generateBtn">生成报告</button>
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <label>选择项目</label>
+        <div class="project-selector" id="projectSelector">
+          <div class="loading">加载项目中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 报告内容区域 -->
+    <div class="report-content" id="reportContent">
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14,2 14,8 20,8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <h3>请配置报告参数并生成报告</h3>
+        <p>选择报告类型、时间范围和项目，然后点击"生成报告"按钮</p>
+      </div>
+    </div>
+
+    <!-- 导出操作 -->
+    <div class="export-actions" id="exportActions" style="display: none;">
+      <button class="primary-btn" id="exportWordBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14,2 14,8 20,8"></polyline>
+        </svg>
+        导出Word文档
+      </button>
+      <button class="ghost-btn" id="printBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+          <polyline points="6,9 6,2 18,2 18,9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        打印报告
+      </button>
+    </div>
+  </div>
+
+  <link rel="stylesheet" href="assets/header-user-menu.css" />
+  <link rel="stylesheet" href="assets/left-sidebar.css" />
+  <script src="assets/header-user-menu.js"></script>
+  <script src="assets/left-sidebar.js"></script>
+  
+  <script>
+    const API = 'http://localhost:8000/api';
+    const token = localStorage.getItem('token');
+    
+    let allProjects = [];
+    let reportData = null;
+    
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', async function() {
+      await loadProjects();
+      initDateInputs();
+      bindEvents();
+    });
+    
+    // 加载项目列表
+    async function loadProjects() {
+      try {
+        const response = await fetch(`${API}/projects/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        
+        allProjects = await response.json();
+        renderProjectSelector();
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        document.getElementById('projectSelector').innerHTML = 
+          '<div style="padding: 16px; color: var(--danger);">加载项目失败</div>';
+      }
+    }
+    
+    // 渲染项目选择器
+    function renderProjectSelector() {
+      const container = document.getElementById('projectSelector');
+      
+      if (!allProjects.length) {
+        container.innerHTML = '<div style="padding: 16px; color: var(--text-secondary);">暂无项目</div>';
+        return;
+      }
+      
+      const html = allProjects.map(project => `
+        <div class="project-item">
+          <input type="checkbox" id="project-${project.id}" value="${project.id}" />
+          <label for="project-${project.id}" style="margin: 0; cursor: pointer; flex: 1;">
+            ${project.name || project.title || `项目 ${project.id}`}
+          </label>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    // 初始化日期输入
+    function initDateInputs() {
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay() + 1); // 本周一
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // 本周日
+      
+      document.getElementById('startDate').value = formatDate(startOfWeek);
+      document.getElementById('endDate').value = formatDate(endOfWeek);
+    }
+    
+    // 绑定事件
+    function bindEvents() {
+      document.getElementById('reportType').addEventListener('change', updateDateRange);
+      document.getElementById('generateBtn').addEventListener('click', generateReport);
+      document.getElementById('exportWordBtn').addEventListener('click', exportToWord);
+      document.getElementById('printBtn').addEventListener('click', printReport);
+    }
+    
+    // 更新日期范围
+    function updateDateRange() {
+      const reportType = document.getElementById('reportType').value;
+      const today = new Date();
+      let startDate, endDate;
+      
+      switch (reportType) {
+        case 'weekly':
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - today.getDay() + 1);
+          endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          break;
+        case 'monthly':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          break;
+        case 'yearly':
+          startDate = new Date(today.getFullYear(), 0, 1);
+          endDate = new Date(today.getFullYear(), 11, 31);
+          break;
+      }
+      
+      document.getElementById('startDate').value = formatDate(startDate);
+      document.getElementById('endDate').value = formatDate(endDate);
+    }
+    
+    // 生成报告
+    async function generateReport() {
+      const selectedProjects = getSelectedProjects();
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const reportType = document.getElementById('reportType').value;
+      
+      if (!selectedProjects.length) {
+        showToast('请至少选择一个项目', 'error');
+        return;
+      }
+      
+      if (!startDate || !endDate) {
+        showToast('请选择日期范围', 'error');
+        return;
+      }
+      
+      try {
+        document.getElementById('reportContent').innerHTML = '<div class="loading">正在生成报告...</div>';
+        
+        // 获取项目数据
+        const projectsData = await Promise.all(
+          selectedProjects.map(projectId => fetchProjectData(projectId, startDate, endDate))
+        );
+        
+        // 生成报告数据
+        reportData = processReportData(projectsData, reportType, startDate, endDate);
+        
+        // 渲染报告
+        renderReport(reportData);
+        
+        // 显示导出按钮
+        document.getElementById('exportActions').style.display = 'flex';
+        
+      } catch (error) {
+        console.error('Error generating report:', error);
+        document.getElementById('reportContent').innerHTML = 
+          '<div class="empty-state"><h3>生成报告失败</h3><p>请检查网络连接并重试</p></div>';
+      }
+    }
+    
+    // 获取选中的项目
+    function getSelectedProjects() {
+      const checkboxes = document.querySelectorAll('#projectSelector input[type="checkbox"]:checked');
+      return Array.from(checkboxes).map(cb => parseInt(cb.value));
+    }
+    
+    // 获取项目数据
+    async function fetchProjectData(projectId, startDate, endDate) {
+      const response = await fetch(`${API}/projects/${projectId}/work-items/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) throw new Error(`Failed to fetch project ${projectId} data`);
+      
+      const workItems = await response.json();
+      const project = allProjects.find(p => p.id === projectId);
+      
+      return {
+        project,
+        workItems: workItems.filter(item => {
+          const itemDate = new Date(item.created_at || item.updated_at);
+          return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
+        })
+      };
+    }
+    
+    // 处理报告数据
+    function processReportData(projectsData, reportType, startDate, endDate) {
+      const allWorkItems = projectsData.flatMap(pd => pd.workItems);
+      const jobs = allWorkItems.filter(item => item.kind === 'JOB');
+      const tasks = allWorkItems.filter(item => item.kind === 'TASK');
+      
+      // 按Labels最后一个斜线分割值进行汇总
+      const tasksByCategory = {};
+      
+      jobs.forEach(job => {
+        // 解析labels，取最后一个斜线后的值作为分类
+        let category = '其他';
+        if (job.labels && job.labels.length > 0) {
+          const lastLabel = job.labels[job.labels.length - 1];
+          const parts = lastLabel.split('/');
+          category = parts[parts.length - 1] || '其他';
+        }
+        
+        if (!tasksByCategory[category]) {
+          tasksByCategory[category] = {
+            category,
+            jobs: [],
+            totalJobs: 0,
+            completedJobs: 0,
+            todoJobs: 0,
+            doingJobs: 0
+          };
+        }
+        
+        tasksByCategory[category].jobs.push(job);
+        tasksByCategory[category].totalJobs++;
+        
+        switch (job.status) {
+          case 'done':
+            tasksByCategory[category].completedJobs++;
+            break;
+          case 'doing':
+            tasksByCategory[category].doingJobs++;
+            break;
+          case 'todo':
+            tasksByCategory[category].todoJobs++;
+            break;
+        }
+      });
+      
+      return {
+        reportType,
+        startDate,
+        endDate,
+        projects: projectsData.map(pd => pd.project),
+        summary: {
+          totalProjects: projectsData.length,
+          totalJobs: jobs.length,
+          totalTasks: tasks.length,
+          completedJobs: jobs.filter(j => j.status === 'done').length,
+          completedTasks: tasks.filter(t => t.status === 'done').length
+        },
+        tasksByCategory: Object.values(tasksByCategory)
+      };
+    }
+    
+    // 渲染报告
+    function renderReport(data) {
+      const reportTypeNames = {
+        weekly: '周报',
+        monthly: '月报',
+        yearly: '年报'
+      };
+      
+      const html = `
+        <div class="report-header">
+          <div class="report-title">${reportTypeNames[data.reportType]}</div>
+          <div class="report-period">${formatDateRange(data.startDate, data.endDate)}</div>
+        </div>
+        
+        <div class="report-section">
+          <div class="section-title">项目概览</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-number">${data.summary.totalProjects}</div>
+              <div class="summary-label">涉及项目</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-number">${data.summary.totalJobs}</div>
+              <div class="summary-label">总JOB数</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-number">${data.summary.completedJobs}</div>
+              <div class="summary-label">已完成JOB</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-number">${Math.round(data.summary.completedJobs / data.summary.totalJobs * 100) || 0}%</div>
+              <div class="summary-label">完成率</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="report-section">
+          <div class="section-title">项目列表</div>
+          <ul style="margin: 0; padding-left: 20px;">
+            ${data.projects.map(p => `<li>${p.name || p.title || `项目 ${p.id}`}</li>`).join('')}
+          </ul>
+        </div>
+        
+        <div class="report-section">
+          <div class="section-title">任务完成情况</div>
+          ${data.tasksByCategory.map(category => `
+            <div style="margin-bottom: 24px;">
+              <h4 style="margin-bottom: 12px; color: var(--text-main);">${category.category}</h4>
+              <div style="margin-bottom: 12px; color: var(--text-secondary);">
+                总计: ${category.totalJobs} | 
+                已完成: ${category.completedJobs} | 
+                进行中: ${category.doingJobs} | 
+                待办: ${category.todoJobs}
+              </div>
+              <table class="task-table">
+                <thead>
+                  <tr>
+                    <th>任务名称</th>
+                    <th>状态</th>
+                    <th>优先级</th>
+                    <th>负责人</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${category.jobs.map(job => `
+                    <tr>
+                      <td>${job.title || job.name || job.code}</td>
+                      <td><span class="status-badge status-${job.status}">${getStatusText(job.status)}</span></td>
+                      <td><span class="priority-badge priority-${job.priority || 'medium'}">${getPriorityText(job.priority)}</span></td>
+                      <td>${job.assignee || job.assignee_prefix || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      document.getElementById('reportContent').innerHTML = html;
+    }
+    
+    // 导出Word文档
+    function exportToWord() {
+      if (!reportData) return;
+      
+      // 创建HTML内容用于导出
+      const content = document.getElementById('reportContent').innerHTML;
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>工作报告</title>
+          <style>
+            body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 40px; }
+            .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .report-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
+            .report-period { font-size: 16px; color: #666; }
+            .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 15px 0; border-left: 4px solid #007bff; padding-left: 12px; }
+            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+            .summary-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
+            .summary-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 4px; }
+            .summary-label { font-size: 14px; color: #666; }
+            .task-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .task-table th, .task-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+            .task-table th { background: #f5f5f5; font-weight: bold; }
+            .status-badge, .priority-badge { padding: 3px 6px; border-radius: 3px; font-size: 12px; font-weight: 500; }
+            .status-todo { background: #ffc107; color: white; }
+            .status-doing { background: #28a745; color: white; }
+            .status-done { background: #007bff; color: white; }
+            .priority-high { background: #dc3545; color: white; }
+            .priority-medium { background: #ffc107; color: white; }
+            .priority-low { background: #28a745; color: white; }
+          </style>
+        </head>
+        <body>${content}</body>
+        </html>
+      `;
+      
+      // 创建Blob并下载
+      const blob = new Blob([fullHtml], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `工作报告_${formatDate(new Date())}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast('报告已导出', 'success');
+    }
+    
+    // 打印报告
+    function printReport() {
+      if (!reportData) return;
+      
+      const content = document.getElementById('reportContent').innerHTML;
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>工作报告</title>
+          <style>
+            body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 20px; }
+            .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .report-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
+            .section-title { font-size: 18px; font-weight: bold; margin: 20px 0 15px 0; border-left: 4px solid #007bff; padding-left: 12px; }
+            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+            .summary-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
+            .task-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .task-table th, .task-table td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+            .task-table th { background: #f5f5f5; font-weight: bold; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>${content}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+    
+    // 工具函数
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    function formatDateRange(startDate, endDate) {
+      const start = new Date(startDate).toLocaleDateString('zh-CN');
+      const end = new Date(endDate).toLocaleDateString('zh-CN');
+      return `${start} - ${end}`;
+    }
+    
+    function getStatusText(status) {
+      const statusMap = {
+        todo: '待办',
+        doing: '进行中',
+        done: '已完成',
+        blocked: '阻塞',
+        cancelled: '已取消'
+      };
+      return statusMap[status] || status;
+    }
+    
+    function getPriorityText(priority) {
+      const priorityMap = {
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High'
+      };
+      return priorityMap[priority] || 'Medium';
+    }
+    
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+        color: white;
+        border-radius: 6px;
+        z-index: 10000;
+        font-size: 14px;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
