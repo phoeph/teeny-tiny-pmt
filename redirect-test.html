@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>跳转测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .test-button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin: 8px;
+    }
+    .test-button:hover {
+      background: #4338ca;
+    }
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+    }
+    .success { background: #d1fae5; color: #059669; }
+    .error { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <div class="test-card">
+    <h2>🔍 跳转路径测试</h2>
+    <p>测试不同的跳转方式，找出问题所在</p>
+    
+    <button class="test-button" onclick="testRedirect1()">测试: location.href = 'projects.html'</button>
+    <button class="test-button" onclick="testRedirect2()">测试: location.href = './projects.html'</button>
+    <button class="test-button" onclick="testRedirect3()">测试: window.location = 'projects.html'</button>
+    <button class="test-button" onclick="testRedirect4()">测试: window.location.replace('projects.html')</button>
+    
+    <div id="result"></div>
+  </div>
+  
+  <div class="test-card">
+    <h3>当前页面信息</h3>
+    <div id="pageInfo"></div>
+  </div>
+
+  <script>
+    function showResult(message, type = 'success') {
+      const result = document.getElementById('result');
+      result.className = `result ${type}`;
+      result.textContent = message;
+    }
+
+    function testRedirect1() {
+      showResult('即将跳转: location.href = "projects.html"');
+      setTimeout(() => {
+        location.href = 'projects.html';
+      }, 1000);
+    }
+
+    function testRedirect2() {
+      showResult('即将跳转: location.href = "./projects.html"');
+      setTimeout(() => {
+        location.href = './projects.html';
+      }, 1000);
+    }
+
+    function testRedirect3() {
+      showResult('即将跳转: window.location = "projects.html"');
+      setTimeout(() => {
+        window.location = 'projects.html';
+      }, 1000);
+    }
+
+    function testRedirect4() {
+      showResult('即将跳转: window.location.replace("projects.html")');
+      setTimeout(() => {
+        window.location.replace('projects.html');
+      }, 1000);
+    }
+
+    // 显示当前页面信息
+    function showPageInfo() {
+      const info = document.getElementById('pageInfo');
+      info.innerHTML = `
+        <div><strong>当前URL:</strong> ${window.location.href}</div>
+        <div><strong>协议:</strong> ${window.location.protocol}</div>
+        <div><strong>主机:</strong> ${window.location.host}</div>
+        <div><strong>路径:</strong> ${window.location.pathname}</div>
+        <div><strong>基础URL:</strong> ${window.location.origin}</div>
+      `;
+    }
+
+    showPageInfo();
+  </script>
+</body>
+</html>

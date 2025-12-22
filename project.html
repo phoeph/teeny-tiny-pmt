@@ -230,7 +230,7 @@
       color: var(--text-main);
     }
     .action-dropdown {
-      position: absolute;
+      position: fixed;
       background: var(--bg-surface);
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-lg);
@@ -380,15 +380,44 @@
     const token = localStorage.getItem('token');
     const params = new URLSearchParams(location.search);
     const idParam = params.get('id');
+    
+    console.log('🔍 Project页面调试信息:');
+    console.log('- 完整URL:', location.href);
+    console.log('- URL search部分:', location.search);
+    console.log('- URLSearchParams对象:', params);
+    console.log('- 获取到的id参数:', idParam);
+    console.log('- id参数类型:', typeof idParam);
+    
     const parsedId = parseInt(idParam || '', 10);
+    console.log('- parseInt结果:', parsedId);
+    console.log('- parseInt结果类型:', typeof parsedId);
+    console.log('- Number.isFinite检查:', Number.isFinite(parsedId));
+    
     const projectId = parsedId;
     window.__projectId = projectId;
     window.__pageHistoryKey = `project:${projectId}`;
     PageHistory.init(window.__pageHistoryKey);
+    
     if (!Number.isFinite(projectId)) {
       console.error('[project] 缺少或非法的项目ID参数');
       document.getElementById('projectHeader').textContent = '错误：缺少项目ID参数';
-    }
+      
+      // 显示友好的错误页面
+      const mainContent = document.querySelector('.main-content') || document.body;
+      mainContent.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom: 16px; opacity: 0.7;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <h3 style="margin: 0 0 8px 0; color: var(--text-main);">项目ID参数缺失</h3>
+          <p style="margin: 0 0 16px 0; color: var(--text-secondary);">请通过项目列表页面访问具体项目</p>
+          <button onclick="location.href='projects.html'" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">返回项目列表</button>
+        </div>
+      `;
+    } else {
+      // 项目ID有效，继续执行正常的页面逻辑
 
     function fmtDate(d) { return d ? new Date(d) : null; }
     function __getPlannedStartStr(i){ return i && (i.planned_start_date || i.planned_start) || null; }
@@ -476,25 +505,6 @@
         return new Date(ms).toISOString().slice(0, 19);
       }catch(_){ return ''; }
     }
-    let startDate = (function(){ const y=new Date().getFullYear()-1; return new Date(y,0,1); })();
-    let endDate = (function(){ const y=new Date().getFullYear()+1; return new Date(y,11,31); })();
-    let __creatingTask = false;
-    let __creatingParentRef = null;
-    let __creatingJob = false;
-    let totalDays = 0;
-    let columnWidth = 30;
-    let timeMode = 'day';
-    let scrollPosition = 0;
-    let viewportWidth = 1200;
-    let currentDate = new Date();
-    let BAR_HEIGHT = 20;
-    let __drag = null;
-    let __ruleToastShown = false;
-    const ganttData = { tasks: [], timeColumns: [], assignees: [] };
-    let __sortTaskAsc = true;
-    let __sortAssigneeAsc = true;
-    window.__expandedParents = window.__expandedParents || {};
-    window.__expandedJobCards = window.__expandedJobCards || {};
     function colorForStatus(s) { return s === 'done' ? 'var(--primary)' : (s === 'doing' ? 'var(--success)' : 'var(--warning)'); }
     function enableDnD() {
       ['todo','doing','done'].forEach(id => {
@@ -561,30 +571,6 @@
         console.error('[kanban] patch error', err);
         showToast('网络错误，更新失败', 'error');
       }
-    }
-
-    function showToast(text, type) {
-      const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = text; document.body.appendChild(el);
-      setTimeout(()=>{ el.remove(); }, 1800);
-    }
-
-    async function __showErrorFromResponse(res){
-      let msg = '';
-      try {
-        const ct = (res.headers && res.headers.get && res.headers.get('content-type')) || '';
-        if (ct.indexOf('application/json') >= 0) {
-          const data = await res.json();
-          const detail = typeof data === 'string' ? data : (data && (data.detail || data.message || ''));
-          const t = String(detail || '').trim();
-          msg = t || '';
-        } else {
-          const t = String((await res.text()) || '').trim();
-          msg = t || '';
-        }
-      } catch (_) {
-        msg = '';
-      }
-      showToast(msg || '操作失败', 'error');
     }
 
     function bindTouchDnD() {
@@ -672,14 +658,14 @@
         const p = await res.json();
         document.getElementById('projectHeader').textContent = `[${p.code} · ${p.name}]`;
         const metaTarget = document.getElementById('projectMeta');
-        const bc = `<a href="projects">Projects</a> / ${p.code}`;
+        const bc = `<a href="projects.html">Projects</a> / ${p.code}`;
         const entity = normalizeEntity('project', p, { project: p });
         renderJiraIssueLayout(metaTarget, entity, { breadcrumb: bc, counter: '', linksHtml: '', hideHeader: true, rawProject: p });
         try{ setupLabelEditor(metaTarget, entity, { rawProject: p, project_id: p.id }); }catch(_){}
         try {
           const topBc = document.getElementById('breadcrumb');
           if (topBc) {
-            topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${p.code} · ${p.name}`;
+            topBc.innerHTML = `<a href="projects.html">Projects</a><span class="sep">/</span>${p.code} · ${p.name}`;
           }
         } catch (_) {}
         const descEl = document.getElementById('issueDescProject'); if(descEl) descEl.innerHTML = (p.description || '') || '暂无描述';
@@ -916,7 +902,7 @@
               row.classList.add('dragging');
             });
             row.addEventListener('dragend', ()=> row.classList.remove('dragging'));
-            row.ondblclick = function(ev){ ev.stopPropagation(); window.location.href = `job?code=${item.code}&project=${projectId}&task=${t.code}`; };
+            row.ondblclick = function(ev){ ev.stopPropagation(); window.location.href = `job.html?code=${item.code}&project=${projectId}&task=${t.code}`; };
             panel.appendChild(row);
           });
           if (expanded) { try { toggle.querySelector('path').setAttribute('d','M10 7l5 5-5 5z'); } catch (e) { } }
@@ -925,7 +911,7 @@
           el.appendChild(toggle);
           el.appendChild(panel);
         }
-        el.ondblclick = function(ev){ if(item.kind==='JOB'){ if(toggle && (ev.target===toggle || toggle.contains(ev.target))) return; window.location.href = `job?code=${item.code}&project=${projectId}`; } else { let parentCode=''; const jobs=(window.__jobs||[]); for(const j of jobs){ const ks=j.subtasks||[]; if(ks.find(x=> (x.id===item.id)||(x.code===item.code))){ parentCode=j.code||''; break; } } if(parentCode){ const tid=item.code||item.id; window.location.href = `task?code=${tid}&project=${projectId}&job=${parentCode}`; } } };
+        el.ondblclick = function(ev){ if(item.kind==='JOB'){ if(toggle && (ev.target===toggle || toggle.contains(ev.target))) return; window.location.href = `job.html?code=${item.code}&project=${projectId}`; } else { let parentCode=''; const jobs=(window.__jobs||[]); for(const j of jobs){ const ks=j.subtasks||[]; if(ks.find(x=> (x.id===item.id)||(x.code===item.code))){ parentCode=j.code||''; break; } } if(parentCode){ const tid=item.code||item.id; window.location.href = `task.html?code=${tid}&project=${projectId}&job=${parentCode}`; } } };
         return el;
       };
       ['todo','doing','done'].forEach(s => { const c = document.getElementById(s); c.innerHTML=''; byStatus[s].forEach(it => c.appendChild(mkCard(it))); });
@@ -1037,7 +1023,10 @@
         setVScroll(tl.scrollTop);
         maybeExtendTimeline();
       };
-      const onThScroll = () => { if(tl) tl.scrollLeft = th.scrollLeft; };
+      const onThScroll = () => { 
+        if(tl) tl.scrollLeft = th.scrollLeft; 
+        positionActionMenu(); // 水平滚动时也重新定位菜单
+      };
       const onListScroll = (e) => { if(__syncing) return; const y=e.target.scrollTop||0; setVScroll(y); };
       const onWheel = (e) => { const y=(tl?tl.scrollTop:0) + (e.deltaY||0); setVScroll(y); };
       
@@ -1099,7 +1088,7 @@
               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
             </span>
             <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;">
-              <a class="task-title" href="job?code=${jcode}&project=${projectId}" style="color:inherit; text-decoration:none;">${displayName}</a>
+              <a class="task-title" href="job.html?code=${jcode}&project=${projectId}" style="color:inherit; text-decoration:none;">${displayName}</a>
             </div>
             <button class="more-btn" onclick="showTaskMenu(event, ${ti}, -1)" title="更多操作">
               <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
@@ -1118,7 +1107,7 @@
           div.innerHTML = `
             <div class="task-name-wrapper">
               <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                <a class="task-title" href="task?code=${tCode}&project=${projectId}&job=${jcode}" style="color:inherit; text-decoration:none;">${tDisplayName}</a>
+                <a class="task-title" href="task.html?code=${tCode}&project=${projectId}&job=${jcode}" style="color:inherit; text-decoration:none;">${tDisplayName}</a>
               </div>
               <button class="more-btn" onclick="showTaskMenu(event, ${ti}, ${si})" title="更多操作">
                 <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
@@ -1151,26 +1140,6 @@
       if(startEl) startEl.value=__toLocalInputValue(sStr);
       if(endEl) endEl.value=__toLocalInputValue(eStr); const priSel=document.getElementById('taskEditPrioritySelect'); if(priSel) priSel.value=(__editingTaskRef.priority||'medium'); (function(){ try{ const items=Array.isArray(window.__items)?window.__items:[]; const pcode=__parentJobCodeOfItem(__editingTaskRef)||''; let parent=null; if(pcode){ parent=items.find(x=> x.kind==='JOB' && x.code===pcode); } if(!parent){ parent=items.find(x=> x.kind==='JOB' && (Array.isArray(x.subtasks) && x.subtasks.find(s=> (s.id===__editingTaskRef.id)||(s.code===__editingTaskRef.code)))); } const pStartStr=parent? (__getPlannedStartStr(parent)||'') : ''; const pEndStr=parent? (__getPlannedEndStr(parent)||'') : ''; if(pStartStr){ if(startEl) startEl.min=pStartStr; if(endEl) endEl.min=pStartStr; } if(pEndStr){ if(startEl) startEl.max=pEndStr; if(endEl) endEl.max=pEndStr; } if(pStartStr && sStr && startEl && (new Date(sStr) < new Date(pStartStr))) startEl.value=pStartStr; if(pEndStr && eStr && endEl && (new Date(eStr) > new Date(pEndStr))) endEl.value=pEndStr; const onCheck=function(){ const ps=startEl.value||''; const pe=endEl.value||''; const invalidOrder=(ps && pe && (new Date(pe)<new Date(ps))); const min=startEl.min||''; const max=endEl.max||''; const outOfRange=( (min && ps<min) || (max && pe>max) ); const btn=document.getElementById('taskEditSaveBtn'); if(btn){ btn.disabled=invalidOrder||outOfRange; } }; if(startEl) startEl.oninput=onCheck; if(endEl) endEl.oninput=onCheck; onCheck(); }catch(_){ } })(); attachDatePicker(startEl); attachDatePicker(endEl); const estEl=document.getElementById('taskEditEstimatedHoursInput'); if(estEl) estEl.value = (__editingTaskRef.estimated_hours!=null ? __editingTaskRef.estimated_hours : (__daysBetween(sStr,eStr)*8)) || 0; const actEl=document.getElementById('taskEditActualHoursInput'); if(actEl) actEl.value=(__editingTaskRef.actual_hours!=null ? __editingTaskRef.actual_hours : ''); const compEl=document.getElementById('taskEditCompletedAtInput'); if(compEl) compEl.value=(__editingTaskRef.completed_at? __toLocalInputValue(__editingTaskRef.completed_at) : ''); const sel=document.getElementById('taskEditStatusSelect'); sel.value=__editingTaskRef.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
     function closeEditTaskModal(){ const b=document.getElementById('taskEditModalBackdrop'); b.style.display='none'; __editingTaskRef=null; document.body.style.overflow=''; }
-    async function __patchTask(idOrCode, payload){
-      try{
-        try{
-          if(payload && payload.priority===undefined){
-            const jel=document.getElementById('jobEditPrioritySelect');
-            const tel=document.getElementById('taskEditPrioritySelect');
-            if(jel && jel.value){ payload.priority = jel.value || 'medium'; }
-            else if(tel && tel.value){ payload.priority = tel.value || 'medium'; }
-          }
-          if(payload && payload.planned_start_date && typeof payload.planned_start_date==='string'){
-            payload.planned_start_date = payload.planned_start_date.slice(0, 10);
-          }
-          if(payload && payload.planned_end_date && typeof payload.planned_end_date==='string'){
-            payload.planned_end_date = payload.planned_end_date.slice(0, 10);
-          }
-        }catch(_){ }
-        const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) });
-        if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); if((!updated.assignee || updated.assignee==='') && payload){ if(payload.assignee){ updated.assignee = payload.assignee; } else if(payload.assignee_prefix){ updated.assignee = payload.assignee_prefix; } else if(payload.assignee_email){ updated.assignee = __assigneeToPrefix(payload.assignee_email); } } showToast('任务已更新','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); }
-      } catch(e){ console.error('[task] patch error', e); showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); }
-    }
     async function __batchPatch(items){ try{ const payload={ items: (items||[]).map(function(ch){ const it = Object.assign({}, ch); if(it.idOrCode && !it.id) it.id = it.idOrCode; delete it.idOrCode; 
       if(it.planned_start_date && typeof it.planned_start_date==='string') it.planned_start_date=it.planned_start_date.slice(0,10);
       if(it.planned_end_date && typeof it.planned_end_date==='string') it.planned_end_date=it.planned_end_date.slice(0,10);
@@ -1240,7 +1209,7 @@
 
     function enforceBarBounds(){ try{ const total=(ganttData.timeColumns||[]).length*columnWidth; const bars=[...document.querySelectorAll('#timeline .task-bar')]; bars.forEach(bar=>{ let l=parseFloat(bar.style.left)||0; let w=parseFloat(bar.style.width)||0; const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const taskRef = sIdx>=0 ? (ganttData.tasks[tIdx] && ganttData.tasks[tIdx].subtasks[sIdx]) : (ganttData.tasks[tIdx]); let expectedW = w; if (taskRef) { if (timeMode==='day') { expectedW = Math.max((taskRef.duration||1)*columnWidth, columnWidth); } else { const sI=dayOffsetToMonthIndex(taskRef.startDay||0); const eI=dayOffsetToMonthIndex((taskRef.startDay||0)+(taskRef.duration||1)-1); expectedW = Math.max(((eI - sI + 1) * columnWidth), columnWidth); } } w = Math.max(w, expectedW); l=Math.max(0, Math.min(l, Math.max(0, total - w))); const nw=Math.max(2, Math.min(w, Math.max(0, total - l))); bar.style.left=l+'px'; bar.style.width=nw+'px'; }); } catch(e){} }
     let __dragLimitEl=null;
-    function createTaskBar(task, ti, si){ const bar=document.createElement('div'); bar.className='task-bar'; let left,width; if(timeMode==='day'){ left=(task.startDay||0)*columnWidth; width=Math.max((task.duration||1)*columnWidth,columnWidth); } else { const sIdx=dayOffsetToMonthIndex(task.startDay||0); const eIdx=dayOffsetToMonthIndex((task.startDay||0)+(task.duration||1)-1); left=sIdx*columnWidth; width=Math.max(((eIdx - sIdx + 1) * columnWidth),60); } bar.style.left=left+'px'; bar.style.width=width+'px'; bar.style.height=BAR_HEIGHT+'px'; bar.style.top=((40-BAR_HEIGHT)/2)+'px'; bar.style.backgroundColor=task.color||'var(--primary)'; bar.setAttribute('data-task-index', ti); bar.setAttribute('data-subtask-index', si); bar.setAttribute('title', task.name); bar.innerHTML = `<div class="resize-handle left"></div><span class="task-bar-text">${task.name}</span><div class="resize-handle right"></div>`; bar.addEventListener('mousedown', function(e){ const isLeft=e.target.classList.contains('left'); const isRight=e.target.classList.contains('right'); const type=isLeft?'left':(isRight?'right':'move'); const originX=e.clientX; const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; __drag={ type, originX, tIdx, sIdx, start: ref.startDay||0, dur: ref.duration||1 }; document.addEventListener('mousemove', __onDragMove); document.addEventListener('mouseup', __onDragEnd); e.preventDefault(); }); bar.addEventListener('click', function(){ const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; const pid=ref.id||ref.code; if(ref.type==='parent'){ window.location.href = `job?code=${pid}&project=${projectId}`; } else { const parent=ganttData.tasks[tIdx]; const jcode=parent.id||parent.code; window.location.href = `job?code=${jcode}&project=${projectId}`; } }); return bar; }
+    function createTaskBar(task, ti, si){ const bar=document.createElement('div'); bar.className='task-bar'; let left,width; if(timeMode==='day'){ left=(task.startDay||0)*columnWidth; width=Math.max((task.duration||1)*columnWidth,columnWidth); } else { const sIdx=dayOffsetToMonthIndex(task.startDay||0); const eIdx=dayOffsetToMonthIndex((task.startDay||0)+(task.duration||1)-1); left=sIdx*columnWidth; width=Math.max(((eIdx - sIdx + 1) * columnWidth),60); } bar.style.left=left+'px'; bar.style.width=width+'px'; bar.style.height=BAR_HEIGHT+'px'; bar.style.top=((40-BAR_HEIGHT)/2)+'px'; bar.style.backgroundColor=task.color||'var(--primary)'; bar.setAttribute('data-task-index', ti); bar.setAttribute('data-subtask-index', si); bar.setAttribute('title', task.name); bar.innerHTML = `<div class="resize-handle left"></div><span class="task-bar-text">${task.name}</span><div class="resize-handle right"></div>`; bar.addEventListener('mousedown', function(e){ const isLeft=e.target.classList.contains('left'); const isRight=e.target.classList.contains('right'); const type=isLeft?'left':(isRight?'right':'move'); const originX=e.clientX; const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; __drag={ type, originX, tIdx, sIdx, start: ref.startDay||0, dur: ref.duration||1 }; document.addEventListener('mousemove', __onDragMove); document.addEventListener('mouseup', __onDragEnd); e.preventDefault(); }); bar.addEventListener('click', function(){ const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; const pid=ref.id||ref.code; if(ref.type==='parent'){ window.location.href = `job.html?code=${pid}&project=${projectId}`; } else { const parent=ganttData.tasks[tIdx]; const jcode=parent.id||parent.code; window.location.href = `job.html?code=${jcode}&project=${projectId}`; } }); return bar; }
     function __onDragMove(e){
       if(!__drag) return;
       const dx=e.clientX-__drag.originX;
@@ -1593,7 +1562,7 @@
     bindPan(document.querySelector('.time-header')); bindPan(document.getElementById('timelineContainer'));
     (function(){ const taskH=document.querySelector('.task-header'); const assH=document.querySelector('.assignee-header'); if(taskH){ taskH.style.cursor='pointer'; taskH.title='点击切换按名称排序'; taskH.onclick=function(){ __sortTaskAsc=!__sortTaskAsc; renderTaskList(); applyTaskExpansionStates(); renderTimeline(); applyTaskExpansionStates(); renderAssigneeList(); applyTaskExpansionStates(); }; const tog=document.getElementById('toggleAll'); const togPath=document.getElementById('toggleAllPath'); if(tog){ tog.onclick=function(){ window.__expandedParents = window.__expandedParents || {}; const tasks=(ganttData.tasks||[]); let allExpanded=true; for(const t of tasks){ const pid=t.id||t.code; const entry=(window.__expandedParents||{})[pid]; const expanded=(entry===undefined)? true : !!entry; if(!expanded){ allExpanded=false; break; } } const next=!allExpanded; tasks.forEach(t=>{ window.__expandedParents[t.id||t.code]=next; }); if(togPath){ togPath.setAttribute('d', next ? 'M7 10l5 5 5-5z' : 'M10 7l5 5-5 5z'); } applyTaskExpansionStates(); }; } } if(assH){ assH.style.cursor='pointer'; assH.title='点击切换按负责人排序'; assH.onclick=function(){ __sortAssigneeAsc=!__sortAssigneeAsc; renderAssigneeList(); applyTaskExpansionStates(); }; } })();
     (function(){ const res=document.getElementById('colResizer'); if(!res) return; let down=false, sx=0, tw=260, aw=120, pw=100; const taskH=document.querySelector('.task-header'); const assH=document.querySelector('.assignee-header'); const priH=document.querySelector('.priority-header'); const taskL=document.getElementById('taskList'); const assL=document.getElementById('assigneeList'); const priL=document.getElementById('priorityList'); const apply=()=>{ if(taskH) taskH.style.width=tw+'px'; if(assH) assH.style.width=aw+'px'; if(priH) priH.style.width=pw+'px'; if(taskL) taskL.style.width=tw+'px'; if(assL) assL.style.width=aw+'px'; if(priL) priL.style.width=pw+'px'; }; apply(); res.addEventListener('mousedown', function(e){ down=true; sx=e.clientX; document.body.style.cursor='col-resize'; }); document.addEventListener('mousemove', function(e){ if(!down) return; const dx=e.clientX-sx; tw=Math.max(160, tw+dx); aw=Math.max(100, aw-dx); sx=e.clientX; apply(); }); document.addEventListener('mouseup', function(){ if(!down) return; down=false; document.body.style.cursor='default'; }); })();
-  (function(){ const tl=document.getElementById('timeline'); const tc=document.getElementById('timelineContainer'); if(!tl||!tc) return; tl.addEventListener('click', function(e){ const bar=e.target.closest('.task-bar'); if(!bar) return; e.stopPropagation(); e.preventDefault(); }, true); tl.addEventListener('dblclick', function(e){ const bar=e.target.closest('.task-bar'); if(!bar) return; const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; if(ref.type==='parent'){ const pid=ref.id||ref.code; window.location.href = `job?code=${pid}&project=${projectId}`; } else { const parent=ganttData.tasks[tIdx]; const jcode=parent.id||parent.code; const tid=ref.id||ref.code; window.location.href = `task?code=${tid}&project=${projectId}&job=${jcode}`; } }); })();
+  (function(){ const tl=document.getElementById('timeline'); const tc=document.getElementById('timelineContainer'); if(!tl||!tc) return; tl.addEventListener('click', function(e){ const bar=e.target.closest('.task-bar'); if(!bar) return; e.stopPropagation(); e.preventDefault(); }, true); tl.addEventListener('dblclick', function(e){ const bar=e.target.closest('.task-bar'); if(!bar) return; const tIdx=parseInt(bar.getAttribute('data-task-index')); const sIdx=parseInt(bar.getAttribute('data-subtask-index')); const ref=sIdx>=0?ganttData.tasks[tIdx].subtasks[sIdx]:ganttData.tasks[tIdx]; if(ref.type==='parent'){ const pid=ref.id||ref.code; window.location.href = `job.html?code=${pid}&project=${projectId}`; } else { const parent=ganttData.tasks[tIdx]; const jcode=parent.id||parent.code; const tid=ref.id||ref.code; window.location.href = `task.html?code=${tid}&project=${projectId}&job=${jcode}`; } }); })();
   (function(){ 
     const tl=document.getElementById('taskList'); 
     if(!tl) return; 
@@ -1954,87 +1923,365 @@
           closeActionMenu();
         }
       });
+      
+      // Add scroll and resize listeners for dynamic positioning
+      window.addEventListener('scroll', positionActionMenu, true);
+      window.addEventListener('resize', positionActionMenu);
     }
 
-    let currentActionTarget = null;
-    let __actionMenuAnchor = null;
+  } // 闭合 else 块
 
-    function showTaskMenu(e, ti, si) {
-      e.stopPropagation();
-      e.preventDefault();
-      
-      const menu = document.getElementById('actionMenu');
-      currentActionTarget = { ti, si };
-      __actionMenuAnchor = e.target.closest('.more-btn') || e.target;
-      
-      const isParent = si === -1;
-      const task = ganttData.tasks[ti];
-      const subtask = isParent ? null : task.subtasks[si];
-      
-      let html = '';
-      if (isParent) {
-        html += `<div class="action-item" onclick="handleAction('add-task')">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          新增子任务
-        </div>`;
-        html += `<div class="action-item" onclick="handleAction('edit-job')">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-          编辑 JOB
-        </div>`;
-        html += `<div class="action-item danger" onclick="handleAction('del-job')">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          删除 JOB
-        </div>`;
+  // 全局变量定义 - 移到 else 块外部确保全局可访问
+  let startDate = (function(){ const y=new Date().getFullYear()-1; return new Date(y,0,1); })();
+  let endDate = (function(){ const y=new Date().getFullYear()+1; return new Date(y,11,31); })();
+  let __creatingTask = false;
+  let __creatingParentRef = null;
+  let __creatingJob = false;
+  let totalDays = 0;
+  let columnWidth = 30;
+  let timeMode = 'day';
+  let scrollPosition = 0;
+  let viewportWidth = 1200;
+  let currentDate = new Date();
+  let BAR_HEIGHT = 20;
+  let __drag = null;
+  let __ruleToastShown = false;
+  // ganttData moved to global scope
+  let __sortTaskAsc = true;
+  let __sortAssigneeAsc = true;
+  window.__expandedParents = window.__expandedParents || {};
+  window.__expandedJobCards = window.__expandedJobCards || {};
+
+  // 全局辅助函数 - 确保在全局作用域
+  async function __patchTask(idOrCode, payload){
+    try{
+      try{
+        if(payload && payload.priority===undefined){
+          const jel=document.getElementById('jobEditPrioritySelect');
+          const tel=document.getElementById('taskEditPrioritySelect');
+          if(jel && jel.value){ payload.priority = jel.value || 'medium'; }
+          else if(tel && tel.value){ payload.priority = tel.value || 'medium'; }
+        }
+        if(payload && payload.planned_start_date && typeof payload.planned_start_date==='string'){
+          payload.planned_start_date = payload.planned_start_date.slice(0, 10);
+        }
+        if(payload && payload.planned_end_date && typeof payload.planned_end_date==='string'){
+          payload.planned_end_date = payload.planned_end_date.slice(0, 10);
+        }
+      }catch(_){ }
+      const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) });
+      if(res.ok){ 
+        let updated=await res.json(); 
+        updated=__normalizeWorkItemShape(updated); 
+        if((!updated.assignee || updated.assignee==='') && payload){ 
+          if(payload.assignee){ 
+            updated.assignee = payload.assignee; 
+          } else if(payload.assignee_prefix){ 
+            updated.assignee = payload.assignee_prefix; 
+          } else if(payload.assignee_email){ 
+            updated.assignee = __assigneeToPrefix(payload.assignee_email); 
+          } 
+        } 
+        showToast('任务已更新','success'); 
+        const items = Array.isArray(window.__items)? window.__items.slice() : []; 
+        const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); 
+        if(idx>=0){ 
+          items[idx] = Object.assign({}, items[idx], updated); 
+        } else { 
+          for (let i=0;i<items.length;i++){ 
+            const subs=items[i].subtasks||[]; 
+            const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); 
+            if(si>=0){ 
+              subs[si]=Object.assign({}, subs[si], updated); 
+              break; 
+            } 
+          } 
+        } 
+        renderAfterLocalUpdate(items); 
+      } else { 
+        await __showErrorFromResponse(res, '保存失败'); 
+      }
+    } catch(e){ 
+      console.error('[task] patch error', e); 
+      showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); 
+    }
+  }
+
+// 全局下拉菜单变量和函数 - 移到else块外部确保全局可访问
+let currentActionTarget = null;
+let __actionMenuAnchor = null;
+const ganttData = { tasks: [], timeColumns: [], assignees: [] };
+
+function showTaskMenu(e, ti, si) {
+  e.stopPropagation();
+  e.preventDefault();
+  
+  const menu = document.getElementById('actionMenu');
+  currentActionTarget = { ti, si };
+  __actionMenuAnchor = e.target.closest('.more-btn') || e.target;
+  
+  const isParent = si === -1;
+  const task = ganttData.tasks[ti];
+  const subtask = isParent ? null : task.subtasks[si];
+  const currentItem = isParent ? task : subtask;
+  
+  let html = '';
+  if (isParent) {
+    // 新增子任务
+    html += `<div class="action-item" onclick="handleAction('add-task')">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      新增子任务
+    </div>`;
+    
+    // 编辑 JOB
+    html += `<div class="action-item" onclick="handleAction('edit-job')">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      编辑 JOB
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 优先级选项
+    html += `<div class="action-item" onclick="updatePriority('high')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--danger); margin-right: 4px;"></div>
+      设为 High
+    </div>`;
+    html += `<div class="action-item" onclick="updatePriority('medium')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--warning); margin-right: 4px;"></div>
+      设为 Medium
+    </div>`;
+    html += `<div class="action-item" onclick="updatePriority('low')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success); margin-right: 4px;"></div>
+      设为 Low
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 状态选项
+    html += `<div class="action-item" onclick="updateStatus('todo')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--warning); margin-right: 8px;"></div>
+      设为 待办
+    </div>`;
+    html += `<div class="action-item" onclick="updateStatus('doing')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 8px;"></div>
+      设为 进行中
+    </div>`;
+    html += `<div class="action-item" onclick="updateStatus('done')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 8px;"></div>
+      设为 已完成
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 删除 JOB
+    html += `<div class="action-item danger" onclick="handleAction('del-job')">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      删除 JOB
+    </div>`;
+  } else {
+    // 编辑任务
+    html += `<div class="action-item" onclick="handleAction('edit-task')">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      编辑任务
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 优先级选项
+    html += `<div class="action-item" onclick="updatePriority('high')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--danger); margin-right: 4px;"></div>
+      设为 High
+    </div>`;
+    html += `<div class="action-item" onclick="updatePriority('medium')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--warning); margin-right: 4px;"></div>
+      设为 Medium
+    </div>`;
+    html += `<div class="action-item" onclick="updatePriority('low')">
+      <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success); margin-right: 4px;"></div>
+      设为 Low
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 状态选项
+    html += `<div class="action-item" onclick="updateStatus('todo')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--warning); margin-right: 8px;"></div>
+      设为 待办
+    </div>`;
+    html += `<div class="action-item" onclick="updateStatus('doing')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-right: 8px;"></div>
+      设为 进行中
+    </div>`;
+    html += `<div class="action-item" onclick="updateStatus('done')">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-right: 8px;"></div>
+      设为 已完成
+    </div>`;
+    
+    // 分隔线
+    html += `<div style="height: 1px; background: var(--border-color); margin: 4px 0;"></div>`;
+    
+    // 删除任务
+    html += `<div class="action-item danger" onclick="handleAction('del-task')">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      删除任务
+    </div>`;
+  }
+  
+  menu.innerHTML = html;
+  menu.classList.add('show');
+  
+  // 延迟定位，确保菜单已渲染
+  setTimeout(() => {
+    positionActionMenu();
+  }, 10);
+}
+
+function positionActionMenu(){ 
+  const menu = document.getElementById('actionMenu'); 
+  if (!menu) return; 
+  if (!menu.classList.contains('show')) return; 
+  if (!__actionMenuAnchor) return; 
+  
+  // getBoundingClientRect 返回相对于视窗的位置，配合 fixed 定位正好
+  const rect = __actionMenuAnchor.getBoundingClientRect(); 
+  const menuWidth = 160; 
+  const menuHeight = 200; // 估算菜单高度
+  
+  // 计算左侧位置，优先显示在右侧
+  let left = rect.right + 4; 
+  if (left + menuWidth > window.innerWidth) { 
+    // 如果右侧空间不够，显示在左侧
+    left = rect.left - menuWidth - 4; 
+  }
+  // 确保不超出左边界
+  if (left < 4) {
+    left = 4;
+  }
+  
+  // 计算顶部位置，与按钮顶部对齐
+  let top = rect.top;
+  
+  // 确保菜单不会超出视窗底部
+  if (top + menuHeight > window.innerHeight) {
+    top = Math.max(4, window.innerHeight - menuHeight);
+  }
+  
+  // 确保菜单不会超出视窗顶部
+  if (top < 4) {
+    top = 4;
+  }
+  
+  menu.style.left = `${left}px`; 
+  menu.style.top = `${top}px`; 
+}
+
+function closeActionMenu() {
+  const menu = document.getElementById('actionMenu');
+  if (menu) menu.classList.remove('show');
+  currentActionTarget = null;
+  __actionMenuAnchor = null;
+}
+
+function handleAction(action) {
+  if (!currentActionTarget) return;
+  const { ti, si } = currentActionTarget;
+  const task = ganttData.tasks[ti];
+  const subtask = si >= 0 ? task.subtasks[si] : null;
+  
+  closeActionMenu();
+  
+  if (action === 'add-task') {
+    openCreateTaskModal(task);
+  } else if (action === 'edit-job') {
+    openEditJobModal(task);
+  } else if (action === 'del-job') {
+    if(confirm('确定要删除这个 JOB 及其所有子任务吗？')){
+       __deleteItem(task.id || task.code);
+    }
+  } else if (action === 'edit-task') {
+    openEditTaskModal(subtask);
+  } else if (action === 'del-task') {
+    if(confirm('确定要删除这个任务吗？')){
+       __deleteItem(subtask.id || subtask.code);
+    }
+  }
+}
+
+async function updatePriority(priority) {
+  if (!currentActionTarget) return;
+  const { ti, si } = currentActionTarget;
+  const task = ganttData.tasks[ti];
+  const item = si >= 0 ? task.subtasks[si] : task;
+  
+  closeActionMenu();
+  
+  try {
+    const idOrCode = item.id || item.code;
+    await __patchTask(idOrCode, { priority });
+    showToast('优先级已更新', 'success');
+  } catch (e) {
+    console.error('更新优先级失败:', e);
+    showToast('更新优先级失败', 'error');
+  }
+}
+
+async function updateStatus(status) {
+  if (!currentActionTarget) return;
+  const { ti, si } = currentActionTarget;
+  const task = ganttData.tasks[ti];
+  const item = si >= 0 ? task.subtasks[si] : task;
+  
+  closeActionMenu();
+  
+  try {
+    const idOrCode = item.id || item.code;
+    await __patchTask(idOrCode, { status });
+    showToast('状态已更新', 'success');
+  } catch (e) {
+    console.error('更新状态失败:', e);
+    showToast('更新状态失败', 'error');
+  }
+}
+
+// 全局辅助函数 - 移到else块外部确保全局可访问
+  async function __showErrorFromResponse(res){
+    let msg = '';
+    try {
+      const ct = (res.headers && res.headers.get && res.headers.get('content-type')) || '';
+      if (ct.indexOf('application/json') >= 0) {
+        const data = await res.json();
+        const detail = typeof data === 'string' ? data : (data && (data.detail || data.message || ''));
+        const t = String(detail || '').trim();
+        msg = t || '';
       } else {
-        html += `<div class="action-item" onclick="handleAction('edit-task')">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-          编辑任务
-        </div>`;
-        html += `<div class="action-item danger" onclick="handleAction('del-task')">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          删除任务
-        </div>`;
+        const t = String((await res.text()) || '').trim();
+        msg = t || '';
       }
-      
-      menu.innerHTML = html;
-      menu.classList.add('show');
-      
-      positionActionMenu();
+    } catch (_) {
+      msg = '';
     }
+    showToast(msg || '操作失败', 'error');
+  }
 
-    function positionActionMenu(){ const menu=document.getElementById('actionMenu'); if(!menu) return; if(!menu.classList.contains('show')) return; if(!__actionMenuAnchor) return; const rect=__actionMenuAnchor.getBoundingClientRect(); const menuWidth=160; let left=rect.right + 4 + window.scrollX; const viewportRight=window.scrollX + window.innerWidth; if (left + menuWidth > viewportRight) { left = rect.left + window.scrollX - menuWidth - 4; } const top = rect.top + window.scrollY; menu.style.left = `${left}px`; menu.style.top = `${top}px`; }
+  function __normalizeWorkItemShape(i){
+    if (!i) return i;
+    if (i.planned_start_date && !i.planned_start) i.planned_start = i.planned_start_date;
+    if (i.planned_end_date && !i.planned_end) i.planned_end = i.planned_end_date;
+    return i;
+  }
 
-    function closeActionMenu() {
-      const menu = document.getElementById('actionMenu');
-      if (menu) menu.classList.remove('show');
-      currentActionTarget = null;
-      __actionMenuAnchor = null;
-    }
-
-    function handleAction(action) {
-      if (!currentActionTarget) return;
-      const { ti, si } = currentActionTarget;
-      const task = ganttData.tasks[ti];
-      const subtask = si >= 0 ? task.subtasks[si] : null;
-      
-      closeActionMenu();
-      
-      if (action === 'add-task') {
-        openCreateTaskModal(task);
-      } else if (action === 'edit-job') {
-        openEditJobModal(task);
-      } else if (action === 'del-job') {
-        if(confirm('确定要删除这个 JOB 及其所有子任务吗？')){
-           __deleteItem(task.id || task.code);
-        }
-      } else if (action === 'edit-task') {
-        openEditTaskModal(subtask);
-      } else if (action === 'del-task') {
-        if(confirm('确定要删除这个任务吗？')){
-           __deleteItem(subtask.id || subtask.code);
-        }
-      }
-    }
+  function showToast(text, type) {
+    const el = document.createElement('div'); 
+    el.className = `toast ${type}`; 
+    el.textContent = text; 
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); }, 1800);
+  }
   </script>
 </body>
 </html>

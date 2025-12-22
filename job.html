@@ -423,7 +423,7 @@
       try{ if(typeof window.loadComments === 'function'){ window.loadComments(); } else { setTimeout(function(){ if(typeof window.loadComments === 'function'){ window.loadComments(); } }, 0); } }catch(_){ }
       const metaTarget = document.getElementById('jobMeta');
       const links = '';
-      let bc = `<a href="projects">Projects</a> / ${job.code}`;
+      let bc = `<a href="projects.html">Projects</a> / ${job.code}`;
       let projectCode = '';
       try {
         const pr = await fetch(`${API}/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -433,12 +433,12 @@
           window.__rawProject = p;
         }
       } catch (_) {}
-      if (projectCode) { bc = `<a href="projects">Projects</a> / ${projectCode} / ${job.code}`; }
+      if (projectCode) { bc = `<a href="projects.html">Projects</a> / ${projectCode} / ${job.code}`; }
       try {
         const topBc = document.getElementById('breadcrumb');
         if (topBc) {
-          const mid = projectCode ? `<a href="project?id=${projectId}">${projectCode}</a>` : '';
-          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${mid ? mid + '<span class="sep">/</span>' : ''}${job.code} · ${job.title}`;
+          const mid = projectCode ? `<a href="project.html?id=${projectId}">${projectCode}</a>` : '';
+          topBc.innerHTML = `<a href="projects.html">Projects</a><span class="sep">/</span>${mid ? mid + '<span class="sep">/</span>' : ''}${job.code} · ${job.title}`;
         }
       } catch (_) {}
       
@@ -514,7 +514,7 @@
           assSpan.title = '点击编辑负责人';
           assSpan.addEventListener('click', function(ev){ ev.stopPropagation(); openAssigneePickerForItem(assSpan, item); });
         }
-        el.ondblclick = function(ev){ if(item.kind==='JOB'){ window.location.href = `job?code=${item.code}&project=${projectId}`; } else { const parent=(window.__job&&window.__job.code)||''; const tid=item.code||item.id; window.location.href = `task?code=${tid}&project=${projectId}&job=${parent}`; } };
+        el.ondblclick = function(ev){ if(item.kind==='JOB'){ window.location.href = `job.html?code=${item.code}&project=${projectId}`; } else { const parent=(window.__job&&window.__job.code)||''; const tid=item.code||item.id; window.location.href = `task.html?code=${tid}&project=${projectId}&job=${parent}`; } };
         return el;
       };
       ['todo','doing','done'].forEach(s => { const c = document.getElementById(s); if(c){ c.innerHTML=''; (byStatus[s]||[]).forEach(it => c.appendChild(mkCard(it))); } });
@@ -640,7 +640,7 @@
             div.innerHTML = `
               <div class="task-name-wrapper">
                 <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  <a class="task-title" href="task?code=${st.id||st.code}&project=${projectId}&job=${pid}" style="color:inherit; text-decoration:none;" title="${st.name}">${st.name}</a>
+                  <a class="task-title" href="task.html?code=${st.id||st.code}&project=${projectId}&job=${pid}" style="color:inherit; text-decoration:none;" title="${st.name}">${st.name}</a>
                 </div>
                 <button class="more-btn" onclick="showTaskMenu(event, ${ti}, ${si})" title="更多操作">
                   <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
@@ -1002,7 +1002,7 @@
             const r=await fetch(`${API}/work-items/${idOrCode}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); 
             if(r.ok){ 
                 if(idOrCode == (window.__job && window.__job.id) || idOrCode == (window.__job && window.__job.code)) {
-                    window.location.href = 'projects';
+                    window.location.href = 'projects.html';
                 } else {
                     fetchJob(); 
                 }
@@ -1011,7 +1011,7 @@
             const r2=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ status:'deleted' }) }); 
             if(r2.ok){ 
                 if(idOrCode == (window.__job && window.__job.id) || idOrCode == (window.__job && window.__job.code)) {
-                    window.location.href = 'projects';
+                    window.location.href = 'projects.html';
                 } else {
                     fetchJob(); 
                 }

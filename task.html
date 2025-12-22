@@ -121,7 +121,7 @@
       const metaTarget = document.getElementById('taskMeta');
       
       // Add Breadcrumbs
-      let bc = `<a href="projects">Projects</a> / ${task.code}`;
+      let bc = `<a href="projects.html">Projects</a> / ${task.code}`;
       let projectCode = '';
       let rawProject = null;
       try {
@@ -136,15 +136,15 @@
       
       const jobCode = params.get('job');
       if (projectCode) { 
-          bc = `<a href="projects">Projects</a> / ${projectCode} / ${jobCode ? jobCode + ' / ' : ''}${task.code}`; 
+          bc = `<a href="projects.html">Projects</a> / ${projectCode} / ${jobCode ? jobCode + ' / ' : ''}${task.code}`; 
       }
       
       try {
         const topBc = document.getElementById('breadcrumb');
         if (topBc) {
-          const mid = projectCode ? `<a href="project?id=${projectId}">${projectCode}</a>` : '';
-          const jobLink = jobCode ? `<a href="job?code=${jobCode}&project=${projectId}">${jobCode}</a>` : '';
-          topBc.innerHTML = `<a href="projects">Projects</a><span class="sep">/</span>${mid ? mid + '<span class="sep">/</span>' : ''}${jobLink ? jobLink + '<span class="sep">/</span>' : ''}${task.code} · ${task.title || task.name || ''}`;
+          const mid = projectCode ? `<a href="project.html?id=${projectId}">${projectCode}</a>` : '';
+          const jobLink = jobCode ? `<a href="job.html?code=${jobCode}&project=${projectId}">${jobCode}</a>` : '';
+          topBc.innerHTML = `<a href="projects.html">Projects</a><span class="sep">/</span>${mid ? mid + '<span class="sep">/</span>' : ''}${jobLink ? jobLink + '<span class="sep">/</span>' : ''}${task.code} · ${task.title || task.name || ''}`;
         }
       } catch (_) {}
 

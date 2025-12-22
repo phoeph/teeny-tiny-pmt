@@ -1,11 +1,135 @@
-.cm-backdrop{ position:fixed; inset:0; background:var(--modal-overlay); display:flex; align-items:center; justify-content:center; z-index:10000; }
-.cm-modal{ width:560px; max-width:90vw; background:var(--bg-surface); border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,0.25); overflow:hidden; }
-.cm-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border-color); }
-.cm-title{ font-size:16px; font-weight:600; color:var(--text-main); }
-.cm-close{ width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; border:none; background:var(--bg-surface); border-radius:8px; cursor:pointer; }
-.cm-close:hover{ background:var(--bg-hover); }
-.cm-body{ padding:12px 16px; }
-.cm-actions{ display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid var(--border-color); }
-.cm-btn{ padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-surface); cursor:pointer; }
-.cm-btn.primary{ background:var(--primary); color:var(--bg-surface); border:none; }
-.cm-error{ color:var(--text-danger-dark); font-size:12px; margin-top:8px; }
+/* ============================================
+   Comment Modal - Premium Design
+   ============================================ */
+
+.cm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cm-modal {
+  width: 600px;
+  max-width: calc(100vw - 48px);
+  background: var(--bg-surface);
+  border-radius: 18px;
+  box-shadow: var(--shadow-2xl);
+  overflow: hidden;
+  animation: modalSlide 0.25s ease;
+}
+
+@keyframes modalSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+}
+
+.cm-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.cm-close {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.cm-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.cm-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cm-body {
+  padding: 20px 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.cm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+}
+
+.cm-btn {
+  padding: 11px 20px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-main);
+}
+
+.cm-btn:hover {
+  border-color: var(--text-muted);
+  background: var(--bg-hover);
+}
+
+.cm-btn.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.cm-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.cm-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--danger-light);
+  border-radius: 8px;
+  font-weight: 500;
+}

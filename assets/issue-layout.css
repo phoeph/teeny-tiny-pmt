@@ -1,26 +1,349 @@
-.jira-container { margin-top:12px; }
-.jira-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-.jira-breadcrumb { color:var(--primary); font-size:12px; }
-.jira-issue-key { color:var(--primary); font-size:12px; margin-left:6px; }
-.jira-title { font-size:20px; font-weight:600; color:var(--text-main); margin-top:4px; }
-.jira-actions { display:flex; align-items:center; gap:8px; }
-.jira-actions .counter { color:var(--text-secondary); font-size:12px; }
-.jira-actions .export { padding:6px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-surface); cursor:pointer; font-size:12px; }
-.jira-columns { display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-top:12px; align-items: stretch; }
-.jira-columns > .jira-card { height: 100%; display: flex; flex-direction: column; }
-.jira-card { border:1px solid var(--border-color); border-radius:8px; background:var(--bg-surface); padding:12px; }
-.jira-card h4 { margin:0 0 8px 0; font-size:14px; color:var(--text-main); }
-.jira-items { display:flex; flex-direction:column; gap:8px; }
-.jira-items-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.jira-col { min-width:0; }
-.mention { color:var(--primary); font-weight:500; }
-.jira-item { display:flex; align-items:flex-start; gap:10px; }
-.jira-label { width:160px; color:var(--text-secondary); font-size:12px; flex-shrink:0; }
-.jira-value { color:var(--text-main); font-size:13px; }
-.jira-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:var(--bg-body); color:var(--text-main); border:1px solid var(--border-color); }
-.jira-desc { white-space:pre-wrap; color:var(--text-main); font-size:13px; }
-.jira-links { border:1px dashed var(--border-color); padding:8px; border-radius:8px; background:var(--bg-body); font-size:13px; }
-.jira-activity { margin-top:16px; }
-.jira-tabs { display:flex; gap:8px; border-bottom:1px solid var(--border-color); margin-bottom:8px; }
-.jira-tab { padding:6px 10px; font-size:12px; color:var(--text-main); cursor:pointer; }
-.jira-tab.active { border-bottom:2px solid var(--primary); color:var(--primary); }
+/* ============================================
+   Issue Layout - Premium Design (Jira-style)
+   ============================================ */
+
+.jira-container {
+  margin-top: 16px;
+}
+
+.jira-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.jira-breadcrumb {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.jira-issue-key {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 8px;
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.jira-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 6px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.jira-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jira-actions .counter {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.jira-actions .export {
+  padding: 8px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.jira-actions .export:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* Columns Layout */
+.jira-columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+.jira-columns > .jira-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card Styles */
+.jira-card {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.jira-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.jira-card h4 {
+  margin: 0 0 16px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.jira-card h4::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+/* Items Layout */
+.jira-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jira-items-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.jira-col {
+  min-width: 0;
+}
+
+/* Item Styles */
+.jira-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.jira-item:last-child {
+  border-bottom: none;
+}
+
+.jira-label {
+  width: 140px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.jira-value {
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Badge */
+.jira-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-element);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+/* Description */
+.jira-desc {
+  white-space: pre-wrap;
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Links */
+.jira-links {
+  border: 1px dashed var(--border-color);
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Mention */
+.mention {
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Activity Section */
+.jira-activity {
+  margin-top: 24px;
+}
+
+/* Tabs */
+.jira-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border-light);
+  margin-bottom: 16px;
+  padding-bottom: 0;
+}
+
+.jira-tab {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+  border-radius: 8px 8px 0 0;
+}
+
+.jira-tab:hover {
+  color: var(--text-main);
+  background: var(--bg-hover);
+}
+
+.jira-tab.active {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* Description Menu Button */
+.desc-menu-btn {
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.desc-menu-btn:hover {
+  background: var(--bg-hover);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .jira-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .jira-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Comment Styles */
+.comment-item {
+  padding: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: var(--bg-surface);
+  transition: all 0.2s ease;
+}
+
+.comment-item:hover {
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.comment-meta {
+  flex: 1;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.comment-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.comment-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.comment-action-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}

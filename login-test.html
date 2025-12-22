@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录测试页面</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .test-button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    .test-button:hover {
+      background: #4338ca;
+    }
+    .status {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 12px;
+    }
+    .success { background: #d1fae5; color: #059669; }
+    .error { background: #fee2e2; color: #dc2626; }
+    .info { background: #dbeafe; color: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>🔐 登录功能测试</h1>
+  
+  <div class="test-card">
+    <h3>登录流程测试</h3>
+    <p>测试登录功能和页面跳转是否正常</p>
+    
+    <button class="test-button" onclick="testLogin()">测试登录API</button>
+    <button class="test-button" onclick="testPages()">测试页面访问</button>
+    <button class="test-button" onclick="window.open('/login.html', '_blank')">打开登录页面</button>
+    
+    <div id="testResults"></div>
+  </div>
+  
+  <div class="test-card">
+    <h3>修复内容</h3>
+    <ul>
+      <li>✅ 修复登录后跳转路径: <code>projects</code> → <code>projects.html</code></li>
+      <li>✅ 修复项目页面跳转: <code>project?id=</code> → <code>project.html?id=</code></li>
+      <li>✅ 修复JOB页面跳转: <code>job?code=</code> → <code>job.html?code=</code></li>
+      <li>✅ 修复TASK页面跳转: <code>task?code=</code> → <code>task.html?code=</code></li>
+      <li>✅ 修复删除后返回: <code>projects</code> → <code>projects.html</code></li>
+      <li>✅ 修复面包屑导航: 所有 <code>href="projects"</code> → <code>href="projects.html"</code></li>
+      <li>✅ 删除空的projects文件夹，避免路径冲突</li>
+    </ul>
+  </div>
+  
+  <div class="test-card">
+    <h3>测试步骤</h3>
+    <ol>
+      <li>点击"打开登录页面"</li>
+      <li>使用默认账号密码登录 (admin/123)</li>
+      <li>验证是否正确跳转到项目列表页面</li>
+      <li>测试项目、JOB、TASK页面的跳转</li>
+    </ol>
+  </div>
+
+  <script>
+    function showResult(message, type = 'info') {
+      const results = document.getElementById('testResults');
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.textContent = message;
+      results.appendChild(div);
+      
+      setTimeout(() => {
+        if (results.contains(div)) {
+          results.removeChild(div);
+        }
+      }, 5000);
+    }
+
+    async function testLogin() {
+      showResult('正在测试登录API...', 'info');
+      
+      try {
+        const response = await fetch('http://localhost:8000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            login_field: 'admin',
+            password: '123'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          showResult('✅ 登录API测试成功，获得token', 'success');
+          console.log('Token:', data.access_token);
+        } else {
+          showResult('❌ 登录API测试失败', 'error');
+        }
+      } catch (error) {
+        showResult('❌ 登录API连接错误: ' + error.message, 'error');
+      }
+    }
+
+    async function testPages() {
+      showResult('正在测试页面访问...', 'info');
+      
+      const pages = [
+        '/login.html',
+        '/projects.html', 
+        '/data-statistics.html',
+        '/project.html',
+        '/job.html',
+        '/task.html'
+      ];
+      
+      let successCount = 0;
+      
+      for (const page of pages) {
+        try {
+          const response = await fetch(page);
+          if (response.ok) {
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to access ${page}:`, error);
+        }
+      }
+      
+      if (successCount === pages.length) {
+        showResult(`✅ 所有页面访问正常 (${successCount}/${pages.length})`, 'success');
+      } else {
+        showResult(`⚠️ 部分页面访问异常 (${successCount}/${pages.length})`, 'error');
+      }
+    }
+
+    // Auto-run tests on page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        testLogin();
+        setTimeout(() => testPages(), 1000);
+      }, 500);
+    });
+  </script>
+</body>
+</html>

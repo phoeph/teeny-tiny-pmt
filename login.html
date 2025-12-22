@@ -14,57 +14,133 @@
       margin: 0;
       padding: 24px;
       box-sizing: border-box;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      animation: float 20s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(30px, 30px) rotate(180deg); }
     }
     .login-card {
       width: 100%;
-      max-width: 400px;
-      padding: 32px;
+      max-width: 420px;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 1;
     }
     .login-header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+    }
+    .login-logo svg {
+      width: 32px;
+      height: 32px;
+      color: white;
     }
     .login-header h2 {
       margin: 0;
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 28px;
+      font-weight: 800;
       color: var(--text-main);
+      letter-spacing: -0.03em;
     }
     .login-header p {
-      margin: 8px 0 0;
+      margin: 10px 0 0;
       color: var(--text-secondary);
-      font-size: 14px;
+      font-size: 15px;
     }
     .actions {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-top: 24px;
+      margin-top: 28px;
+    }
+    .actions .btn-primary {
+      padding: 14px 24px;
+      font-size: 15px;
+      border-radius: 12px;
     }
     .quick-fill {
       display: flex;
-      gap: 8px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-top: 24px;
       flex-wrap: wrap;
       justify-content: center;
     }
+    .quick-fill .btn-ghost {
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--bg-subtle);
+    }
     .error-msg {
-      background: var(--bg-danger-light);
+      background: var(--danger-light);
       color: var(--text-danger-dark);
-      padding: 12px;
-      border-radius: var(--radius-md);
-      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-top: 20px;
       font-size: 14px;
+      font-weight: 500;
       display: none;
       text-align: center;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+    .divider span {
+      padding: 0 16px;
     }
   </style>
 </head>
 <body>
   <div class="card login-card">
     <div class="login-header">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </div>
       <h2>欢迎回来</h2>
-      <p>请登录您的账号以继续</p>
+      <p>登录您的账号以继续使用项目管理系统</p>
     </div>
     
     <div class="form-group">
@@ -81,10 +157,11 @@
       <button id="loginBtn" class="btn-primary" style="width: 100%; justify-content: center;">登录</button>
     </div>
 
+    <div class="divider"><span>快速登录</span></div>
     <div class="quick-fill">
-      <button id="fillAdmin" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">Admin</button>
-      <button id="fillDemo" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">Demo</button>
-      <button id="fillZhang" class="btn-ghost" style="font-size: 12px; padding: 4px 8px;">PM Zhang</button>
+      <button id="fillAdmin" class="btn-ghost">👑 Admin</button>
+      <button id="fillDemo" class="btn-ghost">🎯 Demo</button>
+      <button id="fillZhang" class="btn-ghost">📋 PM Zhang</button>
     </div>
     
     <div id="error" class="error-msg"></div>
@@ -139,7 +216,9 @@
         loginBtn.textContent = '登录成功';
         
         setTimeout(() => {
-          location.href = 'projects';
+          // 使用完整路径确保跳转正确
+          const baseUrl = window.location.origin;
+          window.location.href = baseUrl + '/projects.html';
         }, 500);
         
       } catch (e) {
