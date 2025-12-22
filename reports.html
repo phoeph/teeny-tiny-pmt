@@ -312,41 +312,71 @@
       border-left: 4px solid var(--primary);
     }
     
-    /* Category Card */
-    .category-card {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-light);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
+    /* Category Section */
+    .category-section {
+      margin-bottom: 32px;
     }
     
-    .category-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    
-    .category-name {
+    .category-section h4 {
       font-size: 16px;
       font-weight: 600;
       color: var(--text-main);
+      margin-bottom: 16px;
+      padding-left: 12px;
+      border-left: 4px solid var(--primary);
     }
     
-    .category-stats {
-      display: flex;
-      gap: 16px;
-    }
-    
-    .category-stat {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-    
-    .category-stat strong {
+    .category-section h5 {
+      font-size: 14px;
+      font-weight: 600;
       color: var(--text-main);
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-left: 2px solid var(--primary-light);
     }
+    
+    .job-list {
+      margin: 0;
+      padding-left: 20px;
+      list-style: none;
+    }
+    
+    .job-item {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    
+    .job-item:hover {
+      background: var(--bg-hover);
+      border-radius: 4px;
+      padding-left: 8px;
+      margin-left: -8px;
+    }
+    
+    .job-bullet {
+      color: var(--text-secondary);
+      font-weight: bold;
+    }
+    
+    .job-name {
+      flex: 1;
+      color: var(--text-main);
+      font-size: 14px;
+    }
+    
+    .job-progress {
+      font-weight: 600;
+      font-size: 13px;
+      min-width: 40px;
+      text-align: right;
+    }
+    
+    .progress-100 { color: var(--success); }
+    .progress-50 { color: var(--warning); }
+    .progress-0 { color: var(--text-secondary); }
     
     /* Task Table */
     .task-table {
@@ -864,45 +894,67 @@
       const jobs = allWorkItems.filter(item => item.kind === 'JOB' || !item.parent_id);
       const tasks = allWorkItems.filter(item => item.kind === 'TASK' || item.parent_id);
       
-      // 按Labels最后一个斜线分割值进行汇总
-      const tasksByCategory = {};
+      // 按Labels层级结构进行汇总
+      const categoryTree = {};
       
       jobs.forEach(job => {
-        let category = '其他';
+        // 解析Labels层级
+        let labelPath = ['其他'];
         if (job.labels && Array.isArray(job.labels) && job.labels.length > 0) {
-          const lastLabel = job.labels[job.labels.length - 1];
-          const parts = String(lastLabel).split('/');
-          category = parts[parts.length - 1] || '其他';
+          // 取第一个label作为分类路径
+          labelPath = String(job.labels[0]).split('/').filter(Boolean);
         } else if (job.label) {
-          const parts = String(job.label).split('/');
-          category = parts[parts.length - 1] || '其他';
+          labelPath = String(job.label).split('/').filter(Boolean);
         }
         
-        if (!tasksByCategory[category]) {
-          tasksByCategory[category] = {
-            category,
-            jobs: [],
-            totalJobs: 0,
-            completedJobs: 0,
-            todoJobs: 0,
-            doingJobs: 0
-          };
+        // 如果没有有效的label路径，使用默认分类
+        if (labelPath.length === 0) {
+          labelPath = ['其他'];
         }
         
-        tasksByCategory[category].jobs.push(job);
-        tasksByCategory[category].totalJobs++;
+        // 构建层级树结构
+        let currentLevel = categoryTree;
+        let fullPath = '';
         
-        switch (job.status) {
-          case 'done':
-            tasksByCategory[category].completedJobs++;
-            break;
-          case 'doing':
-            tasksByCategory[category].doingJobs++;
-            break;
-          default:
-            tasksByCategory[category].todoJobs++;
-            break;
-        }
+        labelPath.forEach((segment, index) => {
+          fullPath += (fullPath ? '/' : '') + segment;
+          
+          if (!currentLevel[segment]) {
+            currentLevel[segment] = {
+              name: segment,
+              fullPath: fullPath,
+              level: index,
+              jobs: [],
+              children: {},
+              stats: {
+                totalJobs: 0,
+                completedJobs: 0,
+                todoJobs: 0,
+                doingJobs: 0
+              }
+            };
+          }
+          
+          // 如果是最后一级，添加JOB
+          if (index === labelPath.length - 1) {
+            currentLevel[segment].jobs.push(job);
+            currentLevel[segment].stats.totalJobs++;
+            
+            switch (job.status) {
+              case 'done':
+                currentLevel[segment].stats.completedJobs++;
+                break;
+              case 'doing':
+                currentLevel[segment].stats.doingJobs++;
+                break;
+              default:
+                currentLevel[segment].stats.todoJobs++;
+                break;
+            }
+          }
+          
+          currentLevel = currentLevel[segment].children;
+        });
       });
       
       return {
@@ -917,7 +969,7 @@
           completedJobs: jobs.filter(j => j.status === 'done').length,
           completedTasks: tasks.filter(t => t.status === 'done').length
         },
-        tasksByCategory: Object.values(tasksByCategory)
+        categoryTree: categoryTree
       };
     }
 
@@ -969,45 +1021,118 @@
         
         <div class="report-section">
           <div class="section-header">
-            <h3 class="section-title">任务完成情况</h3>
+            <h3 class="section-title">本周工作总结</h3>
           </div>
-          ${data.tasksByCategory.length > 0 ? data.tasksByCategory.map(category => `
-            <div class="category-card">
-              <div class="category-header">
-                <div class="category-name">${category.category}</div>
-                <div class="category-stats">
-                  <span class="category-stat">总计: <strong>${category.totalJobs}</strong></span>
-                  <span class="category-stat">已完成: <strong style="color: var(--primary);">${category.completedJobs}</strong></span>
-                  <span class="category-stat">进行中: <strong style="color: var(--success);">${category.doingJobs}</strong></span>
-                  <span class="category-stat">待办: <strong style="color: var(--warning);">${category.todoJobs}</strong></span>
-                </div>
-              </div>
-              <table class="task-table">
-                <thead>
-                  <tr>
-                    <th>任务名称</th>
-                    <th>状态</th>
-                    <th>优先级</th>
-                    <th>负责人</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${category.jobs.map(job => `
-                    <tr>
-                      <td>${job.title || job.name || job.code || '-'}</td>
-                      <td><span class="status-badge status-${job.status || 'todo'}">${getStatusText(job.status)}</span></td>
-                      <td><span class="priority-badge priority-${job.priority || 'medium'}">${getPriorityText(job.priority)}</span></td>
-                      <td>${job.assignee || job.assignee_prefix || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          `).join('') : '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无任务数据</div>'}
+          ${renderCategoryTree(data.categoryTree)}
         </div>
       `;
       
       document.getElementById('reportContent').innerHTML = html;
+    }
+    
+    // 渲染分类树
+    function renderCategoryTree(categoryTree) {
+      if (!categoryTree || Object.keys(categoryTree).length === 0) {
+        return '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无任务数据</div>';
+      }
+      
+      let html = '';
+      let categoryIndex = 1;
+      
+      Object.values(categoryTree).forEach(category => {
+        html += `
+          <div class="category-section" style="margin-bottom: 32px;">
+            <h4 style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 16px;">
+              ${categoryIndex}. ${category.name}
+            </h4>
+            ${renderSubCategories(category.children, 1)}
+          </div>
+        `;
+        categoryIndex++;
+      });
+      
+      return html;
+    }
+    
+    // 渲染子分类
+    function renderSubCategories(children, level) {
+      if (!children || Object.keys(children).length === 0) {
+        return '';
+      }
+      
+      let html = '';
+      let subIndex = 1;
+      
+      Object.values(children).forEach(subCategory => {
+        const indent = level * 20;
+        const prefix = level === 1 ? `(${subIndex})` : `${String.fromCharCode(96 + subIndex)}.`;
+        
+        html += `
+          <div style="margin-left: ${indent}px; margin-bottom: 20px;">
+            <h5 style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 12px;">
+              ${prefix} ${subCategory.name}
+            </h5>
+            ${renderJobList(subCategory.jobs)}
+            ${renderSubCategories(subCategory.children, level + 1)}
+          </div>
+        `;
+        subIndex++;
+      });
+      
+      return html;
+    }
+    
+    // 渲染JOB列表
+    function renderJobList(jobs) {
+      if (!jobs || jobs.length === 0) {
+        return '';
+      }
+      
+      let html = '<ul class="job-list">';
+      
+      jobs.forEach(job => {
+        const completionRate = getJobCompletionRate(job);
+        const progressClass = `progress-${completionRate}`;
+        
+        html += `
+          <li class="job-item">
+            <span class="job-bullet">▪</span>
+            <span class="job-name">${job.title || job.name || job.code || '未命名任务'}</span>
+            <span class="job-progress ${progressClass}">
+              ${completionRate}%
+            </span>
+            <span class="status-badge status-${job.status || 'todo'}" style="font-size: 10px; padding: 2px 6px;">
+              ${getStatusText(job.status)}
+            </span>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      return html;
+    }
+    
+    // 获取JOB完成率（这里可以根据实际业务逻辑调整）
+    function getJobCompletionRate(job) {
+      if (job.status === 'done') return 100;
+      if (job.status === 'doing') return 50; // 可以根据实际进度字段调整
+      return 0;
+    }
+    
+    // 获取完成率颜色
+    function getCompletionColor(rate) {
+      if (rate >= 100) return 'var(--success)';
+      if (rate >= 50) return 'var(--warning)';
+      return 'var(--text-secondary)';
+    }
+    
+    // 获取状态图标
+    function getStatusIcon(status) {
+      switch (status) {
+        case 'done': return '✓';
+        case 'doing': return '◐';
+        default: return '○';
+      }
     }
 
     // 导出Word文档
