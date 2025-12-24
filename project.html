@@ -2223,6 +2223,48 @@ function closeActionMenu() {
 
 function handleAction(action) {
   console.log('[DEBUG] handleAction called with:', action);
+  
+  // 临时在这里定义__deleteItem函数
+  if (typeof __deleteItem === 'undefined') {
+    window.__deleteItem = async function(idOrCode) {
+      console.log('[DEBUG] __deleteItem called with:', idOrCode);
+      try {
+        const API = (window.API) || 'http://localhost:8000/api';
+        const token = localStorage.getItem('token') || '';
+        
+        const r = await fetch(`${API}/work-items/${idOrCode}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (r.ok) {
+          await fetchWorkItems();
+          showToast('删除成功', 'success');
+          return;
+        }
+        
+        const r2 = await fetch(`${API}/work-items/${idOrCode}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'deleted' })
+        });
+        
+        if (r2.ok) {
+          await fetchWorkItems();
+          showToast('删除成功', 'success');
+        } else {
+          await __showErrorFromResponse(r2, '删除失败');
+        }
+      } catch (e) {
+        console.error('[delete] Error deleting item:', e);
+        showToast('网络错误，删除失败', 'error');
+      }
+    };
+  }
+  
   console.log('[DEBUG] __deleteItem function exists:', typeof __deleteItem);
   if (!currentActionTarget) return;
   const { ti, si } = currentActionTarget;
