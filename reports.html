@@ -228,6 +228,8 @@
       padding: 32px;
       box-shadow: var(--shadow-sm);
       min-height: 500px;
+      max-width: 900px;
+      margin: 0 auto;
     }
     
     .report-header {
@@ -382,6 +384,7 @@
     .task-table {
       width: 100%;
       border-collapse: collapse;
+      border: none;
     }
     
     .task-table th {
@@ -393,12 +396,12 @@
       letter-spacing: 0.05em;
       padding: 12px 16px;
       text-align: left;
-      border-bottom: 1px solid var(--border-color);
+      border: none;
     }
     
     .task-table td {
       padding: 12px 16px;
-      border-bottom: 1px solid var(--border-light);
+      border: none;
       font-size: 14px;
       color: var(--text-main);
     }
@@ -467,6 +470,9 @@
       margin-top: 24px;
       padding-top: 24px;
       border-top: 1px solid var(--border-light);
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
     }
     
     /* Empty State */
@@ -890,71 +896,49 @@
 
     // 处理报告数据
     function processReportData(projectsData, reportType, startDate, endDate) {
-      const allWorkItems = projectsData.flatMap(pd => pd.workItems);
-      const jobs = allWorkItems.filter(item => item.kind === 'JOB' || !item.parent_id);
-      const tasks = allWorkItems.filter(item => item.kind === 'TASK' || item.parent_id);
+      // 按项目分组处理数据
+      const projectGroups = {};
+      let totalTasks = 0;
+      let completedTasks = 0;
       
-      // 按Labels层级结构进行汇总
-      const categoryTree = {};
-      
-      jobs.forEach(job => {
-        // 解析Labels层级
-        let labelPath = ['其他'];
-        if (job.labels && Array.isArray(job.labels) && job.labels.length > 0) {
-          // 取第一个label作为分类路径
-          labelPath = String(job.labels[0]).split('/').filter(Boolean);
-        } else if (job.label) {
-          labelPath = String(job.label).split('/').filter(Boolean);
-        }
+      projectsData.forEach(pd => {
+        const project = pd.project;
+        const projectName = project.name || project.title || `项目 ${project.id}`;
+        const workItems = pd.workItems || [];
         
-        // 如果没有有效的label路径，使用默认分类
-        if (labelPath.length === 0) {
-          labelPath = ['其他'];
-        }
+        // 获取该项目的所有JOB
+        const jobs = workItems.filter(item => item.kind === 'JOB' || !item.parent_id);
         
-        // 构建层级树结构
-        let currentLevel = categoryTree;
-        let fullPath = '';
-        
-        labelPath.forEach((segment, index) => {
-          fullPath += (fullPath ? '/' : '') + segment;
-          
-          if (!currentLevel[segment]) {
-            currentLevel[segment] = {
-              name: segment,
-              fullPath: fullPath,
-              level: index,
-              jobs: [],
-              children: {},
-              stats: {
-                totalJobs: 0,
-                completedJobs: 0,
-                todoJobs: 0,
-                doingJobs: 0
-              }
-            };
+        // 收集该项目的所有tasks
+        const projectTasks = [];
+        jobs.forEach(job => {
+          if (job.subtasks && Array.isArray(job.subtasks)) {
+            job.subtasks.forEach(task => {
+              projectTasks.push({
+                ...task,
+                parentJob: job
+              });
+            });
           }
-          
-          // 如果是最后一级，添加JOB
-          if (index === labelPath.length - 1) {
-            currentLevel[segment].jobs.push(job);
-            currentLevel[segment].stats.totalJobs++;
-            
-            switch (job.status) {
-              case 'done':
-                currentLevel[segment].stats.completedJobs++;
-                break;
-              case 'doing':
-                currentLevel[segment].stats.doingJobs++;
-                break;
-              default:
-                currentLevel[segment].stats.todoJobs++;
-                break;
-            }
-          }
-          
-          currentLevel = currentLevel[segment].children;
         });
+        
+        totalTasks += projectTasks.length;
+        completedTasks += projectTasks.filter(t => t.status === 'done').length;
+        
+        // 构建标签层级结构
+        const labelHierarchy = buildLabelHierarchy(projectTasks);
+        
+        projectGroups[project.id] = {
+          project: project,
+          projectName: projectName,
+          labelHierarchy: labelHierarchy,
+          stats: {
+            total: projectTasks.length,
+            done: projectTasks.filter(t => t.status === 'done').length,
+            doing: projectTasks.filter(t => t.status === 'doing').length,
+            todo: projectTasks.filter(t => t.status === 'todo' || !t.status).length
+          }
+        };
       });
       
       return {
@@ -964,20 +948,84 @@
         projects: projectsData.map(pd => pd.project),
         summary: {
           totalProjects: projectsData.length,
-          totalJobs: jobs.length,
-          totalTasks: tasks.length,
-          completedJobs: jobs.filter(j => j.status === 'done').length,
-          completedTasks: tasks.filter(t => t.status === 'done').length
+          totalJobs: projectsData.reduce((sum, pd) => sum + (pd.workItems || []).filter(item => item.kind === 'JOB' || !item.parent_id).length, 0),
+          totalTasks: totalTasks,
+          completedTasks: completedTasks
         },
-        categoryTree: categoryTree
+        projectGroups: projectGroups
       };
+    }
+    
+    // 构建标签层级结构（三级：项目 -> 第一级标签 -> 最后一级标签）
+    function buildLabelHierarchy(tasks) {
+      const hierarchy = {};
+      
+      tasks.forEach(task => {
+        let labelPath = task.label_path || task.parentJob.label_path || '';
+        
+        if (!labelPath || !labelPath.trim()) {
+          labelPath = '其他';
+        }
+        
+        // 按斜线分割标签路径
+        const pathParts = labelPath.split('/').filter(Boolean);
+        
+        // 获取第一个和最后一个部分
+        const firstPart = pathParts[0] || '其他';
+        const lastPart = pathParts.length > 1 ? pathParts[pathParts.length - 1] : firstPart;
+        
+        // 构建二级结构：第一级标签 -> 最后一级标签
+        if (!hierarchy[firstPart]) {
+          hierarchy[firstPart] = {
+            name: firstPart,
+            children: {},
+            stats: { total: 0, done: 0, doing: 0, todo: 0 }
+          };
+        }
+        
+        if (!hierarchy[firstPart].children[lastPart]) {
+          hierarchy[firstPart].children[lastPart] = {
+            name: lastPart,
+            tasks: [],
+            stats: { total: 0, done: 0, doing: 0, todo: 0 }
+          };
+        }
+        
+        // 添加任务到最后一级
+        hierarchy[firstPart].children[lastPart].tasks.push(task);
+        hierarchy[firstPart].children[lastPart].stats.total++;
+        
+        switch (task.status) {
+          case 'done': 
+            hierarchy[firstPart].children[lastPart].stats.done++; 
+            break;
+          case 'doing': 
+            hierarchy[firstPart].children[lastPart].stats.doing++; 
+            break;
+          default: 
+            hierarchy[firstPart].children[lastPart].stats.todo++; 
+            break;
+        }
+      });
+      
+      // 计算第一级标签的统计数据
+      Object.values(hierarchy).forEach(firstLevel => {
+        Object.values(firstLevel.children).forEach(lastLevel => {
+          firstLevel.stats.total += lastLevel.stats.total;
+          firstLevel.stats.done += lastLevel.stats.done;
+          firstLevel.stats.doing += lastLevel.stats.doing;
+          firstLevel.stats.todo += lastLevel.stats.todo;
+        });
+      });
+      
+      return hierarchy;
     }
 
     // 渲染报告
     function renderReport(data) {
       const reportTypeNames = { weekly: '周报', monthly: '月报', yearly: '年报' };
-      const completionRate = data.summary.totalJobs > 0 
-        ? Math.round(data.summary.completedJobs / data.summary.totalJobs * 100) 
+      const completionRate = data.summary.totalTasks > 0 
+        ? Math.round(data.summary.completedTasks / data.summary.totalTasks * 100) 
         : 0;
       
       let html = `
@@ -996,12 +1044,12 @@
               <div class="kpi-label">涉及项目</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-value">${data.summary.totalJobs}</div>
-              <div class="kpi-label">总JOB数</div>
+              <div class="kpi-value">${data.summary.totalTasks}</div>
+              <div class="kpi-label">总任务数</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-value">${data.summary.completedJobs}</div>
-              <div class="kpi-label">已完成JOB</div>
+              <div class="kpi-value">${data.summary.completedTasks}</div>
+              <div class="kpi-label">已完成任务</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-value">${completionRate}%</div>
@@ -1011,135 +1059,228 @@
         </div>
         
         <div class="report-section">
-          <div class="section-header">
-            <h3 class="section-title">项目列表</h3>
-          </div>
-          <ul style="margin: 0; padding-left: 24px; color: var(--text-main);">
-            ${data.projects.map(p => `<li style="margin-bottom: 8px;">${p.name || p.title || `项目 ${p.id}`}</li>`).join('')}
-          </ul>
-        </div>
-        
-        <div class="report-section">
-          <div class="section-header">
-            <h3 class="section-title">本周工作总结</h3>
-          </div>
-          ${renderCategoryTree(data.categoryTree)}
+          ${renderProjectGroups(data.projectGroups)}
         </div>
       `;
       
       document.getElementById('reportContent').innerHTML = html;
     }
     
-    // 渲染分类树
-    function renderCategoryTree(categoryTree) {
-      if (!categoryTree || Object.keys(categoryTree).length === 0) {
+    // 渲染项目分组（三级：项目 -> 第一级标签 -> 最后一级标签）
+    function renderProjectGroups(projectGroups) {
+      if (!projectGroups || Object.keys(projectGroups).length === 0) {
         return '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无任务数据</div>';
       }
       
       let html = '';
-      let categoryIndex = 1;
+      let projectIndex = 1;
       
-      Object.values(categoryTree).forEach(category => {
+      Object.values(projectGroups).forEach(pg => {
+        const projectProgress = pg.stats.total > 0 
+          ? Math.round(pg.stats.done / pg.stats.total * 100) 
+          : 0;
+        const projectProgressColor = projectProgress >= 100 ? 'var(--success)' : (projectProgress >= 50 ? 'var(--warning)' : 'var(--text-secondary)');
+        
         html += `
           <div class="category-section" style="margin-bottom: 32px;">
-            <h4 style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 16px;">
-              ${categoryIndex}. ${category.name}
+            <h4 style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 16px; padding-left: 12px; border-left: 4px solid var(--primary);">
+              <span>${numberToChinese(projectIndex)}、${pg.projectName}</span>
             </h4>
-            ${renderSubCategories(category.children, 1)}
-          </div>
         `;
-        categoryIndex++;
-      });
-      
-      return html;
-    }
-    
-    // 渲染子分类
-    function renderSubCategories(children, level) {
-      if (!children || Object.keys(children).length === 0) {
-        return '';
-      }
-      
-      let html = '';
-      let subIndex = 1;
-      
-      Object.values(children).forEach(subCategory => {
-        const indent = level * 20;
-        const prefix = level === 1 ? `(${subIndex})` : `${String.fromCharCode(96 + subIndex)}.`;
         
-        html += `
-          <div style="margin-left: ${indent}px; margin-bottom: 20px;">
-            <h5 style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 12px;">
-              ${prefix} ${subCategory.name}
-            </h5>
-            ${renderJobList(subCategory.jobs)}
-            ${renderSubCategories(subCategory.children, level + 1)}
-          </div>
-        `;
-        subIndex++;
-      });
-      
-      return html;
-    }
-    
-    // 渲染JOB列表
-    function renderJobList(jobs) {
-      if (!jobs || jobs.length === 0) {
-        return '';
-      }
-      
-      let html = '<ul class="job-list">';
-      
-      jobs.forEach(job => {
-        const completionRate = getJobCompletionRate(job);
-        const progressClass = `progress-${completionRate}`;
+        if (Object.keys(pg.labelHierarchy).length === 0) {
+          html += '<div style="margin-left: 20px; color: var(--text-secondary);">暂无任务</div>';
+        } else {
+          let firstLevelIndex = 1;
+          
+          // 渲染第一级标签
+          Object.values(pg.labelHierarchy).forEach(firstLevel => {
+            const firstLevelProgress = firstLevel.stats.total > 0 
+              ? Math.round(firstLevel.stats.done / firstLevel.stats.total * 100) 
+              : 0;
+            const firstLevelProgressColor = firstLevelProgress >= 100 ? 'var(--success)' : (firstLevelProgress >= 50 ? 'var(--warning)' : 'var(--text-secondary)');
+            
+            html += `
+              <div style="margin-left: 20px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
+                  <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
+                    ${firstLevelIndex}. ${firstLevel.name}
+                  </span>
+                </div>
+            `;
+            
+            let lastLevelIndex = 1;
+            
+            // 渲染最后一级标签
+            Object.values(firstLevel.children).forEach(lastLevel => {
+              const lastLevelProgress = lastLevel.stats.total > 0 
+                ? Math.round(lastLevel.stats.done / lastLevel.stats.total * 100) 
+                : 0;
+              const lastLevelProgressColor = lastLevelProgress >= 100 ? 'var(--success)' : (lastLevelProgress >= 50 ? 'var(--warning)' : 'var(--text-secondary)');
+              
+              html += `
+                <div style="margin-left: 20px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; margin-bottom: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 6px;">
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">
+                      (${lastLevelIndex}) ${lastLevel.name}
+                    </span>
+                  </div>
+                  
+                  <div style="margin-left: 20px;">
+                    <div style="margin: 0; padding-left: 0; list-style: none;">
+              `;
+              
+              lastLevel.tasks.forEach((task, idx) => {
+                const statusClass = `status-${task.status || 'todo'}`;
+                const statusText = getStatusText(task.status);
+                const taskProgress = calculateTaskProgress(task);
+                const taskProgressColor = taskProgress >= 100 ? 'var(--success)' : (taskProgress >= 50 ? 'var(--warning)' : 'var(--text-secondary)');
+                
+                html += `
+                      <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; background: var(--bg-surface); border-radius: 6px;">
+                        <span style="color: var(--text-secondary); font-size: 12px; min-width: 20px;">${idx + 1}.</span>
+                        <span style="flex: 1; color: var(--text-main); font-size: 13px;">${task.title || task.name || task.code || '未命名任务'}</span>
+                        <div style="display: flex; align-items: center; gap: 6px; min-width: 80px;">
+                          <div style="flex: 1; max-width: 40px; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden;">
+                            <div style="width: ${taskProgress}%; height: 100%; background: ${taskProgressColor}; border-radius: 2px;"></div>
+                          </div>
+                          <span style="color: ${taskProgressColor}; font-weight: 600; font-size: 11px; min-width: 28px;">${taskProgress}%</span>
+                        </div>
+                        <span class="status-badge ${statusClass}" style="font-size: 9px; padding: 2px 8px; flex-shrink: 0;">${statusText}</span>
+                      </div>
+                `;
+              });
+              
+              html += `
+                    </div>
+                  </div>
+                </div>
+              `;
+              lastLevelIndex++;
+            });
+            
+            html += '</div>';
+            firstLevelIndex++;
+          });
+        }
         
-        html += `
-          <li class="job-item">
-            <span class="job-bullet">▪</span>
-            <span class="job-name">${job.title || job.name || job.code || '未命名任务'}</span>
-            <span class="job-progress ${progressClass}">
-              ${completionRate}%
-            </span>
-            <span class="status-badge status-${job.status || 'todo'}" style="font-size: 10px; padding: 2px 6px;">
-              ${getStatusText(job.status)}
-            </span>
-          </li>
-        `;
+        html += '</div>';
+        projectIndex++;
       });
       
-      html += '</ul>';
       return html;
     }
     
-    // 获取JOB完成率（这里可以根据实际业务逻辑调整）
-    function getJobCompletionRate(job) {
-      if (job.status === 'done') return 100;
-      if (job.status === 'doing') return 50; // 可以根据实际进度字段调整
-      return 0;
-    }
-    
-    // 获取完成率颜色
-    function getCompletionColor(rate) {
-      if (rate >= 100) return 'var(--success)';
-      if (rate >= 50) return 'var(--warning)';
-      return 'var(--text-secondary)';
-    }
-    
-    // 获取状态图标
-    function getStatusIcon(status) {
-      switch (status) {
-        case 'done': return '✓';
-        case 'doing': return '◐';
-        default: return '○';
+    // 计算任务进度（根据开始/结束时间和当前时间）
+    function calculateTaskProgress(task) {
+      // 如果已完成，返回100%
+      if (task.status === 'done') {
+        return 100;
       }
+      
+      // 如果是待办，返回0%
+      if (task.status === 'todo' || !task.status) {
+        return 0;
+      }
+      
+      // 进行中状态，根据时间计算进度
+      const startDate = task.planned_start || task.planned_start_date;
+      const endDate = task.planned_end || task.planned_end_date;
+      
+      if (!startDate || !endDate) {
+        // 没有时间信息，默认返回50%
+        return 50;
+      }
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const now = new Date();
+      
+      // 如果当前时间早于开始时间，进度为0
+      if (now < start) {
+        return 0;
+      }
+      
+      // 如果当前时间晚于或等于结束时间，进度为100
+      if (now >= end) {
+        return 100;
+      }
+      
+      // 计算进度百分比
+      const totalDuration = end.getTime() - start.getTime();
+      const elapsed = now.getTime() - start.getTime();
+      const progress = Math.round((elapsed / totalDuration) * 100);
+      
+      // 确保返回整数，范围在0-100之间
+      return Math.max(0, Math.min(100, progress));
+    }
+
+    // 数字转中文数字
+    function numberToChinese(num) {
+      const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+      const chineseUnits = ['', '十', '百', '千'];
+      
+      if (num === 0) return '零';
+      if (num < 10) return chineseNumbers[num];
+      if (num === 10) return '十';
+      if (num < 20) return '十' + chineseNumbers[num % 10];
+      if (num < 100) {
+        const tens = Math.floor(num / 10);
+        const ones = num % 10;
+        return chineseNumbers[tens] + '十' + (ones > 0 ? chineseNumbers[ones] : '');
+      }
+      
+      // 处理更大的数字（简化版）
+      return num.toString();
     }
 
     // 导出Word文档
     function exportToWord() {
       if (!reportData) return;
       
-      const content = document.getElementById('reportContent').innerHTML;
+      const reportTypeNames = { weekly: '周报', monthly: '月报', yearly: '年报' };
+      const completionRate = reportData.summary.totalTasks > 0 
+        ? Math.round(reportData.summary.completedTasks / reportData.summary.totalTasks * 100) 
+        : 0;
+      
+      // 生成与页面一致的内容
+      let contentHtml = `
+        <div class="report-container">
+          <div class="report-header">
+            <div class="report-title">${reportTypeNames[reportData.reportType]}</div>
+            <div class="report-period">${formatDateRange(reportData.startDate, reportData.endDate)}</div>
+          </div>
+          
+          <div class="report-section">
+            <h3 class="section-title">项目概览</h3>
+            <table class="kpi-table">
+              <tr>
+                <td class="kpi-card">
+                  <div class="kpi-value">${reportData.summary.totalProjects}</div>
+                  <div class="kpi-label">涉及项目</div>
+                </td>
+                <td class="kpi-card">
+                  <div class="kpi-value">${reportData.summary.totalTasks}</div>
+                  <div class="kpi-label">总任务数</div>
+                </td>
+                <td class="kpi-card">
+                  <div class="kpi-value">${reportData.summary.completedTasks}</div>
+                  <div class="kpi-label">已完成任务</div>
+                </td>
+                <td class="kpi-card">
+                  <div class="kpi-value">${completionRate}%</div>
+                  <div class="kpi-label">完成率</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="report-section">
+            ${generateWordProjectGroups(reportData.projectGroups)}
+          </div>
+        </div>
+      `;
+      
       const fullHtml = `
         <!DOCTYPE html>
         <html>
@@ -1147,30 +1288,340 @@
           <meta charset="UTF-8">
           <title>工作报告</title>
           <style>
-            body { font-family: "Microsoft YaHei", "SimHei", Arial, sans-serif; margin: 40px; line-height: 1.6; }
-            .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-            .report-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
-            .report-period { font-size: 16px; color: #666; }
-            .section-title { font-size: 18px; font-weight: bold; margin: 24px 0 16px 0; border-left: 4px solid #4f46e5; padding-left: 12px; }
-            .kpi-grid { display: flex; gap: 20px; margin-bottom: 24px; }
-            .kpi-card { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center; }
-            .kpi-value { font-size: 28px; font-weight: bold; color: #4f46e5; margin-bottom: 4px; }
-            .kpi-label { font-size: 14px; color: #666; }
-            .category-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-            .category-name { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-            .task-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-            .task-table th, .task-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-            .task-table th { background: #f3f4f6; font-weight: 600; font-size: 12px; text-transform: uppercase; }
-            .status-badge, .priority-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-            .status-todo { background: #fef3c7; color: #d97706; }
-            .status-doing { background: #d1fae5; color: #059669; }
-            .status-done { background: #e0e7ff; color: #4f46e5; }
-            .priority-high { background: #fee2e2; color: #dc2626; }
-            .priority-medium { background: #fef3c7; color: #d97706; }
-            .priority-low { background: #d1fae5; color: #059669; }
+            @page {
+              margin: 2cm 2.5cm;
+              size: A4;
+            }
+            
+            body { 
+              font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important; 
+              margin: 0 !important; 
+              padding: 0 !important; 
+              line-height: 1.6; 
+              color: #2c3e50;
+              background: #ffffff;
+              font-size: 14px;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            * {
+              font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            .report-container {
+              width: calc(100% - 10cm) !important;
+              max-width: none !important;
+              margin: 0 5cm !important;
+              padding: 32px 0 !important;
+              font-family: "Microsoft YaHei", "微软雅黑";
+              background: #ffffff;
+              border: none;
+              box-sizing: border-box;
+            }
+            
+            /* 报告头部 */
+            .report-header { 
+              text-align: center; 
+              margin-bottom: 32px; 
+              padding-bottom: 20px; 
+              border-bottom: 3px solid #4f46e5; 
+              font-family: "Microsoft YaHei", "微软雅黑";
+              margin-left: 0px;
+              margin-right: 0px;
+            }
+            .report-title { 
+              font-size: 24px; 
+              font-weight: bold; 
+              margin-bottom: 8px; 
+              color: #0f172a;
+              letter-spacing: 1px;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            .report-period { 
+              font-size: 16px; 
+              color: #64748b; 
+              font-weight: 500;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            /* 概览部分 */
+            .report-section { 
+              margin-bottom: 8px; 
+              font-family: "Microsoft YaHei", "微软雅黑";
+              margin-left: 0px;
+              margin-right: 0px;
+            }
+            .section-title { 
+              font-size: 18px; 
+              font-weight: bold; 
+              margin: 0 0 12px 0; 
+              padding: 8px 0;
+              color: #0f172a;
+              background: transparent;
+              border: none;
+              font-family: "Microsoft YaHei", "微软雅黑";
+              width: 100%;
+              box-sizing: border-box;
+            }
+            
+            /* KPI 卡片 */
+            .kpi-table { 
+              width: 70%; 
+              border-collapse: separate;
+              border-spacing: 4px;
+              margin-bottom: 20px; 
+              table-layout: fixed;
+              margin-left: auto;
+              margin-right: auto;
+            }
+            .kpi-card { 
+              border: 2px solid #bdc3c7; 
+              padding: 12px 8px; 
+              text-align: center; 
+              width: 25%;
+              background: #f8f9fa;
+              border-radius: 8px;
+              vertical-align: top;
+            }
+            .kpi-value { 
+              font-size: 24px; 
+              font-weight: bold; 
+              color: #4f46e5; 
+              margin-bottom: 4px; 
+              display: block;
+            }
+            .kpi-label { 
+              font-size: 11px; 
+              color: #64748b; 
+              font-weight: 500;
+            }
+            
+            /* 项目部分 */
+            .project-section {
+              margin-bottom: 24px;
+              margin-top: 8px;
+              page-break-inside: avoid;
+              margin-left: 0px;
+              margin-right: 0px;
+              max-width: 100%;
+            }
+            
+            .project-header {
+              color: #2c3e50 !important;
+              padding: 16px 24px;
+              margin-bottom: 4px;
+              border-radius: 8px;
+              font-size: 18px;
+              font-weight: bold;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-family: "Microsoft YaHei", "微软雅黑" !important;
+              width: 100%;
+              box-sizing: border-box;
+            }
+            
+            .project-header span {
+              color: #2c3e50 !important;
+              font-family: "Microsoft YaHei", "微软雅黑" !important;
+            }
+            
+            .project-progress {
+              font-size: 16px;
+              font-weight: 600;
+              background: #34495e !important;
+              color: #ffffff !important;
+              padding: 6px 16px;
+              border-radius: 25px;
+              font-family: "Microsoft YaHei", "微软雅黑" !important;
+              border: 1px solid #ffffff;
+            }
+            
+            /* 第一级标签 */
+            .first-level-section {
+              margin: 4px 0 4px 20px;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            .first-level-header {
+              background: #f8fafc;
+              border-left: 4px solid #4f46e5;
+              padding: 10px 16px;
+              margin-bottom: 4px;
+              border-radius: 0 4px 4px 0;
+              font-size: 15px;
+              font-weight: 600;
+              color: #0f172a;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            .first-level-stats {
+              font-size: 13px;
+              color: #7f8c8d;
+              font-weight: 500;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            /* 最后一级标签 */
+            .last-level-section {
+              margin: 4px 0 4px 30px;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            .last-level-header {
+              background: #f8fafc;
+              border-left: 3px solid #4f46e5;
+              padding: 6px 12px;
+              margin-bottom: 4px;
+              border-radius: 0 3px 3px 0;
+              font-size: 14px;
+              font-weight: 600;
+              color: #0f172a;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            .last-level-progress {
+              font-size: 12px;
+              color: #7f8c8d;
+              font-weight: 500;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            /* 任务列表 */
+            .task-list {
+              margin-left: 30px;
+              font-family: "Microsoft YaHei", "微软雅黑";
+            }
+            
+            .task-list table {
+              border: 1px solid #f5f5f5;
+              border-collapse: collapse;
+            }
+            
+            .task-list table tr {
+              border: 1px solid #f5f5f5;
+            }
+            
+            .task-list table td {
+              border: 1px solid #f8f8f8;
+            }
+            
+            .task-item {
+              margin-bottom: 2px;
+              padding: 2px 0;
+              font-size: 13px;
+              line-height: 1.2;
+            }
+            
+            .progress-high { color: #27ae60; }
+            .progress-medium { color: #f39c12; }
+            .progress-low { color: #95a5a6; }
+            
+            .status-done { color: #27ae60; }
+            .status-doing { color: #f39c12; }
+            .status-todo { color: #95a5a6; }
+            
+            /* 空状态 */
+            .empty-tasks {
+              color: #95a5a6;
+              font-style: italic;
+              font-size: 13px;
+              padding: 8px 0;
+            }
+            
+            .task-status {
+              font-size: 11px;
+              font-weight: 600;
+              padding: 3px 8px;
+              border-radius: 12px;
+              text-align: center;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              display: inline-block;
+              width: 50px;
+            }
+            
+            .status-done {
+              background: #d5f4e6;
+              color: #27ae60;
+              border: 1px solid #27ae60;
+            }
+            
+            .status-doing {
+              background: #fef9e7;
+              color: #f39c12;
+              border: 1px solid #f39c12;
+            }
+            
+            .status-todo {
+              background: #f4f6f7;
+              color: #95a5a6;
+              border: 1px solid #bdc3c7;
+            }
+            
+            /* 空状态 */
+            .empty-tasks {
+              color: #95a5a6;
+              font-style: italic;
+              font-size: 13px;
+              padding: 8px;
+              text-align: center;
+            }
+            
+            /* 打印样式 - 确保打印预览和Word导出一致 */
+            @media print {
+              body {
+                font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                line-height: 1.6;
+                color: #2c3e50 !important;
+                background: #ffffff !important;
+                font-size: 14px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              
+              .report-container {
+                width: calc(100% - 10cm) !important;
+                margin: 0 5cm !important;
+                padding: 32px 0 !important;
+                background: #ffffff !important;
+                border: none !important;
+                box-sizing: border-box;
+              }
+              
+              .report-header {
+                border-bottom: 3px solid #4f46e5 !important;
+              }
+              
+              .project-header {
+                color: #2c3e50 !important;
+              }
+              
+              .kpi-table {
+                width: 70% !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+              }
+              
+              .kpi-card {
+                border: 2px solid #bdc3c7 !important;
+                background: #f8f9fa !important;
+              }
+            }
           </style>
         </head>
-        <body>${content}</body>
+        <body>${contentHtml}</body>
         </html>
       `;
       
@@ -1185,6 +1636,106 @@
       URL.revokeObjectURL(url);
       
       showToast('报告已导出', 'success');
+    }
+    
+    // 生成Word文档的项目分组内容（三级：项目 -> 第一级标签 -> 最后一级标签）
+    function generateWordProjectGroups(projectGroups) {
+      if (!projectGroups || Object.keys(projectGroups).length === 0) {
+        return '<div style="text-align: center; color: #95a5a6; font-style: italic; padding: 40px;">暂无任务数据</div>';
+      }
+      
+      let html = '';
+      let projectIndex = 1;
+      
+      Object.values(projectGroups).forEach(pg => {
+        const projectProgress = pg.stats.total > 0 
+          ? Math.round(pg.stats.done / pg.stats.total * 100) 
+          : 0;
+        
+        // 项目标题
+        html += `
+          <div class="project-section">
+            <div style="color: #0f172a !important; padding: 16px 0; margin-bottom: 20px; font-size: 18px; font-weight: bold; font-family: 'Microsoft YaHei', '微软雅黑' !important; width: 100%; box-sizing: border-box;">
+              <span style="color: #0f172a !important; font-weight: bold !important; font-family: 'Microsoft YaHei', '微软雅黑' !important;">${numberToChinese(projectIndex)}、${pg.projectName}</span>
+            </div>
+        `;
+        
+        if (Object.keys(pg.labelHierarchy).length === 0) {
+          html += '<div class="empty-tasks">暂无任务</div>';
+        } else {
+          let firstLevelIndex = 1;
+          
+          // 渲染第一级标签
+          Object.values(pg.labelHierarchy).forEach(firstLevel => {
+            const firstLevelProgress = firstLevel.stats.total > 0 
+              ? Math.round(firstLevel.stats.done / firstLevel.stats.total * 100) 
+              : 0;
+            
+            html += `
+              <div class="first-level-section">
+                <div class="first-level-header">
+                  <span>${firstLevelIndex}. ${firstLevel.name}</span>
+                </div>
+            `;
+            
+            let lastLevelIndex = 1;
+            
+            // 渲染最后一级标签
+            Object.values(firstLevel.children).forEach(lastLevel => {
+              const lastLevelProgress = lastLevel.stats.total > 0 
+                ? Math.round(lastLevel.stats.done / lastLevel.stats.total * 100) 
+                : 0;
+              
+              html += `
+                <div class="last-level-section">
+                  <div class="last-level-header">
+                    <span>(${lastLevelIndex}) ${lastLevel.name}</span>
+                  </div>
+                  
+                  <div class="task-list">
+                    <table style="width: 60%; border-collapse: collapse; margin-left: 0; border: 1px solid #f5f5f5;">
+              `;
+              
+              // 渲染任务列表
+              if (lastLevel.tasks.length === 0) {
+                html += '<tr><td colspan="4" style="color: #95a5a6; font-style: italic; padding: 8px 12px; border: 1px solid #f8f8f8; text-align: center; font-family: \'Microsoft YaHei\', \'微软雅黑\';">暂无任务</td></tr>';
+              } else {
+                lastLevel.tasks.forEach((task, idx) => {
+                  const statusText = getStatusText(task.status);
+                  const taskProgress = calculateTaskProgress(task);
+                  
+                  const progressColor = taskProgress >= 80 ? '#27ae60' : (taskProgress >= 40 ? '#f39c12' : '#95a5a6');
+                  const statusColor = task.status === 'done' ? '#27ae60' : (task.status === 'doing' ? '#f39c12' : '#95a5a6');
+                  
+                  html += `
+                    <tr style="border: 1px solid #f5f5f5;">
+                      <td style="width: 24px; color: #95a5a6; font-size: 12px; padding: 4px 1px; border: 1px solid #f8f8f8; vertical-align: top; text-align: center; font-family: 'Microsoft YaHei', '微软雅黑';">${idx + 1}.</td>
+                      <td style="width: 236px; color: #0f172a; font-size: 13px; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; font-family: 'Microsoft YaHei', '微软雅黑';">${task.title || task.name || task.code || '未命名任务'}</td>
+                      <td style="width: 50px; color: ${progressColor}; font-weight: 600; font-size: 12px; text-align: center; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; font-family: 'Microsoft YaHei', '微软雅黑';">${taskProgress}%</td>
+                      <td style="width: 60px; color: ${statusColor}; font-size: 11px; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; text-align: center; font-family: 'Microsoft YaHei', '微软雅黑';">[${statusText}]</td>
+                    </tr>
+                  `;
+                });
+              }
+              
+              html += `
+                    </table>
+                  </div>
+                </div>
+              `;
+              lastLevelIndex++;
+            });
+            
+            html += '</div>';
+            firstLevelIndex++;
+          });
+        }
+        
+        html += '</div>';
+        projectIndex++;
+      });
+      
+      return html;
     }
     
     // 打印报告
