@@ -2184,7 +2184,9 @@ function positionActionMenu(){
   // getBoundingClientRect 返回相对于视窗的位置，配合 fixed 定位正好
   const rect = __actionMenuAnchor.getBoundingClientRect(); 
   const menuWidth = 160; 
-  const menuHeight = 200; // 估算菜单高度
+  
+  // 获取菜单的实际高度，如果还没渲染则使用估算值
+  let menuHeight = menu.offsetHeight || 200;
   
   // 计算左侧位置，优先显示在右侧
   let left = rect.right + 4; 
@@ -2197,17 +2199,30 @@ function positionActionMenu(){
     left = 4;
   }
   
-  // 计算顶部位置，与按钮顶部对齐
+  // 智能计算垂直位置
   let top = rect.top;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
   
-  // 确保菜单不会超出视窗底部
-  if (top + menuHeight > window.innerHeight) {
-    top = Math.max(4, window.innerHeight - menuHeight);
+  // 如果下方空间不足，但上方空间充足，则向上显示
+  if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+    top = rect.top - menuHeight - 4; // 显示在按钮上方
+  } else if (spaceBelow < menuHeight && spaceAbove < menuHeight) {
+    // 如果上下空间都不足，选择空间较大的一侧，并调整到边界
+    if (spaceBelow > spaceAbove) {
+      top = window.innerHeight - menuHeight - 4; // 贴底显示
+    } else {
+      top = 4; // 贴顶显示
+    }
   }
+  // 如果下方空间充足，保持默认的 top = rect.top
   
-  // 确保菜单不会超出视窗顶部
+  // 最终边界检查
   if (top < 4) {
     top = 4;
+  }
+  if (top + menuHeight > window.innerHeight - 4) {
+    top = window.innerHeight - menuHeight - 4;
   }
   
   menu.style.left = `${left}px`; 
