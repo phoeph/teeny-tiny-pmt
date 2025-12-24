@@ -2693,15 +2693,44 @@ async function updateStatus(status) {
   }
   
   async function updateCardPriority(priority) {
-    if (!currentCardItem) return;
-    
+    const item = currentCardItem; // 保存引用，避免在closeCardActionMenu后丢失
     closeCardActionMenu();
     
+    if (!item) {
+      console.error('[card] No current item for priority update');
+      return;
+    }
+    
     try {
-      const idOrCode = currentCardItem.id || currentCardItem.code;
+      const idOrCode = item.id || item.code;
       if (typeof __patchTask === 'function') {
         await __patchTask(idOrCode, { priority });
         showToast('优先级已更新', 'success');
+      } else {
+        // 如果__patchTask不存在，使用fetch直接调用API
+        const API = (window.API) || 'http://localhost:8000/api';
+        const token = localStorage.getItem('token') || '';
+        
+        const response = await fetch(`${API}/work-items/${idOrCode}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ priority })
+        });
+        
+        if (response.ok) {
+          showToast('优先级已更新', 'success');
+          // 刷新数据
+          if (typeof fetchWorkItems === 'function') {
+            await fetchWorkItems();
+          } else {
+            window.location.reload();
+          }
+        } else {
+          showToast('更新优先级失败', 'error');
+        }
       }
     } catch (e) {
       console.error('[card] Error updating priority:', e);
@@ -2710,14 +2739,43 @@ async function updateStatus(status) {
   }
   
   async function updateCardStatus(status) {
-    if (!currentCardItem) return;
-    
+    const item = currentCardItem; // 保存引用，避免在closeCardActionMenu后丢失
     closeCardActionMenu();
     
+    if (!item) {
+      console.error('[card] No current item for status update');
+      return;
+    }
+    
     try {
-      const idOrCode = currentCardItem.id || currentCardItem.code;
+      const idOrCode = item.id || item.code;
       if (typeof performStatusChange === 'function') {
         await performStatusChange(idOrCode, status);
+      } else {
+        // 如果performStatusChange不存在，使用fetch直接调用API
+        const API = (window.API) || 'http://localhost:8000/api';
+        const token = localStorage.getItem('token') || '';
+        
+        const response = await fetch(`${API}/work-items/${idOrCode}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        
+        if (response.ok) {
+          showToast('状态已更新', 'success');
+          // 刷新数据
+          if (typeof fetchWorkItems === 'function') {
+            await fetchWorkItems();
+          } else {
+            window.location.reload();
+          }
+        } else {
+          showToast('更新状态失败', 'error');
+        }
       }
     } catch (e) {
       console.error('[card] Error updating status:', e);
