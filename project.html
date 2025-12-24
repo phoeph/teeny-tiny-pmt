@@ -2223,11 +2223,15 @@ function closeActionMenu() {
 
 function handleAction(action) {
   console.log('[DEBUG] handleAction called with:', action);
+  console.log('[DEBUG] fetchWorkItems exists:', typeof fetchWorkItems);
+  console.log('[DEBUG] showToast exists:', typeof showToast);
   
   // 临时在这里定义__deleteItem函数
   if (typeof __deleteItem === 'undefined') {
     window.__deleteItem = async function(idOrCode) {
       console.log('[DEBUG] __deleteItem called with:', idOrCode);
+      console.log('[DEBUG] Inside __deleteItem - fetchWorkItems exists:', typeof fetchWorkItems);
+      
       try {
         const API = (window.API) || 'http://localhost:8000/api';
         const token = localStorage.getItem('token') || '';
@@ -2240,6 +2244,7 @@ function handleAction(action) {
         if (r.ok) {
           // 检查fetchWorkItems是否存在
           if (typeof fetchWorkItems === 'function') {
+            console.log('[DEBUG] Calling fetchWorkItems...');
             await fetchWorkItems();
           } else {
             // 手动刷新页面作为备选方案
@@ -2262,6 +2267,7 @@ function handleAction(action) {
         if (r2.ok) {
           // 检查fetchWorkItems是否存在
           if (typeof fetchWorkItems === 'function') {
+            console.log('[DEBUG] Calling fetchWorkItems...');
             await fetchWorkItems();
           } else {
             // 手动刷新页面作为备选方案
