@@ -821,7 +821,10 @@
           <div class="meta" style="display:flex; justify-content:space-between;"><span class="assignee">${assigneeDisp || '-'}</span><span class="dates">${__getPlannedStartStr(item) || ''} ~ ${__getPlannedEndStr(item) || ''}</span></div>`;
         const editBtn = el.querySelector('.ellipsis-btn');
         if (editBtn) {
-          editBtn.addEventListener('click', function(ev){ ev.stopPropagation(); if(item.kind==='JOB'){ openEditJobModal(item); } else { openEditTaskModal(item); } });
+          editBtn.addEventListener('click', function(ev){ 
+            ev.stopPropagation(); 
+            showCardActionMenu(ev, item);
+          });
         }
         el.addEventListener('mouseenter', function(){ if(item.kind==='JOB'){ __applyShakeForTaskHover(item.code||'', item.status||'', item.code||''); } else { const parent=__parentJobCodeOfItem(item)||''; if(parent){ __applyShakeForTaskHover(parent, item.status||'', item.code||''); } } });
         el.addEventListener('mouseleave', function(){ __clearShake(); });
@@ -2455,6 +2458,240 @@ async function updateStatus(status) {
     document.body.appendChild(el);
     setTimeout(()=>{ el.remove(); }, 1800);
   }
+  
+  // 卡片菜单系统 - 与甘特图菜单样式和功能完全一致
+  let currentCardItem = null;
+  let cardMenuAnchor = null;
+  
+  // 创建卡片菜单HTML
+  if (!document.getElementById('cardActionMenu')) {
+    const cardMenu = document.createElement('div');
+    cardMenu.id = 'cardActionMenu';
+    cardMenu.className = 'action-dropdown';
+    document.body.appendChild(cardMenu);
+    
+    // 点击外部关闭菜单
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.ellipsis-btn') && !e.target.closest('#cardActionMenu')) {
+        closeCardActionMenu();
+      }
+    });
+    
+    // 滚动和窗口大小改变时重新定位
+    window.addEventListener('scroll', positionCardActionMenu, true);
+    window.addEventListener('resize', positionCardActionMenu);
+  }
+  
+  function showCardActionMenu(e, item) {
+    e.preventDefault();
+    
+    const menu = document.getElementById('cardActionMenu');
+    currentCardItem = item;
+    cardMenuAnchor = e.target.closest('.ellipsis-btn') || e.target;
+    
+    const isParent = item.kind === 'JOB';
+    
+    // 生成菜单HTML - 与甘特图菜单完全一致
+    let html = '';
+    
+    if (isParent) {
+      // JOB菜单项
+      html += `<div class="action-item" onclick="handleCardAction('add-task')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        新增子任务
+      </div>`;
+      
+      html += `<div class="action-item" onclick="handleCardAction('edit-job')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        编辑 JOB
+      </div>`;
+      
+      // 优先级子菜单
+      html += `<div class="action-item submenu-parent">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+        优先级
+        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+        <div class="submenu">
+          <div class="action-item" onclick="updateCardPriority('high')">🔴 高优先级</div>
+          <div class="action-item" onclick="updateCardPriority('medium')">🟡 中优先级</div>
+          <div class="action-item" onclick="updateCardPriority('low')">🟢 低优先级</div>
+        </div>
+      </div>`;
+      
+      // 状态子菜单
+      html += `<div class="action-item submenu-parent">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/></svg>
+        状态
+        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+        <div class="submenu">
+          <div class="action-item" onclick="updateCardStatus('todo')">📋 待办</div>
+          <div class="action-item" onclick="updateCardStatus('doing')">🔄 进行中</div>
+          <div class="action-item" onclick="updateCardStatus('done')">✅ 已完成</div>
+        </div>
+      </div>`;
+      
+      html += `<div class="action-item danger" onclick="handleCardAction('del-job')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        删除 JOB
+      </div>`;
+    } else {
+      // TASK菜单项
+      html += `<div class="action-item" onclick="handleCardAction('edit-task')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        编辑任务
+      </div>`;
+      
+      // 优先级子菜单
+      html += `<div class="action-item submenu-parent">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+        优先级
+        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+        <div class="submenu">
+          <div class="action-item" onclick="updateCardPriority('high')">🔴 高优先级</div>
+          <div class="action-item" onclick="updateCardPriority('medium')">🟡 中优先级</div>
+          <div class="action-item" onclick="updateCardPriority('low')">🟢 低优先级</div>
+        </div>
+      </div>`;
+      
+      // 状态子菜单
+      html += `<div class="action-item submenu-parent">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/></svg>
+        状态
+        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+        <div class="submenu">
+          <div class="action-item" onclick="updateCardStatus('todo')">📋 待办</div>
+          <div class="action-item" onclick="updateCardStatus('doing')">🔄 进行中</div>
+          <div class="action-item" onclick="updateCardStatus('done')">✅ 已完成</div>
+        </div>
+      </div>`;
+      
+      html += `<div class="action-item danger" onclick="handleCardAction('del-task')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        删除任务
+      </div>`;
+    }
+    
+    menu.innerHTML = html;
+    menu.classList.add('show');
+    
+    // 延迟定位，确保菜单已渲染
+    setTimeout(() => {
+      positionCardActionMenu();
+    }, 10);
+  }
+  
+  function positionCardActionMenu() {
+    const menu = document.getElementById('cardActionMenu');
+    if (!menu) return;
+    if (!menu.classList.contains('show')) return;
+    if (!cardMenuAnchor) return;
+    
+    // 使用与甘特图菜单完全相同的定位逻辑
+    const rect = cardMenuAnchor.getBoundingClientRect();
+    const menuWidth = 160;
+    let menuHeight = menu.offsetHeight || 200;
+    
+    // 计算左侧位置，优先显示在右侧
+    let left = rect.right + 4;
+    if (left + menuWidth > window.innerWidth) {
+      left = rect.left - menuWidth - 4;
+    }
+    if (left < 4) {
+      left = 4;
+    }
+    
+    // 智能计算垂直位置
+    let top = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+      top = rect.top - menuHeight - 4;
+    } else if (spaceBelow < menuHeight && spaceAbove < menuHeight) {
+      if (spaceBelow > spaceAbove) {
+        top = window.innerHeight - menuHeight - 4;
+      } else {
+        top = 4;
+      }
+    }
+    
+    if (top < 4) {
+      top = 4;
+    }
+    if (top + menuHeight > window.innerHeight - 4) {
+      top = window.innerHeight - menuHeight - 4;
+    }
+    
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  }
+  
+  function closeCardActionMenu() {
+    const menu = document.getElementById('cardActionMenu');
+    if (menu) menu.classList.remove('show');
+    currentCardItem = null;
+    cardMenuAnchor = null;
+  }
+  
+  function handleCardAction(action) {
+    if (!currentCardItem) return;
+    
+    closeCardActionMenu();
+    
+    if (action === 'add-task') {
+      openCreateTaskModal(currentCardItem);
+    } else if (action === 'edit-job') {
+      openEditJobModal(currentCardItem);
+    } else if (action === 'del-job') {
+      if(confirm('确定要删除这个 JOB 及其所有子任务吗？')){
+        if (typeof __deleteItem === 'function') {
+          __deleteItem(currentCardItem.id || currentCardItem.code);
+        }
+      }
+    } else if (action === 'edit-task') {
+      openEditTaskModal(currentCardItem);
+    } else if (action === 'del-task') {
+      if(confirm('确定要删除这个任务吗？')){
+        if (typeof __deleteItem === 'function') {
+          __deleteItem(currentCardItem.id || currentCardItem.code);
+        }
+      }
+    }
+  }
+  
+  async function updateCardPriority(priority) {
+    if (!currentCardItem) return;
+    
+    closeCardActionMenu();
+    
+    try {
+      const idOrCode = currentCardItem.id || currentCardItem.code;
+      if (typeof __patchTask === 'function') {
+        await __patchTask(idOrCode, { priority });
+        showToast('优先级已更新', 'success');
+      }
+    } catch (e) {
+      console.error('[card] Error updating priority:', e);
+      showToast('更新优先级失败', 'error');
+    }
+  }
+  
+  async function updateCardStatus(status) {
+    if (!currentCardItem) return;
+    
+    closeCardActionMenu();
+    
+    try {
+      const idOrCode = currentCardItem.id || currentCardItem.code;
+      if (typeof performStatusChange === 'function') {
+        await performStatusChange(idOrCode, status);
+      }
+    } catch (e) {
+      console.error('[card] Error updating status:', e);
+      showToast('更新状态失败', 'error');
+    }
+  }
+  
   </script>
 </body>
 </html>
