@@ -229,19 +229,16 @@ function setupLabelEditor(container, entity, extras){
           // 处理输入法开始事件
           searchInput.oncompositionstart = function(e) {
             isComposing = true;
-            console.log('Composition start:', e.data);
           };
           
           // 处理输入法更新事件
           searchInput.oncompositionupdate = function(e) {
             isComposing = true;
-            console.log('Composition update:', e.data);
           };
           
           // 处理输入法结束事件
           searchInput.oncompositionend = function(e) {
             isComposing = false;
-            console.log('Composition end:', e.data, 'Final value:', this.value);
             
             // 输入法结束后，更新搜索结果
             const newValue = this.value;
@@ -252,7 +249,6 @@ function setupLabelEditor(container, entity, extras){
           };
           
           searchInput.oninput = function(e) {
-            console.log('Input event:', this.value, 'isComposing:', isComposing);
             
             // 如果正在使用输入法，不要立即更新搜索结果
             if (isComposing) {
@@ -650,12 +646,14 @@ function setupLabelEditor(container, entity, extras){
                     }
                 }
               } catch (inheritError) {
-                console.error('[labels] Label inheritance error:', inheritError);
+                // 标签继承失败，静默处理
                 // Don't show error to user - JOB label was saved successfully
               }
             }
           }
-        }catch(e){ console.error('[labels] save error', e); }
+        }catch(e){ 
+          // 标签保存失败，静默处理
+        }
       }
       
       render();
@@ -725,7 +723,9 @@ function setupLabelEditor(container, entity, extras){
                      }
                  }
              }
-          } catch(e) { console.error(e); }
+          } catch(e) { 
+            // 静默处理错误
+          }
       } else {
           window.__labelPathPrefix = '';
       }
