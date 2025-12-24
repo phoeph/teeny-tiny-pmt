@@ -2222,15 +2222,9 @@ function closeActionMenu() {
 }
 
 function handleAction(action) {
-  console.log('[DEBUG] handleAction called with:', action);
-  console.log('[DEBUG] fetchWorkItems exists:', typeof fetchWorkItems);
-  console.log('[DEBUG] showToast exists:', typeof showToast);
-  
   // 临时在这里定义__deleteItem函数
   if (typeof __deleteItem === 'undefined') {
     window.__deleteItem = async function(idOrCode) {
-      console.log('[DEBUG] __deleteItem called with:', idOrCode);
-      
       try {
         const API = (window.API) || 'http://localhost:8000/api';
         const token = localStorage.getItem('token') || '';
@@ -2271,8 +2265,6 @@ function handleAction(action) {
     
     // 辅助函数：从DOM中移除已删除的元素
     function removeItemFromDOM(idOrCode) {
-      console.log('[DEBUG] Attempting to remove item from DOM:', idOrCode);
-      
       try {
         let removedCount = 0;
         
@@ -2285,9 +2277,7 @@ function handleAction(action) {
         
         kanbanSelectors.forEach(selector => {
           const elements = document.querySelectorAll(selector);
-          console.log(`[DEBUG] Found ${elements.length} elements with selector: ${selector}`);
           elements.forEach(element => {
-            console.log('[DEBUG] Removing element:', element);
             element.remove();
             removedCount++;
           });
@@ -2298,7 +2288,6 @@ function handleAction(action) {
         allElements.forEach(element => {
           const elementId = element.dataset.wid || element.dataset.code || element.dataset.id;
           if (elementId === String(idOrCode)) {
-            console.log('[DEBUG] Removing gantt element:', element);
             element.remove();
             removedCount++;
           }
@@ -2309,7 +2298,6 @@ function handleAction(action) {
         cards.forEach(card => {
           const cardId = card.dataset.wid || card.dataset.code || card.dataset.id;
           if (cardId === String(idOrCode)) {
-            console.log('[DEBUG] Removing card:', card);
             card.remove();
             removedCount++;
           }
@@ -2317,27 +2305,20 @@ function handleAction(action) {
         
         // 更新全局数据
         if (window.__items) {
-          const originalLength = window.__items.length;
           window.__items = window.__items.filter(item => {
             const itemId = String(item.id || item.code);
             const targetId = String(idOrCode);
-            console.log(`[DEBUG] Comparing item ${itemId} with target ${targetId}`);
             return itemId !== targetId;
           });
-          console.log(`[DEBUG] Updated __items: ${originalLength} -> ${window.__items.length}`);
           
           // 同时更新任务的子任务
           window.__items.forEach(item => {
             if (item.subtasks && Array.isArray(item.subtasks)) {
-              const originalSubLength = item.subtasks.length;
               item.subtasks = item.subtasks.filter(subtask => {
                 const subtaskId = String(subtask.id || subtask.code);
                 const targetId = String(idOrCode);
                 return subtaskId !== targetId;
               });
-              if (originalSubLength !== item.subtasks.length) {
-                console.log(`[DEBUG] Updated subtasks for ${item.code}: ${originalSubLength} -> ${item.subtasks.length}`);
-              }
             }
           });
         }
@@ -2345,24 +2326,20 @@ function handleAction(action) {
         // 重新渲染甘特图以反映更改
         if (typeof buildGanttTasks === 'function' && typeof renderAll === 'function') {
           try {
-            console.log('[DEBUG] Re-rendering gantt chart...');
             buildGanttTasks(window.__items);
             renderAll();
           } catch (e) {
-            console.log('[DEBUG] Gantt re-render failed:', e);
+            // 如果甘特图渲染失败，静默处理
           }
         }
         
-        console.log(`[DEBUG] Total elements removed: ${removedCount}`);
-        
         if (removedCount === 0) {
-          console.warn('[DEBUG] No elements were removed, falling back to page reload');
-          setTimeout(() => window.location.reload(), 1000); // 延迟1秒刷新，让用户看到成功提示
+          // 如果没有找到任何元素，延迟刷新页面
+          setTimeout(() => window.location.reload(), 1000);
         }
         
       } catch (e) {
-        console.error('[DEBUG] Error removing item from DOM:', e);
-        // 如果DOM操作失败，回退到刷新页面
+        console.error('[delete] Error removing item from DOM:', e);
         setTimeout(() => window.location.reload(), 1000);
       }
     }
