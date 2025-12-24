@@ -34,11 +34,11 @@ class NonDevWorkManager {
       if (response.ok) {
         this.nonDevWorks = await response.json();
       } else {
-        // 加载失败，使用空数组
+        console.error('Failed to load non-dev works:', response.status);
         this.nonDevWorks = [];
       }
     } catch (error) {
-      // 网络错误，使用空数组
+      console.error('Error loading non-dev works:', error);
       this.nonDevWorks = [];
     }
   }
@@ -262,7 +262,7 @@ class NonDevWorkManager {
         this.showToast(error.message || '保存失败', 'error');
       }
     } catch (error) {
-      // 保存失败
+      console.error('Error saving non-dev work:', error);
       this.showToast('网络错误，请重试', 'error');
     } finally {
       saveBtn.textContent = originalText;
@@ -304,7 +304,7 @@ class NonDevWorkManager {
         this.showToast(error.message || '删除失败', 'error');
       }
     } catch (error) {
-      // 删除失败
+      console.error('Error deleting non-dev work:', error);
       this.showToast('网络错误，请重试', 'error');
     }
   }

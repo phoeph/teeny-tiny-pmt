@@ -555,7 +555,7 @@
         if (res.ok) { showToast('状态更新成功', 'success'); await fetchWorkItems(); }
         else { await __showErrorFromResponse(res, '更新失败'); }
       } catch (err) {
-        // 网络错误
+        console.error('[kanban] patch error', err);
         showToast('网络错误，更新失败', 'error');
       }
     }
@@ -661,6 +661,7 @@
         loadProjectAttachments();
       } catch (e) {
         document.getElementById('projectHeader').textContent = '错误：项目加载失败';
+        console.error('[project] fetchProject failed', e);
       }
     }
 
@@ -674,7 +675,7 @@
         if (!res.ok) { if (res.status===401) throw new Error('unauthorized'); throw new Error('backend unavailable'); }
         data = await res.json();
       } catch (e) {
-        // 工作项加载失败
+        console.error('[project] fetchWorkItems failed', e);
         showToast(e && e.message==='unauthorized' ? '登录已过期，请重新登录' : '工作项加载失败', 'error');
         const prev = Array.isArray(window.__items) ? window.__items : [];
         data = { items: prev };

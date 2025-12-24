@@ -652,7 +652,7 @@ function setupLabelEditor(container, entity, extras){
             }
           }
         }catch(e){ 
-          // 标签保存失败，静默处理
+          console.error('[labels] save error', e);
         }
       }
       

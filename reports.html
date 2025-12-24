@@ -727,7 +727,7 @@
         
         renderProjectList();
       } catch (error) {
-        
+        console.error('Error loading projects:', error);
         document.getElementById('projectList').innerHTML = 
           '<div style="padding: 20px; text-align: center; color: var(--danger);">加载项目失败，请刷新重试</div>';
       }
