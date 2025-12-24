@@ -359,7 +359,6 @@
   <script src="assets/meta-panel.js"></script>
   
   <script src="assets/label-cascader-multi.js"></script>
-  <script src="assets/label-cascader-multi.js"></script>
   <script src="assets/header-user-menu.js"></script>
   <script src="assets/left-sidebar.js"></script>
   <script src="assets/page-history.js"></script>
@@ -446,7 +445,8 @@
         const entity = normalizeEntity('project', window.__rawProject, { project: window.__rawProject });
         renderJiraIssueLayout(metaTarget, entity, { breadcrumb: bc, counter: '', linksHtml: '', hideHeader: true, rawProject: window.__rawProject });
         try{ setupPriorityEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
-        try{ setupLabelEditor(metaTarget, entity, { project_id: projectId, rawProject: window.__rawProject }); }catch(_){ }
+        // Setup label editor for the JOB (not project) - pass rawItem for label inheritance
+        try{ setupLabelEditor(metaTarget, normalizeEntity('job', job, { project: window.__rawProject }), { project_id: projectId, rawProject: window.__rawProject, rawItem: job }); }catch(_){ }
       }
       document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? 'var(--success)' : (p==='high' ? 'var(--danger)' : 'var(--warning)'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });
       try { document.querySelectorAll('.jira-breadcrumb').forEach(function(el){ el.remove(); }); } catch(_){ }
@@ -546,7 +546,11 @@
     function __getPlannedEndStr(i){ return i && (i.planned_end_date || i.planned_end) || null; }
     function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(__getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(__getPlannedEndStr(i))).filter(Boolean); const now=new Date(); const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); const clampMax=new Date(now.getFullYear(), now.getMonth()+7, 0); if(startDates.length||endDates.length){ const minStart=startDates.length? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null; const maxEnd=endDates.length? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null; startDate=minStart? new Date(Math.max(minStart.getTime(), clampMin.getTime())) : clampMin; endDate=maxEnd? new Date(Math.min(maxEnd.getTime(), clampMax.getTime())) : clampMax; } else { startDate=clampMin; endDate=clampMax; } startDate.setDate(startDate.getDate() - 14);
       endDate.setDate(endDate.getDate() + 14);
-      totalDays=Math.ceil((endDate-startDate)/(1000*60*60*24))+1; ganttData.tasks=[]; const parent=window.__job||null; const kids=(items||[]); const pStart=fmtDate(__getPlannedStartStr(parent)), pEnd=fmtDate(__getPlannedEndStr(parent)); const pStartDay=pStart? Math.max(0, Math.floor((pStart-startDate)/(1000*60*60*24))) : 0; const pDuration=(pStart&&pEnd)? Math.max(1, Math.ceil((pEnd-pStart)/(1000*60*60*24))+1) : 1; const mappedKids=kids.map(function(t){ const s=fmtDate(__getPlannedStartStr(t)), e=fmtDate(__getPlannedEndStr(t)); const sd=s? Math.max(0, Math.floor((s-startDate)/(1000*60*60*24))) : 0; const du=(s&&e)? Math.max(1, Math.ceil((e-s)/(1000*60*60*24))+1) : 1; return { id:t.id||t.code, name:(t.title||t.code||'-'), startDay:sd, duration:du, color:colorForStatus(t.status), assignee:__assigneeToDisplay(t.assignee||''), description:(t.title||t.code||'-') }; }); if(parent){ ganttData.tasks.push({ id:parent.id||parent.code, name:(parent.title||parent.code||'-'), category:'', startDay:pStartDay, duration:pDuration, color:colorForStatus(parent.status), assignee:__assigneeToDisplay(parent.assignee||''), description:(parent.title||parent.code||'-'), type:'parent', subtasks:mappedKids }); } else { if(mappedKids.length){ ganttData.tasks.push({ id:'__orphans__', name:'未归属任务', category:'', startDay:0, duration:1, color:'var(--text-secondary)', assignee:'', description:'未归属任务', type:'parent', subtasks:mappedKids }); } }
+      totalDays=Math.ceil((endDate-startDate)/(1000*60*60*24))+1; ganttData.tasks=[]; const kids=(items||[]); 
+      // 只显示tasks，不显示JOB本身
+      const mappedKids=kids.map(function(t){ const s=fmtDate(__getPlannedStartStr(t)), e=fmtDate(__getPlannedEndStr(t)); const sd=s? Math.max(0, Math.floor((s-startDate)/(1000*60*60*24))) : 0; const du=(s&&e)? Math.max(1, Math.ceil((e-s)/(1000*60*60*24))+1) : 1; return { id:t.id||t.code, name:(t.title||t.code||'-'), startDay:sd, duration:du, color:colorForStatus(t.status), assignee:__assigneeToDisplay(t.assignee||''), description:(t.title||t.code||'-'), priority: t.priority || 'medium', rawItem: t }; }); 
+      // 直接将tasks作为顶级任务显示，不包含JOB父节点
+      mappedKids.forEach(function(task) { ganttData.tasks.push(task); });
     }
     function generateTimeColumns(){ ganttData.timeColumns=[]; if(timeMode==='day'){ let d=new Date(startDate.getTime()); for(let day=0; day<totalDays; day++){ ganttData.timeColumns.push({ id:`day-${day}`, label:`${d.getMonth()+1}/${d.getDate()}`, date:new Date(d.getTime()), type:'day', width:columnWidth }); d.setDate(d.getDate()+1); } } else { const sy=startDate.getFullYear(), sm=startDate.getMonth(), ey=endDate.getFullYear(), em=endDate.getMonth(); let cur=new Date(sy,sm,1), tgt=new Date(ey,em,1); while(cur<=tgt){ const y=cur.getFullYear(), m=cur.getMonth()+1, days=new Date(y, cur.getMonth()+1, 0).getDate(); ganttData.timeColumns.push({ id:`month-${y}-${m}`, label:`${m}月`, year:y, month:m, days, type:'month', width:columnWidth }); cur.setMonth(cur.getMonth()+1); } } }
     function renderTimeHeader(){ const yearRow=document.getElementById('yearRow'); const monthRow=document.getElementById('monthRow'); const dayRow=document.getElementById('dayRow'); const timeline=document.getElementById('timeline'); yearRow.innerHTML=''; monthRow.innerHTML=''; dayRow.innerHTML=''; if(timeMode==='day'){ const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow,dayRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); dayRow.style.display='flex'; const monthGroups={}; (ganttData.timeColumns||[]).forEach(col=>{ const d=col.date; const ym=`${d.getFullYear()}-${d.getMonth()+1}`; if(!monthGroups[ym]) monthGroups[ym]={ year:d.getFullYear(), month:d.getMonth()+1, count:0 }; monthGroups[ym].count++; }); const yearGroups={}; Object.values(monthGroups).forEach(m=>{ if(!yearGroups[m.year]) yearGroups[m.year]=0; yearGroups[m.year]+=m.count; }); Object.keys(yearGroups).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(yearGroups[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); Object.keys(monthGroups).sort((a,b)=>{ const [ya,ma]=a.split('-').map(Number); const [yb,mb]=b.split('-').map(Number); return ya!==yb?ya-yb:ma-mb; }).forEach(key=>{ const m=monthGroups[key]; const div=document.createElement('div'); div.className='month-cell'; div.style.width=(m.count*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=`${m.month}月`; monthRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='day-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.date.getDate(); dayRow.appendChild(div); }); } else { dayRow.style.display='none'; const totalWidth=ganttData.timeColumns.length*columnWidth; [timeline,yearRow,monthRow].forEach(el=>{ if(el) el.style.width=totalWidth+'px'; }); const years={}; (ganttData.timeColumns||[]).forEach(col=>{ const y=col.year; if(!years[y]) years[y]=0; years[y]++; }); Object.keys(years).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(y=>{ const div=document.createElement('div'); div.className='year-cell'; div.style.width=(years[y]*columnWidth)+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=y+'年'; yearRow.appendChild(div); }); (ganttData.timeColumns||[]).forEach(col=>{ const div=document.createElement('div'); div.className='month-cell'; div.style.width=columnWidth+'px'; div.style.minWidth=div.style.width; div.style.flexShrink='0'; div.textContent=col.label; monthRow.appendChild(div); }); }
@@ -569,126 +573,62 @@
       generateTimeColumns();
       renderTimeHeader();
       
+      // 直接渲染扁平的任务列表（只有tasks，没有JOB父节点）
       (ganttData.tasks || []).forEach((task, ti) => {
-        // 1. Task List Row (Parent)
-        const parent = document.createElement('div');
-        parent.className = 'task-row parent-task';
+        const rawTask = task.rawItem || items[ti] || {};
         
-        const pid = task.id || task.code;
-        const entry = (window.__expandedParents || {})[pid];
-        const expanded = (entry === undefined) ? true : !!entry;
+        // 1. Task List Row
+        const div = document.createElement('div');
+        div.className = 'task-row';
+        div.setAttribute('data-ti', ti);
+        div.setAttribute('data-si', -1);
         
-        parent.innerHTML = `
+        div.innerHTML = `
           <div class="task-name-wrapper">
-            <span class="collapse-btn ${expanded ? '' : 'collapsed'}" data-ti="${ti}" data-role="toggle" title="展开/折叠">
-              <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
-            </span>
-            <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;">
-              <a class="task-title" href="job?code=${pid}&project=${projectId}" style="color:inherit; text-decoration:none;" title="${task.name}">${task.name}</a>
+            <div class="task-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              <a class="task-title" href="task.html?code=${task.id}&project=${projectId}&job=${jobCode}" style="color:inherit; text-decoration:none;" title="${task.name}">${task.name}</a>
             </div>
             <button class="more-btn" onclick="showTaskMenu(event, ${ti}, -1)" title="更多操作">
               <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
             </button>
           </div>
         `;
-        taskList.appendChild(parent);
+        div.ondblclick = (e) => {
+          if(e.target.closest('.more-btn')) return;
+          openEditTaskModal(rawTask);
+        };
+        taskList.appendChild(div);
         
-        // 2. Assignee Row (Parent)
-        const assP = document.createElement('div');
-        assP.className = 'assignee-row';
-        assP.setAttribute('data-ti', ti);
-        assP.setAttribute('data-si', -1);
-        assP.innerHTML = `<div class="assignee-avatar"></div><span class="assignee-name">${task.assignee || ''}</span>`;
-        if (!expanded) assP.style.display = 'none';
-        assigneeList.appendChild(assP);
+        // 2. Assignee Row
+        const assRow = document.createElement('div');
+        assRow.className = 'assignee-row';
+        assRow.setAttribute('data-ti', ti);
+        assRow.setAttribute('data-si', -1);
+        assRow.innerHTML = `<div class="assignee-avatar"></div><span class="assignee-name">${task.assignee || ''}</span>`;
+        assigneeList.appendChild(assRow);
 
-        // 3. Priority Row (Parent)
+        // 3. Priority Row
         if(priorityList){
-            const priP = document.createElement('div');
-            priP.className = 'priority-row';
-            priP.setAttribute('data-ti', ti);
-            priP.setAttribute('data-si', -1);
-            const lab=__priorityToLabel(task.priority||'');
-            const cls=__priorityToClass(task.priority||'');
-            priP.innerHTML=`<span class="priority-badge ${cls}">${lab}</span>`;
-            if (!expanded) priP.style.display = 'none';
-            priorityList.appendChild(priP);
+          const priRow = document.createElement('div');
+          priRow.className = 'priority-row';
+          priRow.setAttribute('data-ti', ti);
+          priRow.setAttribute('data-si', -1);
+          const lab = __priorityToLabel(task.priority || '');
+          const cls = __priorityToClass(task.priority || '');
+          priRow.innerHTML = `<span class="priority-badge ${cls}">${lab}</span>`;
+          priorityList.appendChild(priRow);
         }
         
-        // 4. Timeline Row (Parent)
+        // 4. Timeline Row
         const row = document.createElement('div');
         row.className = 'task-row-timeline';
         row.setAttribute('data-ti', ti);
         row.setAttribute('data-si', -1);
-        if (!expanded) row.style.display = 'none';
         
         const barEl = createTaskBar(task, ti, -1);
         row.appendChild(barEl);
         tl.appendChild(row);
-        
-        // Subtasks
-        const subs = task.subtasks || [];
-        subs.forEach((st, si) => {
-            // Task List
-            const div = document.createElement('div');
-            div.className = 'task-row subtask';
-            div.style.paddingLeft = '36px';
-            div.setAttribute('data-ti', ti);
-            div.setAttribute('data-si', si);
-            if (!expanded) div.style.display = 'none';
-            
-            div.innerHTML = `
-              <div class="task-name-wrapper">
-                <div class="task-name-text" style="flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  <a class="task-title" href="task.html?code=${st.id||st.code}&project=${projectId}&job=${pid}" style="color:inherit; text-decoration:none;" title="${st.name}">${st.name}</a>
-                </div>
-                <button class="more-btn" onclick="showTaskMenu(event, ${ti}, ${si})" title="更多操作">
-                  <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>
-                </button>
-              </div>
-            `;
-            div.ondblclick = (e) => {
-                 if(e.target.closest('.more-btn')) return;
-                 openEditTaskModal(st);
-            };
-            taskList.appendChild(div);
-            
-            // Assignee
-            const assS = document.createElement('div');
-            assS.className = 'assignee-row';
-            assS.setAttribute('data-ti', ti);
-            assS.setAttribute('data-si', si);
-            assS.innerHTML = `<div class="assignee-avatar"></div><span class="assignee-name">${st.assignee || ''}</span>`;
-            if (!expanded) assS.style.display = 'none';
-            assigneeList.appendChild(assS);
-
-            // Priority
-            if(priorityList){
-                const priS = document.createElement('div');
-                priS.className = 'priority-row';
-                priS.setAttribute('data-ti', ti);
-                priS.setAttribute('data-si', si);
-                const lab2=__priorityToLabel(st.priority||'');
-                const cls2=__priorityToClass(st.priority||'');
-                priS.innerHTML=`<span class="priority-badge ${cls2}">${lab2}</span>`;
-                if (!expanded) priS.style.display = 'none';
-                priorityList.appendChild(priS);
-            }
-            
-            // Timeline
-            const rowS = document.createElement('div');
-            rowS.className = 'task-row-timeline';
-            rowS.setAttribute('data-ti', ti);
-            rowS.setAttribute('data-si', si);
-            if (!expanded) rowS.style.display = 'none';
-            
-            const barS = createTaskBar(st, ti, si);
-            rowS.appendChild(barS);
-            tl.appendChild(rowS);
-        });
       });
-      
-      applyTaskExpansionStates();
     }
 
   (function(){ 

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索框测试</title>
+    <style>
+        body {
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-input {
+            width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            direction: ltr !important;
+            text-align: left !important;
+            unicode-bidi: normal !important;
+        }
+        .test-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h2>搜索框光标位置测试</h2>
+    
+    <div class="test-container">
+        <h3>测试1: 静态输入框</h3>
+        <input type="text" class="test-input" placeholder="输入abc测试..." />
+        <p>在上面输入框中输入"abc"，检查光标是否在文字右侧</p>
+    </div>
+    
+    <div class="test-container">
+        <h3>测试2: 动态创建的输入框</h3>
+        <div id="dynamicContainer"></div>
+        <button onclick="createDynamicInput()">创建动态输入框</button>
+        <p>点击按钮创建输入框，然后输入"abc"测试</p>
+    </div>
+    
+    <div class="test-container">
+        <h3>测试3: 模拟Labels搜索框</h3>
+        <div id="labelContainer"></div>
+        <button onclick="createLabelInput()">创建Labels样式输入框</button>
+        <p>这个模拟了Labels弹窗中的搜索框</p>
+    </div>
+
+    <script>
+        function createDynamicInput() {
+            const container = document.getElementById('dynamicContainer');
+            container.innerHTML = '<input type="text" class="test-input" placeholder="动态创建的输入框..." style="direction: ltr; text-align: left;" />';
+            const input = container.querySelector('input');
+            input.focus();
+        }
+        
+        function createLabelInput() {
+            const container = document.getElementById('labelContainer');
+            let html = '<div style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: white;">';
+            html += '<input type="text" id="testLabelSearch" placeholder="搜索标签..." style="width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; direction: ltr; text-align: left;" value="">';
+            html += '</div>';
+            container.innerHTML = html;
+            
+            const input = document.getElementById('testLabelSearch');
+            setTimeout(() => {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }, 0);
+            
+            input.oninput = function() {
+                console.log('输入值:', this.value);
+                console.log('光标位置:', this.selectionStart, this.selectionEnd);
+            };
+        }
+    </script>
+</body>
+</html>

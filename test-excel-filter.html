@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel列名过滤测试</title>
+    <style>
+        body {
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-data {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .filtered-data {
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Excel列名过滤逻辑测试</h2>
+    
+    <div class="test-container">
+        <h3>测试数据（模拟从API获取的标签树）</h3>
+        <div class="test-data" id="originalData"></div>
+        
+        <h3>过滤后的数据（应用filterExcelHeaders函数）</h3>
+        <div class="filtered-data" id="filteredData"></div>
+        
+        <h3>过滤规则</h3>
+        <ul>
+            <li>过滤掉匹配 <code>/^level\d+_/i</code> 模式的名称</li>
+            <li>例如：level1_name, level2_code, LEVEL3_DESC 等</li>
+            <li>保留正常的标签名称</li>
+            <li>递归应用到所有子节点</li>
+        </ul>
+    </div>
+
+    <script>
+        // 模拟标签数据（包含Excel列名）
+        const mockData = [
+            {
+                name: "level1_name",
+                children: [
+                    { name: "软件开发", children: [] },
+                    { name: "level2_code", children: [] }
+                ]
+            },
+            {
+                name: "项目管理",
+                children: [
+                    { name: "需求分析", children: [] },
+                    { name: "level2_name", children: [
+                        { name: "具体任务1", children: [] },
+                        { name: "LEVEL3_DESC", children: [] }
+                    ]},
+                    { name: "项目实施", children: [] }
+                ]
+            },
+            {
+                name: "LEVEL1_CODE",
+                children: []
+            },
+            {
+                name: "质量管理",
+                children: [
+                    { name: "测试", children: [] },
+                    { name: "验收", children: [] }
+                ]
+            }
+        ];
+        
+        // 过滤Excel列名的函数（从label-cascader-multi.js复制）
+        function filterExcelHeaders(nodes) {
+            if (!Array.isArray(nodes)) return [];
+            
+            return nodes.filter(function(node) {
+                const name = node.name || '';
+                // 过滤掉Excel列名模式：levelN_name, levelN_code等
+                const isExcelHeader = /^level\d+_/i.test(name);
+                return !isExcelHeader;
+            }).map(function(node) {
+                // 递归过滤子节点
+                if (node.children && node.children.length > 0) {
+                    return {
+                        ...node,
+                        children: filterExcelHeaders(node.children)
+                    };
+                }
+                return node;
+            });
+        }
+        
+        // 格式化显示数据
+        function formatData(data, indent = 0) {
+            let result = '';
+            data.forEach(node => {
+                const spaces = '  '.repeat(indent);
+                result += `${spaces}- ${node.name}\n`;
+                if (node.children && node.children.length > 0) {
+                    result += formatData(node.children, indent + 1);
+                }
+            });
+            return result;
+        }
+        
+        // 显示测试结果
+        document.addEventListener('DOMContentLoaded', function() {
+            const originalEl = document.getElementById('originalData');
+            const filteredEl = document.getElementById('filteredData');
+            
+            originalEl.textContent = formatData(mockData);
+            
+            const filteredData = filterExcelHeaders(mockData);
+            filteredEl.textContent = formatData(filteredData);
+            
+            console.log('原始数据:', mockData);
+            console.log('过滤后数据:', filteredData);
+        });
+    </script>
+</body>
+</html>

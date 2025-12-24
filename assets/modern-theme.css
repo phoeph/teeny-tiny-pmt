@@ -933,6 +933,71 @@ textarea.form-input {
   color: var(--danger);
 }
 
+/* Label Cascader Specific Styles */
+#labelCascaderDropdown {
+  min-width: 300px;
+  max-width: 800px;
+  padding: 0;
+}
+
+#labelCascaderDropdown .search-result-item {
+  border: 1px solid transparent;
+  margin: 2px 4px;
+}
+
+#labelCascaderDropdown .search-result-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+#labelCascaderDropdown .cascader-col {
+  background: var(--bg-surface);
+}
+
+#labelCascaderDropdown .cascader-col:last-child {
+  border-right: none;
+}
+
+#labelCascaderDropdown .select-btn:hover {
+  background: var(--primary-light);
+  border-radius: 50%;
+}
+
+#labelCascaderDropdown .arrow-area:hover {
+  color: var(--primary);
+}
+
+/* Search input styling */
+#labelSearch {
+  outline: none;
+  transition: border-color var(--transition-fast);
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: normal !important;
+}
+
+#labelSearch:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Clear button styling */
+#clearLabelsBtn {
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-surface) !important;
+  color: var(--text-secondary) !important;
+}
+
+#clearLabelsBtn:hover {
+  background: var(--danger-light) !important;
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
 /* ============================================
    List View
    ============================================ */

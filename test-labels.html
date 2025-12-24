@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labels Popup Test</title>
+    <link rel="stylesheet" href="assets/modern-theme.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .jira-item {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .jira-label {
+            width: 120px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .jira-value {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Labels Popup 测试</h2>
+        <p>点击下面的 Labels 链接测试优化后的弹窗功能：</p>
+        
+        <div id="testMeta">
+            <div class="jira-item">
+                <div class="jira-label">Labels</div>
+                <div class="jira-value">
+                    <!-- This will be populated by setupLabelEditor -->
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <h3>✅ 已修复的问题：</h3>
+            <ul>
+                <li>✅ <strong>移除了 "根节点" 文本和 Excel 样式的标题</strong></li>
+                <li>✅ <strong>过滤掉Excel列名</strong>（如level1_name、level2_name等）</li>
+                <li>✅ <strong>点击节点时保持滚动位置</strong></li>
+                <li>✅ 添加了模糊搜索功能</li>
+                <li>✅ <strong>添加了清空Labels功能</strong></li>
+                <li>✅ <strong>修复了搜索框光标位置问题</strong></li>
+                <li>✅ <strong>修复了中文输入法兼容性问题</strong></li>
+                <li>✅ <strong>消除了视觉闪烁和晃动</strong></li>
+                <li>✅ 改进了 UI 样式和用户体验</li>
+            </ul>
+            
+            <h3>🔍 搜索框测试步骤：</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <h4>基本功能测试：</h4>
+                <ol>
+                    <li><strong>点击上面的 Labels 链接</strong> - 打开标签选择弹窗</li>
+                    <li><strong>在搜索框中输入 "abc"</strong> - 文字应该从左到右正常显示</li>
+                    <li><strong>检查光标位置</strong> - 光标应该在文字 "abc" 的右侧</li>
+                    <li><strong>继续输入 "def"</strong> - 应该变成 "abcdef"，不是 "defabc"</li>
+                </ol>
+                
+                <h4>滚动位置保持测试：</h4>
+                <div style="background: #e8f5e8; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                    <strong>🎯 测试场景：</strong>
+                    <ol>
+                        <li><strong>打开Labels弹窗</strong> - 确保有足够多的标签项目</li>
+                        <li><strong>在左侧列表中向下滚动</strong> - 滚动到第19个或更靠后的项目</li>
+                        <li><strong>点击某个非叶子节点</strong> - 展开其子节点</li>
+                        <li><strong>观察视觉效果</strong> - 应该无闪烁、无晃动、无重新渲染</li>
+                        <li><strong>检查左侧滚动位置</strong> - 应该保持在点击的位置，不回到顶部</li>
+                        <li><strong>继续在其他列中操作</strong> - 所有列的滚动位置都应该保持</li>
+                    </ol>
+                    <p><strong>✅ 预期结果</strong>：平滑的用户体验，无任何视觉闪烁或晃动</p>
+                </div>
+                
+                <h4>中文输入法测试：</h4>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                    <strong>🔍 重点测试场景：</strong>
+                    <ol>
+                        <li><strong>切换到中文输入法</strong>（如搜狗拼音、微软拼音等）</li>
+                        <li><strong>输入拼音 "he"</strong> - 应该显示候选"和、合、河"等</li>
+                        <li><strong>选择汉字 "合"</strong> - 应该正确显示汉字，不会被打断</li>
+                        <li><strong>继续输入 "tong"</strong> - 应该能正常输入"同"，组成"合同"</li>
+                    </ol>
+                    <p><strong>⚠️ 如果还有问题，请打开浏览器开发者工具查看Console日志</strong></p>
+                </div>
+                
+                <h4>数据清洁测试：</h4>
+                <div style="background: #f0f8ff; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                    <strong>🧹 Excel列名过滤测试：</strong>
+                    <ol>
+                        <li><strong>打开Labels弹窗</strong> - 查看标签列表</li>
+                        <li><strong>检查是否有Excel列名</strong> - 不应该看到"level1_name"、"level2_name"等</li>
+                        <li><strong>展开各级节点</strong> - 所有层级都不应该显示Excel列名</li>
+                        <li><strong>搜索Excel列名</strong> - 搜索"level1"应该没有结果</li>
+                    </ol>
+                <h4>清空Labels功能测试：</h4>
+                <div style="background: #fff0f0; padding: 10px; border-radius: 4px; margin: 5px 0;">
+                    <strong>🗑️ 清空功能测试：</strong>
+                    <ol>
+                        <li><strong>选择一个标签</strong> - 先为项目/JOB/任务设置一个标签</li>
+                        <li><strong>重新打开Labels弹窗</strong> - 应该显示当前选中的标签</li>
+                        <li><strong>点击"清空"按钮</strong> - 位于搜索框右侧的红色按钮</li>
+                        <li><strong>检查结果</strong> - 标签应该变为"Select Label"，后端数据被清空</li>
+                        <li><strong>刷新页面验证</strong> - 确认标签确实被永久清空</li>
+                    </ol>
+                    <p><strong>✅ 预期结果</strong>：用户可以轻松清空不需要的标签，支持所有三个页面</p>
+                </div>
+            </div>
+            
+            <h3>🛠️ 技术修复详情：</h3>
+            <ul>
+                <li><strong>🆕 添加Excel列名过滤</strong>：使用正则表达式 <code>/^level\d+_/i</code> 过滤Excel列名</li>
+                <li>添加了 <code>direction: ltr</code> 和 <code>text-align: left</code> 样式</li>
+                <li><strong>🆕 改进了滚动位置保持机制</strong>：在DOM重建后自动恢复滚动位置</li>
+                <li>改进了光标位置管理和焦点处理</li>
+                <li>添加了 <code>autocomplete="off"</code> 和 <code>spellcheck="false"</code></li>
+                <li>优化了输入框重新渲染时的光标位置恢复</li>
+                <li><strong>🆕 添加了中文输入法支持</strong>：使用 <code>compositionstart/update/end</code> 事件</li>
+                <li><strong>🆕 防止输入法被打断</strong>：在输入法激活时暂停搜索更新</li>
+                <li><strong>🆕 分离DOM更新逻辑</strong>：避免重新创建输入框，只更新结果区域</li>
+                <li><strong>🆕 实现增量更新</strong>：智能检测视图状态，只更新必要的部分</li>
+                <li><strong>🆕 消除视觉闪烁</strong>：避免不必要的DOM重建，保持平滑的用户体验</li>
+                <li><strong>🆕 递归数据清洁</strong>：在所有层级都应用Excel列名过滤</li>
+            </ul>
+            
+            <div style="background: #e8f5e8; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                <strong>💡 额外测试页面：</strong><br>
+                • <a href="test-chinese-input.html" target="_blank">中文输入法专项测试</a><br>
+                • <a href="test-search-input.html" target="_blank">搜索框基础测试</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/label-cascader-multi.js"></script>
+    <script>
+        // Mock localStorage for testing
+        if (!localStorage.getItem('token')) {
+            localStorage.setItem('token', 'test-token');
+        }
+        
+        // Mock entity for testing
+        const testEntity = {
+            type: 'project',
+            id: 1,
+            code: 'TEST-001',
+            name: 'Test Project'
+        };
+        
+        // Mock extras
+        const testExtras = {
+            rawProject: {
+                id: 1,
+                code: 'TEST-001',
+                name: 'Test Project',
+                label_path: ''
+            },
+            project_id: 1
+        };
+        
+        // Initialize the label editor
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('testMeta');
+            setupLabelEditor(container, testEntity, testExtras);
+        });
+    </script>
+</body>
+</html>
