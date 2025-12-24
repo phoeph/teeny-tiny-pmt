@@ -878,7 +878,7 @@
               <div class="title" title="${titles.full}">${titles.short}</div>
               <div class="meta" style="display:flex; justify-content:space-between;"><span class="assignee">${assigneeDispChild || '-'}</span><span class="dates">${__getPlannedStartStr(t) || ''} ~ ${__getPlannedEndStr(t) || ''}</span></div>`;
               const ebtn = row.querySelector('.ellipsis-btn');
-              if (ebtn) ebtn.addEventListener('click', function(ev){ ev.stopPropagation(); openEditTaskModal(t); });
+              if (ebtn) ebtn.addEventListener('click', function(ev){ ev.stopPropagation(); showCardActionMenu(ev, t); });
               row.addEventListener('mouseenter', function(){ const parent=item.code||''; __applyShakeForTaskHover(parent, t.status||'', t.code||''); });
               row.addEventListener('mouseleave', function(){ __clearShake(); });
               const a2 = row.querySelector('.assignee');
@@ -1174,7 +1174,11 @@
   }
     
     async function __deleteItem(idOrCode){ 
-      console.log('[DEBUG] __deleteItem called with:', idOrCode);
+      if (!idOrCode) {
+        showToast('删除失败：无效的项目标识', 'error');
+        return;
+      }
+      
       try{ 
         const r=await fetch(`${API}/work-items/${idOrCode}`, { 
           method:'DELETE', 
@@ -1204,6 +1208,10 @@
         showToast('网络错误，删除失败', 'error');
       } 
     }
+    
+    // Make __deleteItem globally available
+    window.__deleteItem = __deleteItem;
+    
     function renderTimeline(){ const tl=document.getElementById('timeline'); tl.innerHTML=''; if(!ganttData.tasks || ganttData.tasks.length===0){ const empty=document.createElement('div'); empty.style.padding='12px'; empty.style.color='var(--text-secondary)'; empty.textContent='暂无可显示的任务'; tl.appendChild(empty); return; } (ganttData.tasks||[]).forEach((task, ti)=>{ const row=document.createElement('div'); row.className='task-row-timeline'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', -1); row.appendChild(createTaskBar(task, ti, -1)); tl.appendChild(row); (task.subtasks||[]).forEach((st, si)=>{ const sub=document.createElement('div'); sub.className='task-row-timeline'; sub.setAttribute('data-ti', ti); sub.setAttribute('data-si', si); sub.appendChild(createTaskBar(st, ti, si)); tl.appendChild(sub); }); }); enforceBarBounds(); applyTaskExpansionStates(); }
     function fixTaskTitles(){ try{ const list=document.getElementById('taskList'); if(!list) return; const titles=[...list.querySelectorAll('.task-title')]; if(!titles.length) return; const expected=[]; (ganttData.tasks||[]).forEach(t=>{ expected.push(__titleOrCode(t)); (t.subtasks||[]).forEach(st=> expected.push(__titleOrCode(st))); }); for(let i=0;i<Math.min(titles.length, expected.length); i++){ const el=titles[i]; const val=expected[i]; if(el && typeof val==='string'){ el.textContent=val; } } } catch(_){} }
     function tweakTaskListLayout(){}
@@ -2503,7 +2511,17 @@ async function updateStatus(status) {
     currentCardItem = item;
     cardMenuAnchor = e.target.closest('.ellipsis-btn') || e.target;
     
-    const isParent = item.kind === 'JOB';
+    // Improved task detection logic
+    // 1. Check if explicitly marked as TASK
+    // 2. Check if code starts with TASK-
+    // 3. Check if has parent relationship fields
+    // 4. Default to JOB if none of the above
+    const hasTaskCode = String(item.code || '').toUpperCase().startsWith('TASK-');
+    const hasParentFields = !!(item.parent_id || item.parentId || item.parent || item.parent_code || item.parentCode);
+    const isExplicitTask = String(item.kind||'').toUpperCase()==='TASK';
+    
+    const isTask = isExplicitTask || hasTaskCode || hasParentFields;
+    const isParent = !isTask; // If not a task, it's a parent (JOB)
     
     // 生成菜单HTML - 卡片菜单不包含状态选项（通过拖拽修改状态）
     let html = '';
@@ -2664,6 +2682,7 @@ async function updateStatus(status) {
           __deleteItem(savedItem.id || savedItem.code);
         }
       }
+    }
     }
   }
   
