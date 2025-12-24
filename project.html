@@ -2320,9 +2320,37 @@ function handleAction(action) {
           const originalLength = window.__items.length;
           window.__items = window.__items.filter(item => {
             const itemId = String(item.id || item.code);
-            return itemId !== String(idOrCode);
+            const targetId = String(idOrCode);
+            console.log(`[DEBUG] Comparing item ${itemId} with target ${targetId}`);
+            return itemId !== targetId;
           });
           console.log(`[DEBUG] Updated __items: ${originalLength} -> ${window.__items.length}`);
+          
+          // 同时更新任务的子任务
+          window.__items.forEach(item => {
+            if (item.subtasks && Array.isArray(item.subtasks)) {
+              const originalSubLength = item.subtasks.length;
+              item.subtasks = item.subtasks.filter(subtask => {
+                const subtaskId = String(subtask.id || subtask.code);
+                const targetId = String(idOrCode);
+                return subtaskId !== targetId;
+              });
+              if (originalSubLength !== item.subtasks.length) {
+                console.log(`[DEBUG] Updated subtasks for ${item.code}: ${originalSubLength} -> ${item.subtasks.length}`);
+              }
+            }
+          });
+        }
+        
+        // 重新渲染甘特图以反映更改
+        if (typeof buildGanttTasks === 'function' && typeof renderAll === 'function') {
+          try {
+            console.log('[DEBUG] Re-rendering gantt chart...');
+            buildGanttTasks(window.__items);
+            renderAll();
+          } catch (e) {
+            console.log('[DEBUG] Gantt re-render failed:', e);
+          }
         }
         
         console.log(`[DEBUG] Total elements removed: ${removedCount}`);
