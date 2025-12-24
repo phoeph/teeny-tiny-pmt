@@ -1145,7 +1145,36 @@
       const psDate = ps ? String(ps).slice(0, 10) : null;
       const peDate = pe ? String(pe).slice(0, 10) : null;
       const payload={ kind:'JOB', project_id: projectId, title, status, planned_start_date: psDate, planned_end_date: peDate, description: desc, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), priority }; const res=await fetch(`${API}/work-items/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let created=await res.json(); created=__normalizeWorkItemShape(created); if((!created.assignee||created.assignee==='') && prefix){ created.assignee = prefix; } showToast('JOB 创建成功','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; items.push(created); renderAfterLocalUpdate(items); await fetchWorkItems(); } else { await __showErrorFromResponse(res); } } catch(e){  showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); } }
-    async function __deleteItem(idOrCode){ try{ const r=await fetch(`${API}/work-items/${idOrCode}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); if(r.ok){ await fetchWorkItems(); return; } const r2=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ status:'deleted' }) }); if(r2.ok){ await fetchWorkItems(); } }catch(e){} }
+    async function __deleteItem(idOrCode){ 
+      try{ 
+        const r=await fetch(`${API}/work-items/${idOrCode}`, { 
+          method:'DELETE', 
+          headers:{ Authorization:`Bearer ${token}` } 
+        }); 
+        if(r.ok){ 
+          await fetchWorkItems(); 
+          showToast('删除成功', 'success');
+          return; 
+        } 
+        const r2=await fetch(`${API}/work-items/${idOrCode}`, { 
+          method:'PATCH', 
+          headers:{ 
+            'Content-Type':'application/json', 
+            Authorization:`Bearer ${token}` 
+          }, 
+          body: JSON.stringify({ status:'deleted' }) 
+        }); 
+        if(r2.ok){ 
+          await fetchWorkItems(); 
+          showToast('删除成功', 'success');
+        } else {
+          await __showErrorFromResponse(r2, '删除失败');
+        }
+      }catch(e){
+        console.error('[delete] Error deleting item:', e);
+        showToast('网络错误，删除失败', 'error');
+      } 
+    }
     function renderTimeline(){ const tl=document.getElementById('timeline'); tl.innerHTML=''; if(!ganttData.tasks || ganttData.tasks.length===0){ const empty=document.createElement('div'); empty.style.padding='12px'; empty.style.color='var(--text-secondary)'; empty.textContent='暂无可显示的任务'; tl.appendChild(empty); return; } (ganttData.tasks||[]).forEach((task, ti)=>{ const row=document.createElement('div'); row.className='task-row-timeline'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', -1); row.appendChild(createTaskBar(task, ti, -1)); tl.appendChild(row); (task.subtasks||[]).forEach((st, si)=>{ const sub=document.createElement('div'); sub.className='task-row-timeline'; sub.setAttribute('data-ti', ti); sub.setAttribute('data-si', si); sub.appendChild(createTaskBar(st, ti, si)); tl.appendChild(sub); }); }); enforceBarBounds(); applyTaskExpansionStates(); }
     function fixTaskTitles(){ try{ const list=document.getElementById('taskList'); if(!list) return; const titles=[...list.querySelectorAll('.task-title')]; if(!titles.length) return; const expected=[]; (ganttData.tasks||[]).forEach(t=>{ expected.push(__titleOrCode(t)); (t.subtasks||[]).forEach(st=> expected.push(__titleOrCode(st))); }); for(let i=0;i<Math.min(titles.length, expected.length); i++){ const el=titles[i]; const val=expected[i]; if(el && typeof val==='string'){ el.textContent=val; } } } catch(_){} }
     function tweakTaskListLayout(){}
