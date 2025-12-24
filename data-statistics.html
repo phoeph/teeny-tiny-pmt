@@ -1084,7 +1084,7 @@
     // Data fetching functions
     async function fetchAllData() {
       try {
-        console.log('📡 开始获取真实数据...');
+        
         
         // 初始化数据结构
         statsData.projects = [];
@@ -1092,7 +1092,7 @@
         statsData.users = [];
 
         // 1. 获取项目数据
-        console.log('🔗 调用API:', `${API}/projects`);
+        
         const projectsRes = await fetch(`${API}/projects`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
@@ -1100,14 +1100,14 @@
         if (projectsRes.ok) {
           const projectsData = await projectsRes.json();
           statsData.projects = projectsData.items || projectsData || [];
-          console.log('✅ 获取到项目数据:', statsData.projects.length, '个项目');
+          
         } else {
-          console.error('❌ 项目数据获取失败:', projectsRes.status, projectsRes.statusText);
+          
           throw new Error(`项目数据获取失败: ${projectsRes.status}`);
         }
 
         // 2. 获取用户数据
-        console.log('🔗 调用API:', `${API}/users`);
+        
         const usersRes = await fetch(`${API}/users`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
@@ -1115,9 +1115,9 @@
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           statsData.users = usersData || [];
-          console.log('✅ 获取到用户数据:', statsData.users.length, '个用户');
+          
         } else {
-          console.error('❌ 用户数据获取失败:', usersRes.status, usersRes.statusText);
+          
           throw new Error(`用户数据获取失败: ${usersRes.status}`);
         }
 
@@ -1125,7 +1125,7 @@
         const allWorkItems = [];
         for (const project of statsData.projects) {
           try {
-            console.log('🔗 调用API:', `${API}/work-items/by-project/${project.id}`);
+            
             const workItemsRes = await fetch(`${API}/work-items/by-project/${project.id}`, { 
               headers: { Authorization: `Bearer ${token}` } 
             });
@@ -1172,25 +1172,25 @@
                 }
               }
             } else {
-              console.error(`❌ 项目 ${project.id} 的工作项获取失败:`, workItemsRes.status, workItemsRes.statusText);
+              
               throw new Error(`工作项数据获取失败: ${workItemsRes.status}`);
             }
           } catch (error) {
-            console.error(`❌ 项目 ${project.id} 的工作项获取异常:`, error);
+            
             throw error;
           }
         }
         
         statsData.workItems = allWorkItems;
-        console.log('✅ 获取到工作项数据:', statsData.workItems.length, '个工作项');
+        
 
         // 4. 获取真实活动数据
         await fetchRealActivities();
         
-        console.log('✅ 所有真实数据获取成功');
+        
         return true;
       } catch (error) {
-        console.error('❌ 数据获取失败:', error);
+        
         // 不使用模拟数据，显示错误状态
         showDataError(error.message);
         return false;
@@ -1235,7 +1235,7 @@
     // 获取真实活动数据
     async function fetchRealActivities() {
       try {
-        console.log('📋 获取最近活动数据...');
+        
         
         // 由于评论API只支持按实体获取，我们需要从项目和工作项中收集评论
         const allActivities = [];
@@ -1243,7 +1243,7 @@
         // 从项目中获取评论作为活动 (限制只获取前3个项目的评论以避免过多API调用)
         for (const project of statsData.projects.slice(0, 3)) {
           try {
-            console.log('🔗 调用API:', `${API}/comments/project/${project.id}`);
+            
             const commentsRes = await fetch(`${API}/comments/project/${project.id}`, { 
               headers: { Authorization: `Bearer ${token}` } 
             });
@@ -1262,17 +1262,17 @@
                 });
               }
             } else {
-              console.warn(`⚠️ 获取项目 ${project.id} 评论失败:`, commentsRes.status);
+              
             }
           } catch (error) {
-            console.warn(`⚠️ 获取项目 ${project.id} 评论异常:`, error);
+            
           }
         }
         
         // 从工作项中获取评论作为活动 (限制只获取前5个工作项的评论)
         for (const workItem of statsData.workItems.slice(0, 5)) {
           try {
-            console.log('🔗 调用API:', `${API}/comments/work_item/${workItem.id}`);
+            
             const commentsRes = await fetch(`${API}/comments/work_item/${workItem.id}`, { 
               headers: { Authorization: `Bearer ${token}` } 
             });
@@ -1291,16 +1291,16 @@
                 });
               }
             } else {
-              console.warn(`⚠️ 获取工作项 ${workItem.id} 评论失败:`, commentsRes.status);
+              
             }
           } catch (error) {
-            console.warn(`⚠️ 获取工作项 ${workItem.id} 评论异常:`, error);
+            
           }
         }
         
         // 如果没有评论数据，生成一些基于工作项更新的活动
         if (allActivities.length === 0) {
-          console.log('📋 没有评论数据，基于工作项生成活动数据...');
+          
           
           // 基于工作项的更新时间生成活动
           const recentWorkItems = statsData.workItems
@@ -1325,10 +1325,10 @@
           .sort((a, b) => new Date(b.time) - new Date(a.time))
           .slice(0, 20);
           
-        console.log('✅ 获取到活动数据:', statsData.activities.length, '条');
+        
         
       } catch (error) {
-        console.error('❌ 获取活动数据失败:', error);
+        
         // 不使用模拟数据，设置为空数组
         statsData.activities = [];
       }
@@ -1348,15 +1348,14 @@
       const activeUsers = new Set(statsData.workItems.map(w => w.assignee)).size;
 
       // 调试信息
-      console.log('📊 KPI计算详情:');
-      console.log('- 总项目数:', totalProjects);
-      console.log('- 活跃项目数:', activeProjects);
-      console.log('- 总工作项数:', statsData.workItems.length);
-      console.log('- JOB数量:', jobs.length);
-      console.log('- TASK数量:', tasks.length);
-      console.log('- 已完成任务数:', completedTasks);
-      console.log('- 活跃用户数:', activeUsers);
-      console.log('- 工作项类型分布:', statsData.workItems.reduce((acc, item) => {
+      
+      
+      
+      
+      
+      
+      
+      
         acc[item.kind] = (acc[item.kind] || 0) + 1;
         return acc;
       }, {}));
@@ -2106,12 +2105,12 @@
       }
       
       if (issues.length > 0) {
-        console.error('❌ 数据验证失败:', issues);
+        
         showDataError(`数据验证失败: ${issues.join(', ')}`);
         return false;
       }
       
-      console.log('✅ 数据验证通过 - 使用真实数据库数据');
+      
       return true;
     }
 
@@ -2141,11 +2140,11 @@
     function renderAllData() {
       // Validate data before rendering - 只有真实数据验证通过才渲染
       if (!validateData()) {
-        console.error('❌ 数据验证失败，停止渲染');
+        
         return;
       }
       
-      console.log('📊 开始渲染真实数据...');
+      
       renderKPIs();
       renderTopProjectsProgress();
       renderUpcomingDeadlines();
@@ -2164,7 +2163,7 @@
       }
       
       // Log render completion
-      console.log('✅ Dashboard渲染完成 - 使用真实数据库数据');
+      
     }
 
     function updateDataQualityIndicator() {
@@ -2233,7 +2232,7 @@
           showToast(`使用模拟数据 (${loadTime}ms)`, 'info');
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        
         showToast('数据更新失败', 'error');
         // 不使用模拟数据，显示错误状态
         showDataError('数据更新失败，请检查网络连接或联系管理员');
@@ -2415,7 +2414,7 @@
         }
         
         if (duration > 100) { // Warn if render takes more than 100ms
-          console.warn(`Slow render detected: ${name} took ${duration.toFixed(2)}ms`);
+          
         }
         
         return result;
@@ -2428,13 +2427,13 @@
 
     // Initialize
     async function init() {
-      console.log('🚀 初始化数据统计dashboard...');
+      
       
       // Initial load
       await fetchDataWithLoading();
       
       // Refresh activities on page entry
-      console.log('📋 刷新最近活动...');
+      
       await fetchRealActivities();
       renderRecentActivities();
       
@@ -2442,12 +2441,12 @@
       
       // Show initialization complete message
       const initTime = Date.now() - performanceMetrics.startTime;
-      console.log(`✅ Dashboard初始化完成，耗时: ${initTime}ms`);
+      
       showToast(`Dashboard加载完成 (${initTime}ms)`, 'success');
       
       // Auto refresh every 5 minutes
       setInterval(async () => {
-        console.log('🔄 自动刷新数据...');
+        
         await fetchAllData();
         renderAllData();
         showToast('数据已自动刷新', 'info');
@@ -2455,7 +2454,7 @@
       
       // Auto refresh activities every 1 minute
       setInterval(async () => {
-        console.log('📋 自动刷新最近活动...');
+        
         await fetchRealActivities();
         renderRecentActivities();
         updateTimestamp();

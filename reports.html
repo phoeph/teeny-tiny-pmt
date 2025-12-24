@@ -727,7 +727,7 @@
         
         renderProjectList();
       } catch (error) {
-        console.error('Error loading projects:', error);
+        
         document.getElementById('projectList').innerHTML = 
           '<div style="padding: 20px; text-align: center; color: var(--danger);">加载项目失败，请刷新重试</div>';
       }
@@ -888,7 +888,7 @@
         }
         
       } catch (error) {
-        console.error('Error generating report:', error);
+        
         document.getElementById('reportContent').innerHTML = `
           <div class="empty-state">
             <div class="icon" style="background: var(--danger-light);">
@@ -949,7 +949,7 @@
           throw new Error('Authentication failed');
         }
       } catch (error) {
-        console.warn('Failed to fetch non-dev works:', error);
+        
       }
       
       // 不按日期过滤，获取所有工作项
@@ -2113,7 +2113,7 @@
           
           // 注意：不需要再次更新非开发工作管理器，因为数据已经是最新的了
         } catch (error) {
-          console.error('Error regenerating report:', error);
+          
         }
       }
     };

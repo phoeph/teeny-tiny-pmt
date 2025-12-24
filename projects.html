@@ -316,7 +316,7 @@
            const raw = await r.json();
            currentUser = (raw && raw.user) ? raw.user : raw;
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {  }
     }
 
     function applyViewMode(mode) {
@@ -336,7 +336,7 @@
       const isAdmin = currentUser && currentUser.username === 'admin';
 
       projectsData.forEach(p => {
-        console.log('🔧 创建项目卡片:', p.name, 'ID:', p.id);
+        
         const el = document.createElement('div');
         
         let html = '';
@@ -390,23 +390,23 @@
         
         // Add debugging for click events
         el.addEventListener('click', (e) => {
-           console.log('🖱️ 点击事件触发!');
-           console.log('🖱️ 事件目标:', e.target);
-           console.log('🖱️ 当前元素:', e.currentTarget);
-           console.log('🖱️ 点击项目:', p);
-           console.log('🔗 项目ID:', p.id, '类型:', typeof p.id);
+           
+           
+           
+           
+           
            
            // Stop propagation to prevent any parent handlers
            e.stopPropagation();
            
            // Check if clicking on action buttons
            if (e.target.closest('.card-actions') || e.target.closest('.action-btn') || e.target.closest('.card-dropdown')) {
-             console.log('🖱️ 点击了操作按钮，阻止跳转');
+             
              return;
            }
            
            const targetUrl = `project.html?id=${p.id}`;
-           console.log('🔗 准备跳转到:', targetUrl);
+           
            
            // Use window.location.href without leading slash to avoid URL rewriting issues
            window.location.href = targetUrl;
@@ -416,11 +416,11 @@
         el.onclick = null;
         
         container.appendChild(el);
-        console.log('✅ 项目卡片已添加到容器:', p.name);
+        
       });
       
-      console.log('📊 渲染完成，总共', projectsData.length, '个项目卡片');
-      console.log('🖱️ 容器中的卡片数量:', container.children.length);
+      
+      
       
       updatePaginationUI();
     }
@@ -503,24 +503,24 @@
 
     async function fetchProjects() {
       if (!currentUser) await fetchCurrentUser();
-      console.log('🔍 开始获取项目数据...');
+      
       try {
         const url = `${API}/projects?page=${currentPage}&size=${pageSize}`;
-        console.log('📡 API调用:', url);
+        
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        console.log('📡 API响应状态:', res.status, res.statusText);
+        
         
         if (!res.ok) {
           throw new Error(`API调用失败: ${res.status} ${res.statusText}`);
         }
         const data = await res.json();
-        console.log('📡 API返回数据:', data);
+        
         projectsData = data.items || [];
         totalItems = data.total || 0;
-        console.log('✅ 获取到真实项目数据:', projectsData.length, '个项目');
-        console.log('📋 项目数据详情:', projectsData);
+        
+        
       } catch (e) {
-        console.error('❌ 项目数据获取失败:', e.message);
+        
         projectsData = [];
         totalItems = 0;
         // 显示错误信息而不是使用模拟数据

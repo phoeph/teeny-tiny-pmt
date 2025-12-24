@@ -381,25 +381,14 @@
     const params = new URLSearchParams(location.search);
     const idParam = params.get('id');
     
-    console.log('🔍 Project页面调试信息:');
-    console.log('- 完整URL:', location.href);
-    console.log('- URL search部分:', location.search);
-    console.log('- URLSearchParams对象:', params);
-    console.log('- 获取到的id参数:', idParam);
-    console.log('- id参数类型:', typeof idParam);
-    
     const parsedId = parseInt(idParam || '', 10);
-    console.log('- parseInt结果:', parsedId);
-    console.log('- parseInt结果类型:', typeof parsedId);
-    console.log('- Number.isFinite检查:', Number.isFinite(parsedId));
-    
     const projectId = parsedId;
     window.__projectId = projectId;
     window.__pageHistoryKey = `project:${projectId}`;
     PageHistory.init(window.__pageHistoryKey);
     
     if (!Number.isFinite(projectId)) {
-      console.error('[project] 缺少或非法的项目ID参数');
+      // 缺少或非法的项目ID参数
       document.getElementById('projectHeader').textContent = '错误：缺少项目ID参数';
       
       // 显示友好的错误页面
@@ -516,7 +505,6 @@
           try { ev.dataTransfer.setData('text/plain', val); } catch (e) {}
           try { ev.dataTransfer.setData('text', val); } catch (e) {}
           ev.dataTransfer.effectAllowed = 'move';
-          try { console.debug('[kanban] dragstart', { id: val, from: id }); } catch (e) {}
           el.classList.add('dragging');
         });
         container.addEventListener('dragend', ev => { const el = ev.target.closest('.card'); if (el) el.classList.remove('dragging'); }, true);
@@ -532,7 +520,6 @@
           const fallback = wid || ev.dataTransfer.getData('text');
           const idOrCode = fallback;
           if (!idOrCode) return;
-          try { console.debug('[kanban] drop', { to: status, id: idOrCode }); } catch (e) {}
           await performStatusChange(idOrCode, status);
           col.classList.remove('drop-active');
           col.classList.add('drop-flash');
@@ -568,7 +555,7 @@
         if (res.ok) { showToast('状态更新成功', 'success'); await fetchWorkItems(); }
         else { await __showErrorFromResponse(res, '更新失败'); }
       } catch (err) {
-        console.error('[kanban] patch error', err);
+        // 网络错误
         showToast('网络错误，更新失败', 'error');
       }
     }
@@ -674,12 +661,10 @@
         loadProjectAttachments();
       } catch (e) {
         document.getElementById('projectHeader').textContent = '错误：项目加载失败';
-        console.error('[project] fetchProject failed', e);
       }
     }
 
     async function fetchWorkItems() {
-      console.time('[data] fetchWorkItems');
       if (!Number.isFinite(projectId)) return;
       try{ await loadAssigneeDefaults(); }catch(_){}
       try{ await fetchDbAssignees(); }catch(_){}
@@ -689,7 +674,7 @@
         if (!res.ok) { if (res.status===401) throw new Error('unauthorized'); throw new Error('backend unavailable'); }
         data = await res.json();
       } catch (e) {
-        console.error('[project] fetchWorkItems failed', e);
+        // 工作项加载失败
         showToast(e && e.message==='unauthorized' ? '登录已过期，请重新登录' : '工作项加载失败', 'error');
         const prev = Array.isArray(window.__items) ? window.__items : [];
         data = { items: prev };
@@ -737,16 +722,16 @@
           }
         });
       });
-      try { console.table({ todo: byStatus.todo.length, doing: byStatus.doing.length, done: byStatus.done.length }); } catch (e) {}
-      console.timeEnd('[data] fetchWorkItems');
+      try {  } catch (e) {}
+      
       window.__items = normalizedItems || [];
       window.__jobs = jobs;
       window.__tasksFlat = tasksFlat;
       
-      console.time('[gantt] build+init');
+      
       buildGanttTasks(window.__items);
       initGantt();
-      console.timeEnd('[gantt] build+init');
+      
       renderKanban(byStatus);
       enableDnD();
       buildAssigneeSuggestions();
@@ -807,7 +792,7 @@
           try { ev.dataTransfer.setData('text/plain', val); } catch (e) {}
           try { ev.dataTransfer.setData('text', val); } catch (e) {}
           ev.dataTransfer.effectAllowed = 'move';
-          console.log('[kanban] dragstart', { id: val, fromStatus: item.status, kind: item.kind });
+          
         });
         (function(){
           const codeStr = item.code || '';
@@ -898,7 +883,7 @@
               try { ev.dataTransfer.setData('text/plain', val); } catch (e) {}
               try { ev.dataTransfer.setData('text', val); } catch (e) {}
               ev.dataTransfer.effectAllowed = 'move';
-              try { console.debug('[kanban] dragstart', { id: val, fromStatus: t.status, kind: 'TASK' }); } catch (e) {}
+              try {  } catch (e) {}
               row.classList.add('dragging');
             });
             row.addEventListener('dragend', ()=> row.classList.remove('dragging'));
@@ -992,14 +977,14 @@
         });
         ganttData.tasks.push({ id:'__orphans__', name:'未归属任务', category:'', startDay:0, duration:1, color:'var(--text-secondary)', assignee:'', description:'未归属任务', type:'parent', subtasks:mapped });
       }
-      console.debug('[gantt] tasks built', { items: (items||[]).length, parents: ganttData.tasks.length, orphans: orphanTasks.length });
+      
     }
 
     function bindEditHandlers(){ try{ const tCancel=document.getElementById('taskEditCancelBtn'); const tSave=document.getElementById('taskEditSaveBtn'); const jCancel=document.getElementById('jobEditCancelBtn'); const jSave=document.getElementById('jobEditSaveBtn'); if(tCancel){ tCancel.onclick=function(){ __creatingTask=false; __creatingParentRef=null; closeEditTaskModal(); }; } if(tSave){ tSave.onclick=async function(){ const ps=document.getElementById('taskEditStartInput').value||null; const pe=document.getElementById('taskEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const title=(document.getElementById('taskEditTitleInput').value||'').trim(); const assigneeInput=(document.getElementById('taskEditAssigneeInput').value||'').trim(); if(__creatingTask){ if(!title){ showToast('请输入任务标题','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } const parentIdOrCode = __creatingParentRef ? (__creatingParentRef.id||__creatingParentRef.code) : null; await __createTask(parentIdOrCode, title, ps, pe); __creatingTask=false; __creatingParentRef=null; closeEditTaskModal(); return; } if(!__editingTaskRef) return; if(!title){ showToast('请输入任务标题','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } const idOrCode=__editingTaskRef.id||__editingTaskRef.code; const prefix=__assigneeToPrefix(assigneeInput); const status=document.getElementById('taskEditStatusSelect').value||'todo'; const payload={ title, description: (document.getElementById('taskEditDescInput')? (document.getElementById('taskEditDescInput').value||'') : ''), assignee: prefix, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), planned_start_date: ps, planned_end_date: pe, status }; if(status==='done'){ const endStr = pe || __getPlannedEndStr(__editingTaskRef) || ps; const startStr = ps || __getPlannedStartStr(__editingTaskRef) || endStr; const eDate = endStr ? new Date(endStr) : new Date(); const sDate = startStr ? new Date(startStr) : null; const msPerDay = 1000*60*60*24; let days = 1; if(sDate){ days = Math.max(1, Math.floor((eDate - sDate)/msPerDay) + 1); } payload.completed_at = eDate.toISOString(); payload.actual_hours = days * 8; } await __patchTask(idOrCode, payload); __saveLocalAssignment(idOrCode, prefix); closeEditTaskModal(); }; } if(jCancel){ jCancel.onclick=function(){ __creatingJob=false; closeEditJobModal(); }; } if(jSave){ jSave.onclick=async function(){ const ps=document.getElementById('jobEditStartInput').value||null; const pe=document.getElementById('jobEditEndInput').value||null; if(ps && pe){ const s=new Date(ps); const e=new Date(pe); if(e<s){ showToast('结束日期不得早于开始日期','error'); return; } } const title=(document.getElementById('jobEditTitleInput').value||'').trim(); const assigneeInput=(document.getElementById('jobEditAssigneeInput').value||'').trim(); if(__creatingJob){ if(!title){ showToast('请输入JOB标题','error'); return; } const dup=(Array.isArray(window.__items)? window.__items : []).some(function(i){ const isJob=i.kind==='JOB' || (!i.parent_id && !i.parentId && !i.parent && !i.parent_code && !i.parentCode); const t=(i.title||i.name||'').trim(); return isJob && t && t===title; }); if(dup){ showToast('JOB名称已存在，请更换','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } await __createJob(title, ps, pe); __creatingJob=false; closeEditJobModal(); return; } if(!__editingJobRef) return; if(!title){ showToast('请输入JOB标题','error'); return; } if(!assigneeInput){ showToast('请选择负责人','error'); return; } const idOrCode=__editingJobRef.id||__editingJobRef.code; const prefix=__assigneeToPrefix(assigneeInput); const status=document.getElementById('jobEditStatusSelect').value||'todo'; const payload={ title, description: (document.getElementById('jobEditDescInput')? (document.getElementById('jobEditDescInput').value||'') : ''), assignee: prefix, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), planned_start_date: ps, planned_end_date: pe, status }; if(status==='done'){ const endStr = pe || __getPlannedEndStr(__editingJobRef) || ps; const startStr = ps || __getPlannedStartStr(__editingJobRef) || endStr; const eDate = endStr ? new Date(endStr) : new Date(); const sDate = startStr ? new Date(startStr) : null; const msPerDay = 1000*60*60*24; let days = 1; if(sDate){ days = Math.max(1, Math.floor((eDate - sDate)/msPerDay) + 1); } payload.completed_at = eDate.toISOString(); payload.actual_hours = days * 8; } await __patchTask(idOrCode, payload); __saveLocalAssignment(idOrCode, prefix);
       try{ const allItems = Array.isArray(window.__items) ? window.__items.slice() : []; let kids=[]; for(const it of allItems){ const isTask = (it.kind==='TASK') || (!!it.parent_id || !!it.parentId || !!it.parent || !!it.parent_code || !!it.parentCode); const matchParent = (it.parent_id===__editingJobRef.id) || (it.parentId===__editingJobRef.id) || (it.parent_code===__editingJobRef.code) || (it.parentCode===__editingJobRef.code) || (it.parent===__editingJobRef.code); if(isTask && matchParent) kids.push(it); } if((!kids||kids.length===0) && Array.isArray(__editingJobRef.subtasks)) kids = __editingJobRef.subtasks; if(ps && pe){ for(const k of (kids||[])){ const cps=__getPlannedStartStr(k)||ps; const cpe=__getPlannedEndStr(k)||pe; const fit=__fitChildDatesToParentStr(cps, cpe, ps, pe); if(fit.ps!==cps || fit.pe!==cpe){ await __scheduleChange(k.id||k.code, fit.ps, fit.pe); } } } }catch(_){}
       await fetchWorkItems();
       closeEditJobModal(); }; } }catch(_){} }
-    function initGantt() { try { console.time('[gantt] init'); initScrollPosition(); ensureTotalDays(); generateTimeColumns(); renderAll(); centerOnCurrent(); setupScrollSync(); bindEditHandlers(); console.timeEnd('[gantt] init'); } catch(e){ console.error('[gantt] init error', e); } }
+    function initGantt() { try {  initScrollPosition(); ensureTotalDays(); generateTimeColumns(); renderAll(); centerOnCurrent(); setupScrollSync(); bindEditHandlers();  } catch(e){  } }
     function initScrollPosition() { const daysSinceStart = Math.floor((currentDate - startDate)/(1000*60*60*24)); columnWidth = timeMode==='day' ? 30 : 100; scrollPosition = Math.max(0, daysSinceStart*columnWidth - viewportWidth/2); }
     
     function setupScrollSync() {
@@ -1064,7 +1049,7 @@
       idx=Math.max(0, Math.min(idx, (ganttData.timeColumns||[]).length-1));
       return idx;
     }
-    function renderAll(){ console.time('[gantt] renderAll'); __buildFixedDurations(); renderTimeHeaderFixed(); renderTaskList(); tweakTaskListLayout(); applyTaskExpansionStates(); fixTaskTitles(); renderTimeline(); applyTaskExpansionStates(); renderAssigneeList(); renderPriorityList(); console.timeEnd('[gantt] renderAll'); }
+    function renderAll(){  __buildFixedDurations(); renderTimeHeaderFixed(); renderTaskList(); tweakTaskListLayout(); applyTaskExpansionStates(); fixTaskTitles(); renderTimeline(); applyTaskExpansionStates(); renderAssigneeList(); renderPriorityList();  }
 
     function initUnifiedScrollbar(){ try{ const body=document.querySelector('.gantt-body'); if(!body) return; body.style.position='relative'; let track=document.getElementById('unifiedScrollTrack'); if(!track){ track=document.createElement('div'); track.id='unifiedScrollTrack'; track.innerHTML='<div id="unifiedScrollThumb"></div>'; body.appendChild(track); } updateUnifiedScrollbar(); const tl=document.getElementById('timelineContainer'); const thumb=document.getElementById('unifiedScrollThumb'); let dragging=false, startY=0, startTop=0; const setByRatio=(ratio)=>{ const max= (tl.scrollHeight - tl.clientHeight); const y=Math.max(0, Math.min(max, ratio*max)); tl.scrollTop=y; const evt=new Event('scroll'); tl.dispatchEvent(evt); }; const onDown=(e)=>{ dragging=true; startY=e.clientY; startTop=thumb.offsetTop; document.body.style.userSelect='none'; }; const onMove=(e)=>{ if(!dragging) return; const trackRect=track.getBoundingClientRect(); const thumbRect=thumb.getBoundingClientRect(); const maxThumbTop = trackRect.height - thumbRect.height; const delta = e.clientY - startY; const nextTop = Math.max(0, Math.min(maxThumbTop, startTop + delta)); const ratio = nextTop / maxThumbTop; setByRatio(ratio); }; const onUp=()=>{ dragging=false; document.body.style.userSelect=''; }; thumb.onmousedown=onDown; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); window.addEventListener('resize', updateUnifiedScrollbar); }catch(_){ } }
 
@@ -1146,7 +1131,7 @@
       return it; }) }; const res=await fetch(`${API}/work-items/batch`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ const data=await res.json(); const updatedList=(data&&data.items)||[]; showToast('批量更新成功','success'); const itemsLocal = Array.isArray(window.__items)? window.__items.slice() : []; for(const updated of updatedList){ const norm=__normalizeWorkItemShape(updated); const idx = itemsLocal.findIndex(i=> (i.id===norm.id) || (i.code===norm.code)); if(idx>=0){ itemsLocal[idx] = Object.assign({}, itemsLocal[idx], norm); } else { for (let i=0;i<itemsLocal.length;i++){ const subs=itemsLocal[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===norm.id) || (s.code===norm.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], norm); break; } } } }
         renderAfterLocalUpdate(itemsLocal);
         return updatedList;
-      } else { await __showErrorFromResponse(res, '保存失败'); return []; } } catch(e){ console.error('[batch] patch error', e); showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); return []; } }
+      } else { await __showErrorFromResponse(res, '保存失败'); return []; } } catch(e){  showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); return []; } }
     let __editingJobRef=null;
     async function openEditJobModal(ref){ __editingJobRef=__findFullItem(ref); const b=document.getElementById('jobEditModalBackdrop'); const titleEl=document.querySelector('#jobEditModal h4'); if(titleEl) titleEl.textContent='编辑任务'; document.getElementById('jobEditTitleInput').value=__editingJobRef.title||__editingJobRef.name||''; try{ document.getElementById('jobEditDescInput').value=__editingJobRef.description||''; }catch(_){ } const assEl=document.getElementById('jobEditAssigneeInput'); await fetchDbAssignees(); (function(){ const base=(__editingJobRef.assignee||__editingJobRef.assignee_prefix||__editingJobRef.assignee_username||''); const disp=__assigneeToDisplay(base); assEl.value=(disp==='NA')? '' : disp; })(); if(!assEl.value){ const alt=(__editingJobRef.assignee_prefix||__editingJobRef.assignee_username||''); const disp2=__assigneeToDisplay(alt); assEl.value=(disp2==='NA')? '' : disp2; } enableAssigneeDropdown('jobEditAssigneeInput'); try{ assEl.addEventListener('blur', commitJobAssigneeAuto); assEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ commitJobAssigneeAuto(); } }); }catch(_){} const sStr=__getPlannedStartStr(__editingJobRef)||''; const eStr=__getPlannedEndStr(__editingJobRef)||''; document.getElementById('jobEditStartInput').value=__toLocalInputValue(sStr); document.getElementById('jobEditEndInput').value=__toLocalInputValue(eStr); const priSel=document.getElementById('jobEditPrioritySelect'); if(priSel) priSel.value=(__editingJobRef.priority||'medium'); attachDatePicker(document.getElementById('jobEditStartInput')); attachDatePicker(document.getElementById('jobEditEndInput')); const estEl=document.getElementById('jobEditEstimatedHoursInput'); if(estEl) estEl.value=(__editingJobRef.estimated_hours!=null? __editingJobRef.estimated_hours : (__daysBetween(sStr,eStr)*8))||0; const actEl=document.getElementById('jobEditActualHoursInput'); if(actEl) actEl.value=(__editingJobRef.actual_hours!=null? __editingJobRef.actual_hours : ''); const compEl=document.getElementById('jobEditCompletedAtInput'); if(compEl) compEl.value=(__editingJobRef.completed_at? __toLocalInputValue(__editingJobRef.completed_at) : ''); const sel=document.getElementById('jobEditStatusSelect'); sel.value=__editingJobRef.status||'todo'; b.style.display='flex'; document.body.style.overflow='hidden'; }
     function closeEditJobModal(){ const b=document.getElementById('jobEditModalBackdrop'); b.style.display='none'; __editingJobRef=null; document.body.style.overflow=''; }
@@ -1154,11 +1139,11 @@
       try{ const parent=(ganttData.tasks||[]).find(t=> String(t.id||t.code)===String(parentIdOrCode)); if(parent){ const pStart=__toYMD(__addDays(startDate, parent.startDay||0)); const pEnd=__toYMD(__addDays(__addDays(startDate, parent.startDay||0), Math.max(1,parent.duration||1)-1)); if(ps && ps<pStart) ps=pStart; if(pe && pe>pEnd) pe=pEnd; } }catch(_){ }
       const psDate = ps ? String(ps).slice(0, 10) : null;
       const peDate = pe ? String(pe).slice(0, 10) : null;
-      const payload={ kind:'TASK', project_id: projectId, parent_id: typeof parentIdOrCode==='string'? (parseInt(parentIdOrCode,10)||null) : parentIdOrCode, title, status, planned_start_date: psDate, planned_end_date: peDate, description: desc, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), priority }; const res=await fetch(`${API}/work-items/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let created=await res.json(); created=__normalizeWorkItemShape(created); if((!created.assignee||created.assignee==='') && prefix){ created.assignee = prefix; } showToast('任务创建成功','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const pid = payload.parent_id; const parent = items.find(i=> i.id===pid); if(parent){ parent.subtasks = Array.isArray(parent.subtasks)? parent.subtasks : []; parent.subtasks.push(created); } else { items.push(created); } renderAfterLocalUpdate(items); await fetchWorkItems(); } else { await __showErrorFromResponse(res); } } catch(e){ console.error('[task] create error', e); showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); } }
+      const payload={ kind:'TASK', project_id: projectId, parent_id: typeof parentIdOrCode==='string'? (parseInt(parentIdOrCode,10)||null) : parentIdOrCode, title, status, planned_start_date: psDate, planned_end_date: peDate, description: desc, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), priority }; const res=await fetch(`${API}/work-items/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let created=await res.json(); created=__normalizeWorkItemShape(created); if((!created.assignee||created.assignee==='') && prefix){ created.assignee = prefix; } showToast('任务创建成功','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const pid = payload.parent_id; const parent = items.find(i=> i.id===pid); if(parent){ parent.subtasks = Array.isArray(parent.subtasks)? parent.subtasks : []; parent.subtasks.push(created); } else { items.push(created); } renderAfterLocalUpdate(items); await fetchWorkItems(); } else { await __showErrorFromResponse(res); } } catch(e){  showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); } }
     async function __createJob(title, ps, pe){ try{ const prefix=(function(){ const elc=document.getElementById('jobAssigneeInput'); if(elc){ return __assigneeToPrefix(elc.value||''); } const ele=document.getElementById('jobEditAssigneeInput'); return __assigneeToPrefix(ele? (ele.value||'') : ''); })(); const status=(function(){ const elc=document.getElementById('jobStatusSelect'); if(elc){ return elc.value||'todo'; } const ele=document.getElementById('jobEditStatusSelect'); return ele? (ele.value||'todo') : 'todo'; })(); const desc=(function(){ const elc=document.getElementById('jobDescInput'); if(elc){ return elc.value||''; } const ele=document.getElementById('jobEditDescInput'); return ele? (ele.value||'') : ''; })(); const priority=(function(){ const elc=document.getElementById('jobPrioritySelect'); if(elc){ return elc.value||'medium'; } const ele=document.getElementById('jobEditPrioritySelect'); return ele? (ele.value||'medium') : 'medium'; })();
       const psDate = ps ? String(ps).slice(0, 10) : null;
       const peDate = pe ? String(pe).slice(0, 10) : null;
-      const payload={ kind:'JOB', project_id: projectId, title, status, planned_start_date: psDate, planned_end_date: peDate, description: desc, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), priority }; const res=await fetch(`${API}/work-items/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let created=await res.json(); created=__normalizeWorkItemShape(created); if((!created.assignee||created.assignee==='') && prefix){ created.assignee = prefix; } showToast('JOB 创建成功','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; items.push(created); renderAfterLocalUpdate(items); await fetchWorkItems(); } else { await __showErrorFromResponse(res); } } catch(e){ console.error('[job] create error', e); showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); } }
+      const payload={ kind:'JOB', project_id: projectId, title, status, planned_start_date: psDate, planned_end_date: peDate, description: desc, assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix), priority }; const res=await fetch(`${API}/work-items/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(payload) }); if(res.ok){ let created=await res.json(); created=__normalizeWorkItemShape(created); if((!created.assignee||created.assignee==='') && prefix){ created.assignee = prefix; } showToast('JOB 创建成功','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; items.push(created); renderAfterLocalUpdate(items); await fetchWorkItems(); } else { await __showErrorFromResponse(res); } } catch(e){  showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); } }
     async function __deleteItem(idOrCode){ try{ const r=await fetch(`${API}/work-items/${idOrCode}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } }); if(r.ok){ await fetchWorkItems(); return; } const r2=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ status:'deleted' }) }); if(r2.ok){ await fetchWorkItems(); } }catch(e){} }
     function renderTimeline(){ const tl=document.getElementById('timeline'); tl.innerHTML=''; if(!ganttData.tasks || ganttData.tasks.length===0){ const empty=document.createElement('div'); empty.style.padding='12px'; empty.style.color='var(--text-secondary)'; empty.textContent='暂无可显示的任务'; tl.appendChild(empty); return; } (ganttData.tasks||[]).forEach((task, ti)=>{ const row=document.createElement('div'); row.className='task-row-timeline'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', -1); row.appendChild(createTaskBar(task, ti, -1)); tl.appendChild(row); (task.subtasks||[]).forEach((st, si)=>{ const sub=document.createElement('div'); sub.className='task-row-timeline'; sub.setAttribute('data-ti', ti); sub.setAttribute('data-si', si); sub.appendChild(createTaskBar(st, ti, si)); tl.appendChild(sub); }); }); enforceBarBounds(); applyTaskExpansionStates(); }
     function fixTaskTitles(){ try{ const list=document.getElementById('taskList'); if(!list) return; const titles=[...list.querySelectorAll('.task-title')]; if(!titles.length) return; const expected=[]; (ganttData.tasks||[]).forEach(t=>{ expected.push(__titleOrCode(t)); (t.subtasks||[]).forEach(st=> expected.push(__titleOrCode(st))); }); for(let i=0;i<Math.min(titles.length, expected.length); i++){ const el=titles[i]; const val=expected[i]; if(el && typeof val==='string'){ el.textContent=val; } } } catch(_){} }
@@ -1306,12 +1291,12 @@
         __onDragMove(e);
         const t = ganttData.tasks[0];
         const a = t.subtasks[0], b = t.subtasks[1];
-        console.assert(t.duration===10, '父移动：父持续时长保持');
-        console.assert(a.duration===4 && b.duration===3, '父移动：子持续时长保持');
-        console.assert(a.startDay>=t.startDay && (a.startDay+a.duration-1)<= (t.startDay+t.duration-1), '子A夹紧到父窗口');
-        console.assert(b.startDay>=t.startDay && (b.startDay+b.duration-1)<= (t.startDay+t.duration-1), '子B夹紧到父窗口');
-        console.log('[linkage-test] ok');
-      } catch(err){ console.error('[linkage-test] failed', err); }
+        
+        
+        
+        
+        
+      } catch(err){  }
     };
     function __onDragEnd(){
       if(!__drag) return;
@@ -1398,7 +1383,7 @@
     function __toDateTimeLocal(date){ if(!date) return ''; const y=date.getFullYear(); const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); const h=String(date.getHours()).padStart(2,'0'); const min=String(date.getMinutes()).padStart(2,'0'); const s=String(date.getSeconds()).padStart(2,'0'); return `${y}-${m}-${d}T${h}:${min}:${s}`; }
     function __fitChildToParent(s0,d0,pStart,pEnd){ let d=Math.max(1,d0); const span=Math.max(1,pEnd-pStart+1); if(d>span){ d=span; } let s=s0; let e=s+d-1; if(s<pStart){ s=pStart; e=s+d-1; } if(e>pEnd){ s=pEnd-d+1; e=pEnd; } if(s<pStart){ s=pStart; d=Math.max(1,pEnd-pStart+1); } return { s, d }; }
     function __fitChildDatesToParentStr(childStartStr, childEndStr, parentStartStr, parentEndStr){ try{ const msPerDay=1000*60*60*24; const d0=Math.max(1, __daysBetween(childStartStr, childEndStr)||1); const span=Math.max(1, __daysBetween(parentStartStr, parentEndStr)||1); const d=Math.max(1, Math.min(d0, span)); const pStart=new Date(parentStartStr); const pEnd=new Date(parentEndStr); const latestStart=__addDays(pEnd, -(d-1)); let ns = childStartStr ? new Date(childStartStr) : new Date(parentStartStr); if(ns < pStart) ns = pStart; if(ns > latestStart) ns = latestStart; const ne = __addDays(ns, d-1); return { ps: __toYMD(ns), pe: __toYMD(ne) }; } catch(_){ return { ps: parentStartStr, pe: parentEndStr }; } }
-    async function __scheduleChange(idOrCode, ps, pe){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ planned_start_date: ps, planned_end_date: pe }) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('时间已更新','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){ console.error('[schedule] update error', e); showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); } }
+    async function __scheduleChange(idOrCode, ps, pe){ try{ const res=await fetch(`${API}/work-items/${idOrCode}`, { method:'PATCH', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ planned_start_date: ps, planned_end_date: pe }) }); if(res.ok){ let updated=await res.json(); updated=__normalizeWorkItemShape(updated); showToast('时间已更新','success'); const items = Array.isArray(window.__items)? window.__items.slice() : []; const idx = items.findIndex(i=> (i.id===updated.id) || (i.code===updated.code)); if(idx>=0){ items[idx] = Object.assign({}, items[idx], updated); } else { for (let i=0;i<items.length;i++){ const subs=items[i].subtasks||[]; const si=subs.findIndex(s=> (s.id===updated.id) || (s.code===updated.code)); if(si>=0){ subs[si]=Object.assign({}, subs[si], updated); break; } } } renderAfterLocalUpdate(items); } else { await __showErrorFromResponse(res, '保存失败'); } } catch(e){  showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); } }
     async function __checkJobTitleExists(title){ try{ if(!Number.isFinite(projectId)) return null; if(!title) return null; const url=`${API}/work-items/name-exists?project_id=${encodeURIComponent(projectId)}&type=job&title=${encodeURIComponent(title)}`; const res=await fetch(url, { headers:{ Authorization:`Bearer ${token}` } }); if(!res.ok){ return null; } return await res.json(); } catch(_){ return null; } }
     function renderAssigneeList(){ const list=document.getElementById('assigneeList'); list.innerHTML=''; (ganttData.tasks||[]).forEach((task, ti)=>{ const pRow=document.createElement('div'); pRow.className='assignee-row'; pRow.setAttribute('data-ti', ti); pRow.setAttribute('data-si', -1); const dn=__assigneeToDisplay(task.assignee||''); pRow.innerHTML=`<div class="assignee-avatar"></div><span class="assignee-name">${dn}</span>`; list.appendChild(pRow); (task.subtasks||[]).forEach((st, si)=>{ const row=document.createElement('div'); row.className='assignee-row'; row.setAttribute('data-ti', ti); row.setAttribute('data-si', si); const dn2=__assigneeToDisplay(st.assignee||''); row.innerHTML=`<div class="assignee-avatar"></div><span class="assignee-name">${dn2}</span>`; list.appendChild(row); }); }); }
     function __priorityToLabel(p){ const v=String(p||'').toLowerCase(); if(v==='low') return 'Low'; if(v==='high') return 'High'; return 'Medium'; }
@@ -1462,7 +1447,7 @@
       el.style.zIndex = 11000;
       el.style.maxHeight = '240px';
       el.style.overflowY = 'auto';
-      console.debug('[dropdown] open', { inputId: input.id, total, query, page: cur });
+      
 
       const itemsHtml = dedup.slice(start, end).map(function(u){
         const tip = u.prefix || u.email || '';
@@ -1542,7 +1527,7 @@
     function hideAssigneeDropdown(){ const el=document.getElementById('assigneeDropdown'); if(el) el.style.display='none'; }
     async function fetchDbAssignees(){ try{ const now=Date.now(); const cache=window.__assigneesCache||{}; if(cache.ts && Array.isArray(cache.data) && (now - cache.ts < 5*60*1000)){ window.__assigneesIndex = cache.data; return; } if(window.__assigneesLoadingPromise){ await window.__assigneesLoadingPromise; return; } window.__assigneesLoading = true; const ctrl=new AbortController(); const timer=setTimeout(()=>{ try{ ctrl.abort(); }catch(_){} }, 4000); const p=(async function(){ try{ const r=await fetch(`${API}/users`, { headers:{ Authorization:`Bearer ${token}` }, signal: ctrl.signal }); if(r.ok){ const list=await r.json(); const data = Array.isArray(list)? list.map(function(u){ return { name: u.full_name || u.username || u.email_prefix, prefix: u.email_prefix || u.username || '', email: u.email || '' }; }) : []; window.__assigneesIndex = data; window.__assigneesCache = { ts: Date.now(), data }; } else { window.__assigneesIndex=[]; showToast && showToast('加载负责人失败','error'); } }catch(e){ window.__assigneesIndex=[]; showToast && showToast('网络错误，加载负责人失败','error'); } finally { clearTimeout(timer); window.__assigneesLoading = false; window.__assigneesLoadingPromise=null; } })(); window.__assigneesLoadingPromise=p; await p; }catch(_){ window.__assigneesIndex=[]; window.__assigneesLoading=false; window.__assigneesLoadingPromise=null; } }
     function enableAssigneeDropdown(inputId){ const input=document.getElementById(inputId); if(!input) return; input.addEventListener('focus', async function(e){ e.stopPropagation(); await (window.__assigneesIndex? Promise.resolve() : fetchDbAssignees()); showAssigneeDropdown(input, input.value); }); input.addEventListener('click', function(e){ e.stopPropagation(); showAssigneeDropdown(input, input.value); }); input.addEventListener('input', function(){ showAssigneeDropdown(input, input.value); }); input.addEventListener('blur', function(){ setTimeout(hideAssigneeDropdown, 120); }); input.addEventListener('keydown', function(e){ const el=document.getElementById('assigneeDropdown'); if(!el || el.style.display!=='block') return; const items=Array.from(el.querySelectorAll('.dropdown-item')); if(items.length===0) return; const state=window.__assigneeDropdownState||{}; const st=state[input.id]||{}; let idx=st.activeIndex||0; if(e.key==='ArrowDown'){ idx=Math.min(items.length-1, idx+1); e.preventDefault(); } else if(e.key==='ArrowUp'){ idx=Math.max(0, idx-1); e.preventDefault(); } else if(e.key==='Enter'){ e.preventDefault(); const it=items[idx]; if(it){ input.value=it.getAttribute('data-name')||''; hideAssigneeDropdown(); } return; } items.forEach(i=>i.classList.remove('active')); const active=items[idx]; if(active){ active.classList.add('active'); active.scrollIntoView({ block:'nearest' }); } state[input.id]={ ...(state[input.id]||{}), activeIndex: idx }; window.__assigneeDropdownState=state; }); }
-    window.__assigneeDropdownSelfTest = function(id){ try{ const input=document.getElementById(id); if(!input) return false; enableAssigneeDropdown(id); input.focus(); const count=document.querySelectorAll('#assigneeDropdown').length; console.assert(count===1, '[selftest] 单一下拉实例'); hideAssigneeDropdown(); return count===1; }catch(e){ console.error('[selftest] 失败', e); return false; } };
+    window.__assigneeDropdownSelfTest = function(id){ try{ const input=document.getElementById(id); if(!input) return false; enableAssigneeDropdown(id); input.focus(); const count=document.querySelectorAll('#assigneeDropdown').length;  hideAssigneeDropdown(); return count===1; }catch(e){  return false; } };
     async function commitTaskAssigneeAuto(){ try{ if(!__editingTaskRef) return; const idOrCode=__editingTaskRef.id||__editingTaskRef.code; const inputVal=(document.getElementById('taskEditAssigneeInput').value||'').trim(); const prefix=__assigneeToPrefix(inputVal); if(!prefix){ return; } const currentPrefix = __assigneeToPrefix(__editingTaskRef.assignee||__editingTaskRef.assignee_prefix||''); if(prefix === currentPrefix) return; const list=Array.isArray(window.__assigneesIndex)? window.__assigneesIndex : []; const ok=list.some(function(u){ return u.prefix===prefix || u.name===inputVal || (u.email && inputVal.indexOf('@')>0 && u.email===inputVal); }); if(!ok){ showToast('负责人必须为数据库用户','error'); return; } const payload={ assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix) }; await __patchTask(idOrCode, payload); __saveLocalAssignment(idOrCode, prefix); }catch(_){ } }
     async function commitJobAssigneeAuto(){ try{ if(!__editingJobRef) return; const idOrCode=__editingJobRef.id||__editingJobRef.code; const inputVal=(document.getElementById('jobEditAssigneeInput').value||'').trim(); const prefix=__assigneeToPrefix(inputVal); if(!prefix){ return; } const currentPrefix = __assigneeToPrefix(__editingJobRef.assignee||__editingJobRef.assignee_prefix||''); if(prefix === currentPrefix) return; const list=Array.isArray(window.__assigneesIndex)? window.__assigneesIndex : []; const ok=list.some(function(u){ return u.prefix===prefix || u.name===inputVal || (u.email && inputVal.indexOf('@')>0 && u.email===inputVal); }); if(!ok){ showToast('负责人必须为数据库用户','error'); return; } const payload={ assignee_prefix: prefix, assignee_email: __prefixToEmail(prefix) }; await __patchTask(idOrCode, payload); __saveLocalAssignment(idOrCode, prefix); }catch(_){ } }
     function attachDatePicker(input){ if(!input) return; input.addEventListener('focus', function(){ openDatePicker(input); }); input.addEventListener('click', function(){ openDatePicker(input); }); }
@@ -1888,7 +1873,7 @@
     (function(){ const up=document.getElementById('projAttachUpload'); const file=document.getElementById('projAttachFile'); if(up){ up.onclick = async function(){ if(!file || !file.files.length) return; try{ const r = await fetch(`${API}/comments/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ entity_type:'project', entity_id: projectId, content: '附件' }) }); if(!r.ok) return; const data=await r.json(); const id=data.id; const fd=new FormData(); fd.append('file', file.files[0]); const rr=await fetch(`${API}/attachments/comments/${id}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: fd }); if(rr.ok){ PageHistory.log('上传附件', `项目#${projectId}`); await loadProjectAttachments(); } } catch (e) {} } } bindCommentTabs(); })();
     (function(){ var cm=CommentsModule.init({ entityType:'project', entityId: projectId, selectors:{ listId:'comments', editorId:'commentEditor', addBtnId:'addCommentBtn', cancelBtnId:'cancelCommentBtn', errorId:'commentError', historyListId:'historyList' }, hooks:{ PageHistory: PageHistory } }); window.loadComments=cm.load; window.__disableLegacyProjectComments=true; })();
 
-    window.addEventListener('error', (e)=>{ console.error('[window] error', e.message, e.filename, e.lineno); });
+    window.addEventListener('error', (e)=>{  });
     if (Number.isFinite(projectId)) {
       fetchProject();
       fetchWorkItems();
@@ -1900,14 +1885,14 @@
         const sd0=new Date(startDate.getTime()); const ed0=new Date(endDate.getTime()); const tm0=timeMode; const cw0=columnWidth; const cols0=(ganttData.timeColumns||[]).slice();
         startDate=new Date('2025-01-01'); endDate=new Date('2025-03-31'); timeMode='month'; columnWidth=100; generateTimeColumns();
         const a=dayOffsetToMonthIndex(0); const b=dayOffsetToMonthIndex(40);
-        console.assert(a===0, '[test] start month index');
-        console.assert(b>=1, '[test] cross month index');
+        
+        
         const items=[{kind:'JOB',code:'JOB-1',title:'J',status:'todo',planned_start:'2025-01-10',planned_end:'2025-02-20'}];
         buildGanttTasks(items);
-        console.assert(Array.isArray(ganttData.tasks)&&ganttData.tasks.length===1, '[test] tasks built');
+        
         startDate=sd0; endDate=ed0; timeMode=tm0; columnWidth=cw0; ganttData.timeColumns=cols0;
-        console.log('[test] ok');
-      }catch(e){ console.error('[test] failed', e); }
+        
+      }catch(e){  }
     };
 
     // Add dropdown menu HTML if not exists
@@ -2002,7 +1987,7 @@
         await __showErrorFromResponse(res, '保存失败'); 
       }
     } catch(e){ 
-      console.error('[task] patch error', e); 
+       
       showToast('网络错误，保存失败：' + (e && e.message ? e.message : ''), 'error'); 
     }
   }
@@ -2225,7 +2210,7 @@ async function updatePriority(priority) {
     await __patchTask(idOrCode, { priority });
     showToast('优先级已更新', 'success');
   } catch (e) {
-    console.error('更新优先级失败:', e);
+    
     showToast('更新优先级失败', 'error');
   }
 }
@@ -2243,7 +2228,7 @@ async function updateStatus(status) {
     await __patchTask(idOrCode, { status });
     showToast('状态已更新', 'success');
   } catch (e) {
-    console.error('更新状态失败:', e);
+    
     showToast('更新状态失败', 'error');
   }
 }

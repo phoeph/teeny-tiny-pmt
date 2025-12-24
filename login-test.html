@@ -115,7 +115,7 @@
         if (response.ok) {
           const data = await response.json();
           showResult('✅ 登录API测试成功，获得token', 'success');
-          console.log('Token:', data.access_token);
+          
         } else {
           showResult('❌ 登录API测试失败', 'error');
         }
@@ -145,7 +145,7 @@
             successCount++;
           }
         } catch (error) {
-          console.error(`Failed to access ${page}:`, error);
+          
         }
       }
       

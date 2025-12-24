@@ -154,7 +154,7 @@
         renderAll();
         renderKanban(byStatus);
         enableDnD();
-      } catch(e){ console.error('[board] fetchWorkItems error', e); }
+      } catch(e){  }
     }
 
     function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(getPlannedEndStr(i))).filter(Boolean);

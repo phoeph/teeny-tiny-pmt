@@ -105,14 +105,14 @@
       showStatus('正在登录...', 'info');
       
       try {
-        console.log('发送登录请求...');
+        
         const res = await fetch(`${API}/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ login_field: username, password })
         });
         
-        console.log('登录响应状态:', res.status);
+        
         
         if (!res.ok) {
           const detail = await res.json();
@@ -120,23 +120,23 @@
         }
         
         const data = await res.json();
-        console.log('登录成功，获得token:', data.access_token.substring(0, 20) + '...');
+        
         
         localStorage.setItem('token', data.access_token);
         
         showStatus('登录成功！即将跳转...', 'success');
         loginBtn.textContent = '登录成功';
         
-        console.log('准备跳转到: projects.html');
-        console.log('当前URL:', window.location.href);
+        
+        
         
         setTimeout(() => {
-          console.log('执行跳转: location.href = "projects.html"');
+          
           location.href = 'projects.html';
         }, 1000);
         
       } catch (e) {
-        console.error('登录错误:', e);
+        
         showStatus('登录失败: ' + e.message, 'error');
         loginBtn.textContent = '登录测试';
         loginBtn.disabled = false;
