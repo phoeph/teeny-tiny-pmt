@@ -2271,38 +2271,71 @@ function handleAction(action) {
     
     // 辅助函数：从DOM中移除已删除的元素
     function removeItemFromDOM(idOrCode) {
+      console.log('[DEBUG] Attempting to remove item from DOM:', idOrCode);
+      
       try {
-        // 移除看板卡片
-        const kanbanCards = document.querySelectorAll('.card');
-        kanbanCards.forEach(card => {
-          const cardId = card.dataset.wid || card.dataset.code;
-          if (cardId === String(idOrCode)) {
-            card.remove();
+        let removedCount = 0;
+        
+        // 移除看板卡片 - 尝试多种选择器
+        const kanbanSelectors = [
+          `[data-wid="${idOrCode}"]`,
+          `[data-code="${idOrCode}"]`,
+          `[data-id="${idOrCode}"]`
+        ];
+        
+        kanbanSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          console.log(`[DEBUG] Found ${elements.length} elements with selector: ${selector}`);
+          elements.forEach(element => {
+            console.log('[DEBUG] Removing element:', element);
+            element.remove();
+            removedCount++;
+          });
+        });
+        
+        // 移除甘特图中的任务行 - 查找包含该ID的所有相关元素
+        const allElements = document.querySelectorAll('*[data-wid], *[data-code], *[data-id]');
+        allElements.forEach(element => {
+          const elementId = element.dataset.wid || element.dataset.code || element.dataset.id;
+          if (elementId === String(idOrCode)) {
+            console.log('[DEBUG] Removing gantt element:', element);
+            element.remove();
+            removedCount++;
           }
         });
         
-        // 移除甘特图中的任务行
-        const taskRows = document.querySelectorAll('.task-row, .task-row-timeline');
-        taskRows.forEach(row => {
-          const rowId = row.dataset.wid || row.dataset.code;
-          if (rowId === String(idOrCode)) {
-            row.remove();
+        // 特别处理卡片容器
+        const cards = document.querySelectorAll('.card, .kanban-card, .task-card');
+        cards.forEach(card => {
+          const cardId = card.dataset.wid || card.dataset.code || card.dataset.id;
+          if (cardId === String(idOrCode)) {
+            console.log('[DEBUG] Removing card:', card);
+            card.remove();
+            removedCount++;
           }
         });
         
         // 更新全局数据
         if (window.__items) {
+          const originalLength = window.__items.length;
           window.__items = window.__items.filter(item => {
             const itemId = String(item.id || item.code);
             return itemId !== String(idOrCode);
           });
+          console.log(`[DEBUG] Updated __items: ${originalLength} -> ${window.__items.length}`);
         }
         
-        console.log('[DEBUG] Item removed from DOM:', idOrCode);
+        console.log(`[DEBUG] Total elements removed: ${removedCount}`);
+        
+        if (removedCount === 0) {
+          console.warn('[DEBUG] No elements were removed, falling back to page reload');
+          setTimeout(() => window.location.reload(), 1000); // 延迟1秒刷新，让用户看到成功提示
+        }
+        
       } catch (e) {
         console.error('[DEBUG] Error removing item from DOM:', e);
         // 如果DOM操作失败，回退到刷新页面
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1000);
       }
     }
   }
