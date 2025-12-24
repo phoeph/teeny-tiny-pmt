@@ -2238,7 +2238,14 @@ function handleAction(action) {
         });
         
         if (r.ok) {
-          await fetchWorkItems();
+          // 检查fetchWorkItems是否存在
+          if (typeof fetchWorkItems === 'function') {
+            await fetchWorkItems();
+          } else {
+            // 手动刷新页面作为备选方案
+            console.log('[DEBUG] fetchWorkItems not found, reloading page');
+            window.location.reload();
+          }
           showToast('删除成功', 'success');
           return;
         }
@@ -2253,10 +2260,22 @@ function handleAction(action) {
         });
         
         if (r2.ok) {
-          await fetchWorkItems();
+          // 检查fetchWorkItems是否存在
+          if (typeof fetchWorkItems === 'function') {
+            await fetchWorkItems();
+          } else {
+            // 手动刷新页面作为备选方案
+            console.log('[DEBUG] fetchWorkItems not found, reloading page');
+            window.location.reload();
+          }
           showToast('删除成功', 'success');
         } else {
-          await __showErrorFromResponse(r2, '删除失败');
+          // 检查__showErrorFromResponse是否存在
+          if (typeof __showErrorFromResponse === 'function') {
+            await __showErrorFromResponse(r2, '删除失败');
+          } else {
+            showToast('删除失败', 'error');
+          }
         }
       } catch (e) {
         console.error('[delete] Error deleting item:', e);
