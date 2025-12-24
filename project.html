@@ -2491,7 +2491,7 @@ async function updateStatus(status) {
     
     const isParent = item.kind === 'JOB';
     
-    // 生成菜单HTML - 与甘特图菜单完全一致
+    // 生成菜单HTML - 与甘特图菜单完全一致（扁平列表，无子菜单）
     let html = '';
     
     if (isParent) {
@@ -2506,29 +2506,43 @@ async function updateStatus(status) {
         编辑 JOB
       </div>`;
       
-      // 优先级子菜单
-      html += `<div class="action-item submenu-parent">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
-        优先级
-        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
-        <div class="submenu">
-          <div class="action-item" onclick="updateCardPriority('high')">🔴 高优先级</div>
-          <div class="action-item" onclick="updateCardPriority('medium')">🟡 中优先级</div>
-          <div class="action-item" onclick="updateCardPriority('low')">🟢 低优先级</div>
-        </div>
+      html += `<div class="action-separator"></div>`;
+      
+      // 优先级选项 - 扁平显示
+      html += `<div class="action-item" onclick="updateCardPriority('high')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ef4444;margin-right:8px;"></span>
+        设为 High
       </div>`;
       
-      // 状态子菜单
-      html += `<div class="action-item submenu-parent">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/></svg>
-        状态
-        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
-        <div class="submenu">
-          <div class="action-item" onclick="updateCardStatus('todo')">📋 待办</div>
-          <div class="action-item" onclick="updateCardStatus('doing')">🔄 进行中</div>
-          <div class="action-item" onclick="updateCardStatus('done')">✅ 已完成</div>
-        </div>
+      html += `<div class="action-item" onclick="updateCardPriority('medium')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f97316;margin-right:8px;"></span>
+        设为 Medium
       </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardPriority('low')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-right:8px;"></span>
+        设为 Low
+      </div>`;
+      
+      html += `<div class="action-separator"></div>`;
+      
+      // 状态选项 - 扁平显示
+      html += `<div class="action-item" onclick="updateCardStatus('todo')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f97316;margin-right:8px;"></span>
+        设为 待办
+      </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardStatus('doing')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-right:8px;"></span>
+        设为 进行中
+      </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardStatus('done')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#3b82f6;margin-right:8px;"></span>
+        设为 已完成
+      </div>`;
+      
+      html += `<div class="action-separator"></div>`;
       
       html += `<div class="action-item danger" onclick="handleCardAction('del-job')">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -2541,29 +2555,43 @@ async function updateStatus(status) {
         编辑任务
       </div>`;
       
-      // 优先级子菜单
-      html += `<div class="action-item submenu-parent">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
-        优先级
-        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
-        <div class="submenu">
-          <div class="action-item" onclick="updateCardPriority('high')">🔴 高优先级</div>
-          <div class="action-item" onclick="updateCardPriority('medium')">🟡 中优先级</div>
-          <div class="action-item" onclick="updateCardPriority('low')">🟢 低优先级</div>
-        </div>
+      html += `<div class="action-separator"></div>`;
+      
+      // 优先级选项 - 扁平显示
+      html += `<div class="action-item" onclick="updateCardPriority('high')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ef4444;margin-right:8px;"></span>
+        设为 High
       </div>`;
       
-      // 状态子菜单
-      html += `<div class="action-item submenu-parent">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/></svg>
-        状态
-        <svg class="submenu-arrow" viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
-        <div class="submenu">
-          <div class="action-item" onclick="updateCardStatus('todo')">📋 待办</div>
-          <div class="action-item" onclick="updateCardStatus('doing')">🔄 进行中</div>
-          <div class="action-item" onclick="updateCardStatus('done')">✅ 已完成</div>
-        </div>
+      html += `<div class="action-item" onclick="updateCardPriority('medium')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f97316;margin-right:8px;"></span>
+        设为 Medium
       </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardPriority('low')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-right:8px;"></span>
+        设为 Low
+      </div>`;
+      
+      html += `<div class="action-separator"></div>`;
+      
+      // 状态选项 - 扁平显示
+      html += `<div class="action-item" onclick="updateCardStatus('todo')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f97316;margin-right:8px;"></span>
+        设为 待办
+      </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardStatus('doing')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22c55e;margin-right:8px;"></span>
+        设为 进行中
+      </div>`;
+      
+      html += `<div class="action-item" onclick="updateCardStatus('done')">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#3b82f6;margin-right:8px;"></span>
+        设为 已完成
+      </div>`;
+      
+      html += `<div class="action-separator"></div>`;
       
       html += `<div class="action-item danger" onclick="handleCardAction('del-task')">
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
