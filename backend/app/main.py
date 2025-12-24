@@ -79,6 +79,40 @@ async def startup():
                 conn.execute(text("ALTER TABLE work_items ADD COLUMN label_path TEXT"))
         except Exception:
             pass
+        # 轻量迁移：创建project_non_dev_works表（若不存在）
+        try:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS project_non_dev_works (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER NOT NULL,
+                    report_period_start DATE NOT NULL,
+                    report_period_end DATE NOT NULL,
+                    title VARCHAR(500) NOT NULL,
+                    description TEXT,
+                    creator_id INTEGER NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME,
+                    deleted_at DATETIME,
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (creator_id) REFERENCES users(id)
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_non_dev_work_project ON project_non_dev_works(project_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_non_dev_work_period ON project_non_dev_works(project_id, report_period_start, report_period_end)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_non_dev_work_creator ON project_non_dev_works(creator_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_non_dev_work_deleted ON project_non_dev_works(deleted_at)"))
+        except Exception:
+            pass
+        
+        # 轻量迁移：为project_non_dev_works添加work_type字段（若不存在）
+        try:
+            cols_ndw = conn.execute(text("PRAGMA table_info(project_non_dev_works)")).fetchall()
+            names_ndw = {c[1] for c in cols_ndw}
+            if "work_type" not in names_ndw:
+                conn.execute(text("ALTER TABLE project_non_dev_works ADD COLUMN work_type VARCHAR(50) DEFAULT 'other_work'"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_non_dev_work_type ON project_non_dev_works(work_type)"))
+        except Exception:
+            pass
         # 轻量迁移：为users添加phone与avatar_key列（若不存在）
         try:
             cols_u = conn.execute(text("PRAGMA table_info(users)")).fetchall()
@@ -126,7 +160,7 @@ def health():
 
 
 # 导入并注册路由
-from .routers import auth, project, work_items, comments, notifications, attachments, users, labels, exports
+from .routers import auth, project, work_items, comments, notifications, attachments, users, labels, exports, non_dev_works
 from .routers import watch
 app.include_router(auth.router)
 app.include_router(project.router)
@@ -135,7 +169,7 @@ app.include_router(comments.router)
 app.include_router(notifications.router)
 app.include_router(attachments.router)
 app.include_router(watch.router)
-app.include_router(watch.router)
 app.include_router(users.router)
 app.include_router(labels.router)
 app.include_router(exports.router)
+app.include_router(non_dev_works.router)

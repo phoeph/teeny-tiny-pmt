@@ -74,6 +74,7 @@ class Project(Base):
     owner = relationship("User", back_populates="owned_projects", foreign_keys=[owner_id])
     creator = relationship("User", foreign_keys=[creator_id])
     work_items = relationship("WorkItem", back_populates="project")
+    non_dev_works = relationship("ProjectNonDevWork", back_populates="project")
 
 
 class WorkItem(Base):
@@ -124,6 +125,36 @@ class WorkItem(Base):
     creator = relationship("User", foreign_keys=[creator_id])
     parent = relationship("WorkItem", remote_side=[id], back_populates="subtasks")
     subtasks = relationship("WorkItem", back_populates="parent")
+
+
+class ProjectNonDevWork(Base):
+    """周报非开发工作说明和工作计划"""
+    __tablename__ = "project_non_dev_works"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    report_period_start = Column(Date, nullable=False)  # 周报开始日期
+    report_period_end = Column(Date, nullable=False)    # 周报结束日期
+    work_type = Column(String(50), nullable=False, default="other_work")  # 工作类型：other_work, next_week_plan
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # 约束
+    __table_args__ = (
+        Index("idx_non_dev_work_project", "project_id"),
+        Index("idx_non_dev_work_period", "project_id", "report_period_start", "report_period_end"),
+        Index("idx_non_dev_work_creator", "creator_id"),
+        Index("idx_non_dev_work_deleted", "deleted_at"),
+        Index("idx_non_dev_work_type", "work_type"),  # 新增类型索引
+    )
+    
+    # 关系
+    project = relationship("Project", back_populates="non_dev_works")
+    creator = relationship("User", foreign_keys=[creator_id])
 
 
 class Comment(Base):

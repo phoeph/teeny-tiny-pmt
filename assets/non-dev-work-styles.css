@@ -1,0 +1,360 @@
+/* 非开发工作管理组件样式 */
+
+/* 非开发工作管理容器 - 与报告卡片保持一致的宽度 */
+#reportNonDevWorkContainer {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.non-dev-work-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.non-dev-work-section .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.non-dev-work-section .section-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  padding-left: 12px;
+  border-left: 4px solid var(--primary);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  height: auto;
+}
+
+.non-dev-work-list {
+  margin-bottom: 16px;
+}
+
+.non-dev-work-item {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.non-dev-work-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-light);
+}
+
+.work-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.work-item-index {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 20px;
+}
+
+.work-item-title {
+  flex: 1;
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.work-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.non-dev-work-item:hover .work-item-actions {
+  opacity: 1;
+}
+
+.work-item-description {
+  margin-top: 8px;
+  padding-left: 28px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.work-item-period {
+  margin-top: 6px;
+  padding-left: 28px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+.delete-work-btn:hover {
+  background: var(--bg-danger-light);
+  color: var(--danger);
+  border-color: var(--danger-light);
+}
+
+.non-dev-work-form {
+  margin-top: 20px;
+  padding: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.non-dev-work-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.form-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.form-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-header h4::before {
+  content: '✏️';
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  background: var(--bg-surface);
+}
+
+.form-group select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+  appearance: none;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.form-actions .ghost-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-actions .ghost-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  border-color: var(--primary-light);
+}
+
+.form-actions .primary-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+}
+
+.form-actions .primary-btn:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+
+.form-actions .primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.project-group {
+  margin-bottom: 20px;
+}
+
+.project-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 12px 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--primary-light);
+}
+
+.project-works {
+  margin-left: 12px;
+}
+
+/* Toast 样式 */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.toast-success {
+  background-color: #10b981;
+}
+
+.toast-error {
+  background-color: #ef4444;
+}
+
+.toast-info {
+  background-color: #3b82f6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .non-dev-work-section {
+    margin: 16px 0;
+    padding: 16px;
+  }
+  
+  .non-dev-work-section .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .work-item-header {
+    flex-wrap: wrap;
+  }
+  
+  .work-item-actions {
+    opacity: 1;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}

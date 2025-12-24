@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="assets/modern-theme.css" />
   <link rel="stylesheet" href="assets/header-user-menu.css" />
   <link rel="stylesheet" href="assets/left-sidebar.css" />
+  <link rel="stylesheet" href="assets/non-dev-work-styles.css" />
   <style>
     /* Page Header */
     .page-header {
@@ -648,6 +649,9 @@
       </div>
     </div>
 
+    <!-- 非开发工作管理 -->
+    <div id="reportNonDevWorkContainer"></div>
+
     <!-- 导出操作 -->
     <div class="export-actions" id="exportActions" style="display: none;">
       <button class="primary-btn" id="exportWordBtn">
@@ -671,19 +675,32 @@
 
   <script src="assets/header-user-menu.js"></script>
   <script src="assets/left-sidebar.js"></script>
+  <script src="assets/report-non-dev-work-manager.js"></script>
   
   <script>
     const API = 'http://localhost:8000/api';
     const token = localStorage.getItem('token');
     
+    // Check if user is authenticated
+    if (!token) {
+      // Redirect to login page if no token
+      window.location.href = 'login.html';
+      // Stop execution
+      throw new Error('No authentication token found');
+    }
+    
     let allProjects = [];
     let reportData = null;
+    let reportNonDevWorkManager = null;
     
     // 初始化页面
     document.addEventListener('DOMContentLoaded', async function() {
       await loadProjects();
       initDateInputs();
       bindEvents();
+      
+      // 初始化非开发工作管理器
+      reportNonDevWorkManager = new ReportNonDevWorkManager(API);
     });
     
     // 加载项目列表
@@ -693,10 +710,21 @@
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        if (response.status === 401) {
+          // Token expired or invalid, redirect to login
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+          return;
+        }
+        
         if (!response.ok) throw new Error('Failed to fetch projects');
         
         const data = await response.json();
         allProjects = data.items || [];
+        
+        // 将项目列表设为全局变量，供非开发工作管理器使用
+        window.allProjects = allProjects;
+        
         renderProjectList();
       } catch (error) {
         console.error('Error loading projects:', error);
@@ -854,6 +882,11 @@
         renderReport(reportData);
         document.getElementById('exportActions').style.display = 'flex';
         
+        // 初始化非开发工作管理器（等待数据加载完成）
+        if (reportNonDevWorkManager) {
+          await reportNonDevWorkManager.updateReportParams(selectedProjects, startDate, endDate);
+        }
+        
       } catch (error) {
         console.error('Error generating report:', error);
         document.getElementById('reportContent').innerHTML = `
@@ -884,14 +917,43 @@
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      if (response.status === 401) {
+        // Token expired or invalid, redirect to login
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+        throw new Error('Authentication failed');
+      }
+      
       if (!response.ok) throw new Error(`Failed to fetch project ${projectId} data`);
       
       const data = await response.json();
       const workItems = data.items || [];
       const project = allProjects.find(p => p.id === projectId);
       
+      // 获取非开发工作说明 - 使用新的by-report端点
+      let nonDevWorks = [];
+      try {
+        const params = new URLSearchParams({
+          project_ids: projectId.toString(),
+          start_date: startDate,
+          end_date: endDate
+        });
+        const nonDevResponse = await fetch(`${API}/non-dev-works/by-report?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (nonDevResponse.ok) {
+          nonDevWorks = await nonDevResponse.json();
+        } else if (nonDevResponse.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+          throw new Error('Authentication failed');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch non-dev works:', error);
+      }
+      
       // 不按日期过滤，获取所有工作项
-      return { project, workItems };
+      return { project, workItems, nonDevWorks };
     }
 
     // 处理报告数据
@@ -905,21 +967,22 @@
         const project = pd.project;
         const projectName = project.name || project.title || `项目 ${project.id}`;
         const workItems = pd.workItems || [];
+        const nonDevWorks = pd.nonDevWorks || [];
         
         // 获取该项目的所有JOB
         const jobs = workItems.filter(item => item.kind === 'JOB' || !item.parent_id);
         
-        // 收集该项目的所有tasks
+        // 收集该项目的所有JOB（不管是否有子任务，都显示JOB本身）
         const projectTasks = [];
         jobs.forEach(job => {
-          if (job.subtasks && Array.isArray(job.subtasks)) {
-            job.subtasks.forEach(task => {
-              projectTasks.push({
-                ...task,
-                parentJob: job
-              });
-            });
-          }
+          // 始终添加JOB本身到任务列表中
+          projectTasks.push({
+            ...job,
+            parentJob: null, // JOB本身没有父任务
+            // 如果JOB有子任务，可以从子任务中汇总状态信息
+            aggregatedStatus: job.subtasks && job.subtasks.length > 0 ? 
+              getAggregatedStatus(job.subtasks) : job.status
+          });
         });
         
         totalTasks += projectTasks.length;
@@ -932,6 +995,7 @@
           project: project,
           projectName: projectName,
           labelHierarchy: labelHierarchy,
+          nonDevWorks: nonDevWorks,
           stats: {
             total: projectTasks.length,
             done: projectTasks.filter(t => t.status === 'done').length,
@@ -961,25 +1025,30 @@
       const hierarchy = {};
       
       tasks.forEach(task => {
-        let labelPath = task.label_path || task.parentJob.label_path || '';
+        let labelPath = task.label_path || (task.parentJob && task.parentJob.label_path) || '';
+        
+        let firstPart, lastPart;
         
         if (!labelPath || !labelPath.trim()) {
-          labelPath = '其他';
+          // 所有Labels为空的任务都归到同一个"其他"分类
+          firstPart = '其他';
+          lastPart = '其他';
+        } else {
+          // 按斜线分割标签路径
+          const pathParts = labelPath.split('/').filter(Boolean);
+          
+          // 获取第一个和最后一个部分
+          firstPart = pathParts[0] || '其他';
+          lastPart = pathParts.length > 1 ? pathParts[pathParts.length - 1] : firstPart;
         }
-        
-        // 按斜线分割标签路径
-        const pathParts = labelPath.split('/').filter(Boolean);
-        
-        // 获取第一个和最后一个部分
-        const firstPart = pathParts[0] || '其他';
-        const lastPart = pathParts.length > 1 ? pathParts[pathParts.length - 1] : firstPart;
         
         // 构建二级结构：第一级标签 -> 最后一级标签
         if (!hierarchy[firstPart]) {
           hierarchy[firstPart] = {
             name: firstPart,
             children: {},
-            stats: { total: 0, done: 0, doing: 0, todo: 0 }
+            stats: { total: 0, done: 0, doing: 0, todo: 0 },
+            isOther: firstPart === '其他' // 标记是否为"其他"分类
           };
         }
         
@@ -995,7 +1064,9 @@
         hierarchy[firstPart].children[lastPart].tasks.push(task);
         hierarchy[firstPart].children[lastPart].stats.total++;
         
-        switch (task.status) {
+        // 使用汇总状态（如果存在）或原始状态
+        const taskStatus = task.aggregatedStatus || task.status;
+        switch (taskStatus) {
           case 'done': 
             hierarchy[firstPart].children[lastPart].stats.done++; 
             break;
@@ -1019,6 +1090,46 @@
       });
       
       return hierarchy;
+    }
+
+    // 根据子任务状态计算JOB的汇总状态
+    function getAggregatedStatus(subtasks) {
+      if (!subtasks || subtasks.length === 0) {
+        return 'todo';
+      }
+      
+      const statusCounts = {
+        done: 0,
+        doing: 0,
+        todo: 0,
+        blocked: 0,
+        cancelled: 0
+      };
+      
+      subtasks.forEach(task => {
+        const status = task.status || 'todo';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      
+      const total = subtasks.length;
+      
+      // 如果所有子任务都完成，JOB状态为完成
+      if (statusCounts.done === total) {
+        return 'done';
+      }
+      
+      // 如果有任何子任务在进行中，JOB状态为进行中
+      if (statusCounts.doing > 0) {
+        return 'doing';
+      }
+      
+      // 如果有已完成的任务但不是全部，也算进行中
+      if (statusCounts.done > 0) {
+        return 'doing';
+      }
+      
+      // 其他情况为待办
+      return 'todo';
     }
 
     // 渲染报告
@@ -1088,13 +1199,22 @@
             </h4>
         `;
         
+        let firstLevelIndex = 1;
+        
         if (Object.keys(pg.labelHierarchy).length === 0) {
           html += '<div style="margin-left: 20px; color: var(--text-secondary);">暂无任务</div>';
         } else {
-          let firstLevelIndex = 1;
+          // 对标签进行排序：普通标签在前，"其他"分类在后
+          const sortedFirstLevels = Object.values(pg.labelHierarchy).sort((a, b) => {
+            // "其他"分类排在最后
+            if (a.isOther && !b.isOther) return 1;
+            if (!a.isOther && b.isOther) return -1;
+            // 其他情况保持原顺序
+            return 0;
+          });
           
           // 渲染第一级标签
-          Object.values(pg.labelHierarchy).forEach(firstLevel => {
+          sortedFirstLevels.forEach(firstLevel => {
             const firstLevelProgress = firstLevel.stats.total > 0 
               ? Math.round(firstLevel.stats.done / firstLevel.stats.total * 100) 
               : 0;
@@ -1131,14 +1251,14 @@
               `;
               
               lastLevel.tasks.forEach((task, idx) => {
-                const statusClass = `status-${task.status || 'todo'}`;
-                const statusText = getStatusText(task.status);
+                const statusClass = `status-${task.aggregatedStatus || task.status || 'todo'}`;
+                const statusText = getStatusText(task.aggregatedStatus || task.status);
                 const taskProgress = calculateTaskProgress(task);
                 const taskProgressColor = taskProgress >= 100 ? 'var(--success)' : (taskProgress >= 50 ? 'var(--warning)' : 'var(--text-secondary)');
                 
                 html += `
                       <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; background: var(--bg-surface); border-radius: 6px;">
-                        <span style="color: var(--text-secondary); font-size: 12px; min-width: 20px;">${idx + 1}.</span>
+                        <span style="color: var(--text-secondary); font-size: 12px; min-width: 20px;">${numberToCircle(idx + 1)}</span>
                         <span style="flex: 1; color: var(--text-main); font-size: 13px;">${task.title || task.name || task.code || '未命名任务'}</span>
                         <div style="display: flex; align-items: center; gap: 6px; min-width: 80px;">
                           <div style="flex: 1; max-width: 40px; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden;">
@@ -1164,6 +1284,104 @@
           });
         }
         
+        // 添加非开发工作说明和下周工作计划
+        if (pg.nonDevWorks && pg.nonDevWorks.length > 0) {
+          // 按工作类型分组
+          const otherWorks = pg.nonDevWorks.filter(w => w.work_type === 'other_work');
+          const nextWeekPlans = pg.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
+          
+          // 渲染其他工作说明
+          if (otherWorks.length > 0) {
+            html += `
+              <div style="margin-left: 20px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
+                  <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
+                    ${firstLevelIndex}. 其他工作说明
+                  </span>
+                </div>
+                
+                <div style="margin-left: 20px;">
+                  <div style="margin: 0; padding-left: 0; list-style: none;">
+            `;
+            
+            otherWorks.forEach((work, idx) => {
+              html += `
+                <div style="margin-left: 20px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; margin-bottom: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 6px;">
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">
+                      (${idx + 1}) ${work.title || '未命名工作'}
+                    </span>
+                  </div>
+              `;
+              
+              // 如果有描述，添加描述内容
+              if (work.description) {
+                html += `
+                  <div style="margin-left: 20px;">
+                    <div style="padding: 8px 12px; background: var(--bg-subtle); border-radius: 4px; border-left: 2px solid var(--border-light);">
+                      <span style="color: var(--text-secondary); font-size: 13px; font-style: italic;">${work.description}</span>
+                    </div>
+                  </div>
+                `;
+              }
+              
+              html += `</div>`;
+            });
+            
+            html += `
+                  </div>
+                </div>
+              </div>
+            `;
+            firstLevelIndex++;
+          }
+          
+          // 渲染下周工作计划
+          if (nextWeekPlans.length > 0) {
+            html += `
+              <div style="margin-left: 20px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
+                  <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
+                    ${firstLevelIndex}. 下周工作计划
+                  </span>
+                </div>
+                
+                <div style="margin-left: 20px;">
+                  <div style="margin: 0; padding-left: 0; list-style: none;">
+            `;
+            
+            nextWeekPlans.forEach((work, idx) => {
+              html += `
+                <div style="margin-left: 20px; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; margin-bottom: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 6px;">
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">
+                      (${idx + 1}) ${work.title || '未命名计划'}
+                    </span>
+                  </div>
+              `;
+              
+              // 如果有描述，添加描述内容
+              if (work.description) {
+                html += `
+                  <div style="margin-left: 20px;">
+                    <div style="padding: 8px 12px; background: var(--bg-subtle); border-radius: 4px; border-left: 2px solid var(--border-light);">
+                      <span style="color: var(--text-secondary); font-size: 13px; font-style: italic;">${work.description}</span>
+                    </div>
+                  </div>
+                `;
+              }
+              
+              html += `</div>`;
+            });
+            
+            html += `
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
         html += '</div>';
         projectIndex++;
       });
@@ -1171,15 +1389,21 @@
       return html;
     }
     
-    // 计算任务进度（根据开始/结束时间和当前时间）
+    // 计算任务进度（根据开始/结束时间和当前时间，或子任务完成情况）
     function calculateTaskProgress(task) {
+      // 如果是JOB且有子任务，根据子任务完成情况计算进度
+      if (task.subtasks && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+        const completedSubtasks = task.subtasks.filter(subtask => subtask.status === 'done').length;
+        return Math.round((completedSubtasks / task.subtasks.length) * 100);
+      }
+      
       // 如果已完成，返回100%
-      if (task.status === 'done') {
+      if (task.status === 'done' || task.aggregatedStatus === 'done') {
         return 100;
       }
       
       // 如果是待办，返回0%
-      if (task.status === 'todo' || !task.status) {
+      if (task.status === 'todo' || task.aggregatedStatus === 'todo' || !task.status) {
         return 0;
       }
       
@@ -1232,6 +1456,19 @@
       
       // 处理更大的数字（简化版）
       return num.toString();
+    }
+
+    // 数字转圆圈数字
+    function numberToCircle(num) {
+      const circleNumbers = ['⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', 
+                           '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+      
+      if (num >= 0 && num < circleNumbers.length) {
+        return circleNumbers[num];
+      }
+      
+      // 超出范围时使用普通数字加圆圈
+      return `㊣${num}`;
     }
 
     // 导出Word文档
@@ -1303,6 +1540,7 @@
               font-size: 14px;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              zoom: 1.4; /* 140%缩放 */
             }
             
             * {
@@ -1312,9 +1550,9 @@
             }
             
             .report-container {
-              width: calc(100% - 10cm) !important;
+              width: calc(100% - 12cm) !important; /* 稍微增加左右留白，从10cm改为12cm */
               max-width: none !important;
-              margin: 0 5cm !important;
+              margin: 0 6cm !important; /* 左右各6cm留白，从5cm增加 */
               padding: 32px 0 !important;
               font-family: "Microsoft YaHei", "微软雅黑";
               background: #ffffff;
@@ -1369,7 +1607,7 @@
             
             /* KPI 卡片 */
             .kpi-table { 
-              width: 70%; 
+              width: 70%; /* 恢复原来的70%宽度 */
               border-collapse: separate;
               border-spacing: 4px;
               margin-bottom: 20px; 
@@ -1589,11 +1827,12 @@
                 font-size: 14px;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                zoom: 1.4 !important; /* 保持140%缩放 */
               }
               
               .report-container {
-                width: calc(100% - 10cm) !important;
-                margin: 0 5cm !important;
+                width: calc(100% - 12cm) !important; /* 稍微增加左右留白 */
+                margin: 0 6cm !important;
                 padding: 32px 0 !important;
                 background: #ffffff !important;
                 border: none !important;
@@ -1660,13 +1899,22 @@
             </div>
         `;
         
+        let firstLevelIndex = 1;
+        
         if (Object.keys(pg.labelHierarchy).length === 0) {
           html += '<div class="empty-tasks">暂无任务</div>';
         } else {
-          let firstLevelIndex = 1;
+          // 对标签进行排序：普通标签在前，"其他"分类在后
+          const sortedFirstLevels = Object.values(pg.labelHierarchy).sort((a, b) => {
+            // "其他"分类排在最后
+            if (a.isOther && !b.isOther) return 1;
+            if (!a.isOther && b.isOther) return -1;
+            // 其他情况保持原顺序
+            return 0;
+          });
           
           // 渲染第一级标签
-          Object.values(pg.labelHierarchy).forEach(firstLevel => {
+          sortedFirstLevels.forEach(firstLevel => {
             const firstLevelProgress = firstLevel.stats.total > 0 
               ? Math.round(firstLevel.stats.done / firstLevel.stats.total * 100) 
               : 0;
@@ -1701,15 +1949,15 @@
                 html += '<tr><td colspan="4" style="color: #95a5a6; font-style: italic; padding: 8px 12px; border: 1px solid #f8f8f8; text-align: center; font-family: \'Microsoft YaHei\', \'微软雅黑\';">暂无任务</td></tr>';
               } else {
                 lastLevel.tasks.forEach((task, idx) => {
-                  const statusText = getStatusText(task.status);
+                  const statusText = getStatusText(task.aggregatedStatus || task.status);
                   const taskProgress = calculateTaskProgress(task);
                   
                   const progressColor = taskProgress >= 80 ? '#27ae60' : (taskProgress >= 40 ? '#f39c12' : '#95a5a6');
-                  const statusColor = task.status === 'done' ? '#27ae60' : (task.status === 'doing' ? '#f39c12' : '#95a5a6');
+                  const statusColor = (task.aggregatedStatus || task.status) === 'done' ? '#27ae60' : ((task.aggregatedStatus || task.status) === 'doing' ? '#f39c12' : '#95a5a6');
                   
                   html += `
                     <tr style="border: 1px solid #f5f5f5;">
-                      <td style="width: 24px; color: #95a5a6; font-size: 12px; padding: 4px 1px; border: 1px solid #f8f8f8; vertical-align: top; text-align: center; font-family: 'Microsoft YaHei', '微软雅黑';">${idx + 1}.</td>
+                      <td style="width: 24px; color: #95a5a6; font-size: 12px; padding: 4px 1px; border: 1px solid #f8f8f8; vertical-align: top; text-align: center; font-family: 'Microsoft YaHei', '微软雅黑';">${numberToCircle(idx + 1)}</td>
                       <td style="width: 236px; color: #0f172a; font-size: 13px; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; font-family: 'Microsoft YaHei', '微软雅黑';">${task.title || task.name || task.code || '未命名任务'}</td>
                       <td style="width: 50px; color: ${progressColor}; font-weight: 600; font-size: 12px; text-align: center; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; font-family: 'Microsoft YaHei', '微软雅黑';">${taskProgress}%</td>
                       <td style="width: 60px; color: ${statusColor}; font-size: 11px; padding: 4px 6px; border: 1px solid #f8f8f8; vertical-align: top; text-align: center; font-family: 'Microsoft YaHei', '微软雅黑';">[${statusText}]</td>
@@ -1729,6 +1977,78 @@
             html += '</div>';
             firstLevelIndex++;
           });
+          
+          // 添加非开发工作说明和下周工作计划
+          if (pg.nonDevWorks && pg.nonDevWorks.length > 0) {
+            // 按工作类型分组
+            const otherWorks = pg.nonDevWorks.filter(w => w.work_type === 'other_work');
+            const nextWeekPlans = pg.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
+            
+            // 渲染其他工作说明
+            if (otherWorks.length > 0) {
+              html += `
+                <div class="first-level-section">
+                  <div class="first-level-header">
+                    <span>${firstLevelIndex}. 其他工作说明</span>
+                  </div>
+              `;
+              
+              otherWorks.forEach((work, idx) => {
+                html += `
+                  <div class="last-level-section">
+                    <div class="last-level-header">
+                      <span>(${idx + 1}) ${work.title || '未命名工作'}</span>
+                    </div>
+                `;
+                
+                // 如果有描述，添加描述内容
+                if (work.description) {
+                  html += `
+                    <div style="margin-left: 30px; padding: 8px 12px; background: #f1f3f4; border-radius: 4px; border-left: 2px solid #ddd; margin-bottom: 10px;">
+                      <span style="color: #64748b; font-size: 12px; font-style: italic; font-family: 'Microsoft YaHei', '微软雅黑';">${work.description}</span>
+                    </div>
+                  `;
+                }
+                
+                html += `</div>`;
+              });
+              
+              html += `</div>`;
+              firstLevelIndex++;
+            }
+            
+            // 渲染下周工作计划
+            if (nextWeekPlans.length > 0) {
+              html += `
+                <div class="first-level-section">
+                  <div class="first-level-header">
+                    <span>${firstLevelIndex}. 下周工作计划</span>
+                  </div>
+              `;
+              
+              nextWeekPlans.forEach((work, idx) => {
+                html += `
+                  <div class="last-level-section">
+                    <div class="last-level-header">
+                      <span>(${idx + 1}) ${work.title || '未命名计划'}</span>
+                    </div>
+                `;
+                
+                // 如果有描述，添加描述内容
+                if (work.description) {
+                  html += `
+                    <div style="margin-left: 30px; padding: 8px 12px; background: #f1f3f4; border-radius: 4px; border-left: 2px solid #ddd; margin-bottom: 10px;">
+                      <span style="color: #64748b; font-size: 12px; font-style: italic; font-family: 'Microsoft YaHei', '微软雅黑';">${work.description}</span>
+                    </div>
+                  `;
+                }
+                
+                html += `</div>`;
+              });
+              
+              html += `</div>`;
+            }
+          }
         }
         
         html += '</div>';
@@ -1772,6 +2092,31 @@
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
+    
+    // 当非开发工作发生变化时重新生成报告
+    window.regenerateReportAfterNonDevWorkChange = async function() {
+      if (reportData) {
+        // 重新获取项目数据以包含最新的非开发工作
+        const selectedProjects = getSelectedProjects();
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const reportType = document.getElementById('reportType').value;
+        
+        try {
+          const projectsData = await Promise.all(
+            selectedProjects.map(projectId => fetchProjectData(projectId, startDate, endDate))
+          );
+          
+          // 重新处理和渲染报告数据
+          reportData = processReportData(projectsData, reportType, startDate, endDate);
+          renderReport(reportData);
+          
+          // 注意：不需要再次更新非开发工作管理器，因为数据已经是最新的了
+        } catch (error) {
+          console.error('Error regenerating report:', error);
+        }
+      }
+    };
   </script>
 </body>
 </html>
