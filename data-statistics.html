@@ -1347,19 +1347,6 @@
       const completedTasks = tasks.filter(t => t.status === 'done').length;
       const activeUsers = new Set(statsData.workItems.map(w => w.assignee)).size;
 
-      // 调试信息
-      
-      
-      
-      
-      
-      
-      
-      
-        acc[item.kind] = (acc[item.kind] || 0) + 1;
-        return acc;
-      }, {}));
-
       // Calculate trends (mock data)
       const projectsThisMonth = Math.floor(totalProjects * 0.2);
       const jobsThisWeek = Math.floor(jobs.length * 0.15);
