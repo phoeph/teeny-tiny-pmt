@@ -1163,6 +1163,7 @@
     } 
   };
     async function __deleteItem(idOrCode){ 
+      console.log('[DEBUG] __deleteItem called with:', idOrCode);
       try{ 
         const r=await fetch(`${API}/work-items/${idOrCode}`, { 
           method:'DELETE', 
@@ -2220,6 +2221,8 @@ function closeActionMenu() {
 }
 
 function handleAction(action) {
+  console.log('[DEBUG] handleAction called with:', action);
+  console.log('[DEBUG] __deleteItem function exists:', typeof __deleteItem);
   if (!currentActionTarget) return;
   const { ti, si } = currentActionTarget;
   const task = ganttData.tasks[ti];
