@@ -2230,7 +2230,6 @@ function handleAction(action) {
   if (typeof __deleteItem === 'undefined') {
     window.__deleteItem = async function(idOrCode) {
       console.log('[DEBUG] __deleteItem called with:', idOrCode);
-      console.log('[DEBUG] Inside __deleteItem - fetchWorkItems exists:', typeof fetchWorkItems);
       
       try {
         const API = (window.API) || 'http://localhost:8000/api';
@@ -2242,15 +2241,8 @@ function handleAction(action) {
         });
         
         if (r.ok) {
-          // 检查fetchWorkItems是否存在
-          if (typeof fetchWorkItems === 'function') {
-            console.log('[DEBUG] Calling fetchWorkItems...');
-            await fetchWorkItems();
-          } else {
-            // 手动刷新页面作为备选方案
-            console.log('[DEBUG] fetchWorkItems not found, reloading page');
-            window.location.reload();
-          }
+          // 直接从DOM中移除元素，无需刷新页面
+          removeItemFromDOM(idOrCode);
           showToast('删除成功', 'success');
           return;
         }
@@ -2265,29 +2257,54 @@ function handleAction(action) {
         });
         
         if (r2.ok) {
-          // 检查fetchWorkItems是否存在
-          if (typeof fetchWorkItems === 'function') {
-            console.log('[DEBUG] Calling fetchWorkItems...');
-            await fetchWorkItems();
-          } else {
-            // 手动刷新页面作为备选方案
-            console.log('[DEBUG] fetchWorkItems not found, reloading page');
-            window.location.reload();
-          }
+          // 直接从DOM中移除元素，无需刷新页面
+          removeItemFromDOM(idOrCode);
           showToast('删除成功', 'success');
         } else {
-          // 检查__showErrorFromResponse是否存在
-          if (typeof __showErrorFromResponse === 'function') {
-            await __showErrorFromResponse(r2, '删除失败');
-          } else {
-            showToast('删除失败', 'error');
-          }
+          showToast('删除失败', 'error');
         }
       } catch (e) {
         console.error('[delete] Error deleting item:', e);
         showToast('网络错误，删除失败', 'error');
       }
     };
+    
+    // 辅助函数：从DOM中移除已删除的元素
+    function removeItemFromDOM(idOrCode) {
+      try {
+        // 移除看板卡片
+        const kanbanCards = document.querySelectorAll('.card');
+        kanbanCards.forEach(card => {
+          const cardId = card.dataset.wid || card.dataset.code;
+          if (cardId === String(idOrCode)) {
+            card.remove();
+          }
+        });
+        
+        // 移除甘特图中的任务行
+        const taskRows = document.querySelectorAll('.task-row, .task-row-timeline');
+        taskRows.forEach(row => {
+          const rowId = row.dataset.wid || row.dataset.code;
+          if (rowId === String(idOrCode)) {
+            row.remove();
+          }
+        });
+        
+        // 更新全局数据
+        if (window.__items) {
+          window.__items = window.__items.filter(item => {
+            const itemId = String(item.id || item.code);
+            return itemId !== String(idOrCode);
+          });
+        }
+        
+        console.log('[DEBUG] Item removed from DOM:', idOrCode);
+      } catch (e) {
+        console.error('[DEBUG] Error removing item from DOM:', e);
+        // 如果DOM操作失败，回退到刷新页面
+        window.location.reload();
+      }
+    }
   }
   
   console.log('[DEBUG] __deleteItem function exists:', typeof __deleteItem);
