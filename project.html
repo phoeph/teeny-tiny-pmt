@@ -1161,7 +1161,8 @@
     } catch(e){  
       showToast('网络错误，创建失败：' + (e && e.message ? e.message : ''), 'error'); 
     } 
-  };
+  }
+    
     async function __deleteItem(idOrCode){ 
       console.log('[DEBUG] __deleteItem called with:', idOrCode);
       try{ 
