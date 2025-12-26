@@ -213,47 +213,121 @@
             })
           );
           
-          // 任务列表
-          lastLevel.tasks.forEach((task, idx) => {
-            const statusText = getStatusText(task.aggregatedStatus || task.status);
-            const taskProgress = calculateTaskProgress(task);
-            const progressColor = taskProgress >= 100 ? COLORS.success : (taskProgress >= 50 ? COLORS.warning : COLORS.textMuted);
-            const statusColor = statusText === '已完成' ? COLORS.success : (statusText === '进行中' ? COLORS.warning : COLORS.textMuted);
-            
-            children.push(
-              new Paragraph({
+          // 任务列表 - 使用表格实现对齐
+          if (lastLevel.tasks.length > 0) {
+            const taskRows = lastLevel.tasks.map((task, idx) => {
+              const statusText = getStatusText(task.aggregatedStatus || task.status);
+              const taskProgress = calculateTaskProgress(task);
+              const progressColor = taskProgress >= 100 ? COLORS.success : (taskProgress >= 50 ? COLORS.warning : COLORS.textMuted);
+              const statusColor = statusText === '已完成' ? COLORS.success : (statusText === '进行中' ? COLORS.warning : COLORS.textMuted);
+              
+              return new TableRow({
                 children: [
-                  new TextRun({
-                    text: `      ${numberToCircle(idx + 1)} `,
-                    font: FONT_FAMILY,
-                    size: 22,
-                    color: COLORS.textSecondary
+                  // 序号列
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: numberToCircle(idx + 1),
+                            font: FONT_FAMILY,
+                            size: 22,
+                            color: COLORS.textSecondary
+                          })
+                        ],
+                        alignment: AlignmentType.CENTER
+                      })
+                    ],
+                    width: { size: 5, type: WidthType.PERCENTAGE },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
                   }),
-                  new TextRun({
-                    text: task.title || task.name || task.code || '未命名任务',
-                    font: FONT_FAMILY,
-                    size: 24,
-                    color: COLORS.textMain
+                  // 任务名称列
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: task.title || task.name || task.code || '未命名任务',
+                            font: FONT_FAMILY,
+                            size: 24,
+                            color: COLORS.textMain
+                          })
+                        ]
+                      })
+                    ],
+                    width: { size: 65, type: WidthType.PERCENTAGE },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
                   }),
-                  new TextRun({
-                    text: `  [${taskProgress}%]  `,
-                    font: FONT_FAMILY,
-                    size: 22,
-                    bold: true,
-                    color: progressColor
+                  // 进度列
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: `${taskProgress}%`,
+                            font: FONT_FAMILY,
+                            size: 22,
+                            bold: true,
+                            color: progressColor
+                          })
+                        ],
+                        alignment: AlignmentType.RIGHT
+                      })
+                    ],
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
                   }),
-                  new TextRun({
-                    text: statusText,
-                    font: FONT_FAMILY,
-                    size: 20,
-                    color: statusColor
+                  // 状态列
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: statusText,
+                            font: FONT_FAMILY,
+                            size: 20,
+                            color: statusColor
+                          })
+                        ],
+                        alignment: AlignmentType.RIGHT
+                      })
+                    ],
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
                   })
-                ],
-                spacing: { after: 100 },
-                indent: { left: convertInchesToTwip(0.9) }
-              })
-            );
-          });
+                ]
+              });
+            });
+            
+            const taskTable = new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: taskRows,
+              indent: { size: convertInchesToTwip(0.9), type: WidthType.DXA }
+            });
+            
+            children.push(taskTable);
+            children.push(new Paragraph({ text: '', spacing: { after: 100 } }));
+          }
           
           lastLevelIndex++;
         }
