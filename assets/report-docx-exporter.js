@@ -320,9 +320,17 @@
             });
             
             const taskTable = new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
+              width: { size: 65, type: WidthType.PERCENTAGE },
               rows: taskRows,
-              indent: { size: convertInchesToTwip(0.9), type: WidthType.DXA }
+              indent: { size: convertInchesToTwip(0.9), type: WidthType.DXA },
+              borders: {
+                top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+                insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+              }
             });
             
             children.push(taskTable);
