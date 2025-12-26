@@ -100,7 +100,7 @@ class ReportNonDevWorkManager {
       container.innerHTML = `
         <div class="non-dev-work-section" style="display: none;">
           <div class="section-header">
-            <h4>其他工作说明</h4>
+            <h4>其他非开发工作说明</h4>
             <button class="primary-btn btn-sm" id="addReportNonDevWorkBtn" disabled>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -137,10 +137,10 @@ class ReportNonDevWorkManager {
     const nextWeekPlans = this.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
 
     const html = `
-      <!-- 其他工作说明 -->
+      <!-- 其他非开发工作说明 -->
       <div class="non-dev-work-section">
         <div class="section-header">
-          <h4>其他工作说明</h4>
+          <h4>其他非开发工作说明</h4>
           <button class="primary-btn btn-sm" id="addReportNonDevWorkBtn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
               <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -181,7 +181,7 @@ class ReportNonDevWorkManager {
         <div class="form-group">
           <label>工作类型</label>
           <select id="reportNonDevWorkType">
-            <option value="other_work">其他工作说明</option>
+            <option value="other_work">其他非开发工作说明</option>
             <option value="next_week_plan">下周工作计划</option>
           </select>
         </div>
@@ -302,7 +302,7 @@ class ReportNonDevWorkManager {
    * 绑定事件
    */
   bindEvents() {
-    // 添加其他工作说明按钮
+    // 添加其他非开发工作说明按钮
     const addBtn = document.getElementById('addReportNonDevWorkBtn');
     if (addBtn) {
       addBtn.addEventListener('click', () => this.showForm('other_work'));
@@ -378,7 +378,7 @@ class ReportNonDevWorkManager {
       if (work.work_type === 'next_week_plan') {
         formTitle.textContent = '编辑下周工作计划';
       } else {
-        formTitle.textContent = '编辑其他工作说明';
+        formTitle.textContent = '编辑其他非开发工作说明';
       }
     } else {
       workTypeSelect.value = workType;
@@ -407,7 +407,7 @@ class ReportNonDevWorkManager {
         titleLabel.textContent = '工作计划标题';
         titleInput.placeholder = '例如：完成用户管理模块开发';
       } else {
-        formTitle.textContent = '添加其他工作说明';
+        formTitle.textContent = '添加其他非开发工作说明';
         titleLabel.textContent = '工作说明标题';
         titleInput.placeholder = '例如：预估新需求工时并和政企领导汇报进度';
       }

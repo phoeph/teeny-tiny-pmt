@@ -150,6 +150,23 @@
         })
       );
       
+      // 本周总结标题
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '# 本周总结',
+              font: FONT_FAMILY,
+              size: 28,
+              bold: true,
+              color: COLORS.primary
+            })
+          ],
+          spacing: { before: 200, after: 200 },
+          indent: { left: convertInchesToTwip(0.2) }
+        })
+      );
+      
       let firstLevelIndex = 1;
       
       // 对标签进行排序
@@ -268,13 +285,13 @@
         const otherWorks = pg.nonDevWorks.filter(w => w.work_type === 'other_work');
         const nextWeekPlans = pg.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
         
-        // 其他工作说明
+        // 其他非开发工作说明
         if (otherWorks.length > 0) {
           children.push(
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `  ${firstLevelIndex}. 其他工作说明`,
+                  text: `  ${firstLevelIndex}. 其他非开发工作说明`,
                   font: FONT_FAMILY,
                   size: 28,
                   bold: true,
@@ -326,39 +343,48 @@
           firstLevelIndex++;
         }
         
-        // 下周工作计划
+        // 下周计划标题
         if (nextWeekPlans.length > 0) {
           children.push(
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `  ${firstLevelIndex}. 下周工作计划`,
+                  text: '# 下周计划',
                   font: FONT_FAMILY,
                   size: 28,
                   bold: true,
-                  color: COLORS.textMain
+                  color: COLORS.primary
                 })
               ],
-              spacing: { before: 200, after: 150 },
-              shading: { fill: COLORS.bgSubtle },
-              indent: { left: convertInchesToTwip(0.3) }
+              spacing: { before: 300, after: 200 },
+              indent: { left: convertInchesToTwip(0.2) }
             })
           );
           
+          // 下周计划内容作为二级（数字编号）直接列出
           nextWeekPlans.forEach((work, idx) => {
             children.push(
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `    (${idx + 1}) ${work.title || '未命名计划'}`,
+                    text: `  ${idx + 1}. ${work.title || '未命名计划'}`,
                     font: FONT_FAMILY,
-                    size: 26,
+                    size: 28,
                     bold: true,
                     color: COLORS.textMain
                   })
                 ],
-                spacing: { before: 150, after: 100 },
-                indent: { left: convertInchesToTwip(0.6) }
+                spacing: { before: 200, after: 150 },
+                shading: { fill: COLORS.bgSubtle },
+                indent: { left: convertInchesToTwip(0.3) },
+                border: {
+                  left: {
+                    color: COLORS.primary,
+                    space: 1,
+                    style: BorderStyle.SINGLE,
+                    size: 24
+                  }
+                }
               })
             );
             
@@ -367,15 +393,15 @@
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: `      ${work.description}`,
+                      text: `    ${work.description}`,
                       font: FONT_FAMILY,
                       size: 24,
                       italics: true,
                       color: COLORS.textSecondary
                     })
                   ],
-                  spacing: { after: 100 },
-                  indent: { left: convertInchesToTwip(0.9) }
+                  spacing: { after: 200 },
+                  indent: { left: convertInchesToTwip(0.6) }
                 })
               );
             }

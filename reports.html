@@ -1201,6 +1201,11 @@
             <h4 style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 16px; padding-left: 12px; border-left: 4px solid var(--primary);">
               <span>${numberToChinese(projectIndex)}、${pg.projectName}</span>
             </h4>
+            
+            <!-- 本周总结标题 -->
+            <div style="margin-left: 10px; margin-bottom: 20px; margin-top: 16px;">
+              <span style="font-size: 15px; font-weight: 700; color: var(--primary);"># 本周总结</span>
+            </div>
         `;
         
         let firstLevelIndex = 1;
@@ -1294,13 +1299,13 @@
           const otherWorks = pg.nonDevWorks.filter(w => w.work_type === 'other_work');
           const nextWeekPlans = pg.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
           
-          // 渲染其他工作说明
+          // 渲染其他非开发工作说明
           if (otherWorks.length > 0) {
             html += `
               <div style="margin-left: 20px; margin-bottom: 24px;">
                 <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
                   <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
-                    ${firstLevelIndex}. 其他工作说明
+                    ${firstLevelIndex}. 其他非开发工作说明
                   </span>
                 </div>
                 
@@ -1340,26 +1345,22 @@
             firstLevelIndex++;
           }
           
-          // 渲染下周工作计划
+          // 渲染下周计划
           if (nextWeekPlans.length > 0) {
             html += `
-              <div style="margin-left: 20px; margin-bottom: 24px;">
-                <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
-                  <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
-                    ${firstLevelIndex}. 下周工作计划
-                  </span>
-                </div>
-                
-                <div style="margin-left: 20px;">
-                  <div style="margin: 0; padding-left: 0; list-style: none;">
+              <!-- 下周计划标题 -->
+              <div style="margin-left: 10px; margin-bottom: 20px; margin-top: 24px;">
+                <span style="font-size: 15px; font-weight: 700; color: var(--primary);"># 下周计划</span>
+              </div>
             `;
             
+            // 下周计划内容作为二级（数字编号）直接列出
             nextWeekPlans.forEach((work, idx) => {
               html += `
-                <div style="margin-left: 20px; margin-bottom: 20px;">
-                  <div style="display: flex; align-items: center; margin-bottom: 12px; padding: 8px 12px; background: #f8fafc; border-radius: 6px;">
-                    <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">
-                      (${idx + 1}) ${work.title || '未命名计划'}
+                <div style="margin-left: 20px; margin-bottom: 24px;">
+                  <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--primary);">
+                    <span style="font-size: 15px; font-weight: 600; color: var(--text-main);">
+                      ${idx + 1}. ${work.title || '未命名计划'}
                     </span>
                   </div>
               `;
@@ -1377,12 +1378,6 @@
               
               html += `</div>`;
             });
-            
-            html += `
-                  </div>
-                </div>
-              </div>
-            `;
           }
         }
         
@@ -1613,12 +1608,12 @@
             const otherWorks = pg.nonDevWorks.filter(w => w.work_type === 'other_work');
             const nextWeekPlans = pg.nonDevWorks.filter(w => w.work_type === 'next_week_plan');
             
-            // 渲染其他工作说明
+            // 渲染其他非开发工作说明
             if (otherWorks.length > 0) {
               html += `
                 <div class="first-level-section">
                   <div class="first-level-header">
-                    <span>${firstLevelIndex}. 其他工作说明</span>
+                    <span>${firstLevelIndex}. 其他非开发工作说明</span>
                   </div>
               `;
               
