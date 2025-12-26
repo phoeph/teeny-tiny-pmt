@@ -240,10 +240,10 @@
                     ],
                     width: { size: 5, type: WidthType.PERCENTAGE },
                     borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
+                      top: { style: BorderStyle.NIL },
+                      bottom: { style: BorderStyle.NIL },
+                      left: { style: BorderStyle.NIL },
+                      right: { style: BorderStyle.NIL }
                     }
                   }),
                   // 任务名称列
@@ -262,10 +262,10 @@
                     ],
                     width: { size: 65, type: WidthType.PERCENTAGE },
                     borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
+                      top: { style: BorderStyle.NIL },
+                      bottom: { style: BorderStyle.NIL },
+                      left: { style: BorderStyle.NIL },
+                      right: { style: BorderStyle.NIL }
                     }
                   }),
                   // 进度列
@@ -286,10 +286,10 @@
                     ],
                     width: { size: 15, type: WidthType.PERCENTAGE },
                     borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
+                      top: { style: BorderStyle.NIL },
+                      bottom: { style: BorderStyle.NIL },
+                      left: { style: BorderStyle.NIL },
+                      right: { style: BorderStyle.NIL }
                     }
                   }),
                   // 状态列
@@ -309,10 +309,10 @@
                     ],
                     width: { size: 15, type: WidthType.PERCENTAGE },
                     borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
+                      top: { style: BorderStyle.NIL },
+                      bottom: { style: BorderStyle.NIL },
+                      left: { style: BorderStyle.NIL },
+                      right: { style: BorderStyle.NIL }
                     }
                   })
                 ]
@@ -324,12 +324,12 @@
               rows: taskRows,
               indent: { size: convertInchesToTwip(0.9), type: WidthType.DXA },
               borders: {
-                top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                insideHorizontal: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-                insideVertical: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+                top: { style: BorderStyle.NIL, size: 0 },
+                bottom: { style: BorderStyle.NIL, size: 0 },
+                left: { style: BorderStyle.NIL, size: 0 },
+                right: { style: BorderStyle.NIL, size: 0 },
+                insideHorizontal: { style: BorderStyle.NIL, size: 0 },
+                insideVertical: { style: BorderStyle.NIL, size: 0 }
               }
             });
             
