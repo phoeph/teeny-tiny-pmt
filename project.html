@@ -2295,6 +2295,23 @@ function closeActionMenu() {
 }
 
 function handleAction(action) {
+  // 确保函数可用
+  if (typeof openEditJobModal === 'undefined') {
+    console.error('[handleAction] openEditJobModal is not defined yet');
+    showToast('功能加载中，请稍后重试', 'warning');
+    return;
+  }
+  if (typeof openEditTaskModal === 'undefined') {
+    console.error('[handleAction] openEditTaskModal is not defined yet');
+    showToast('功能加载中，请稍后重试', 'warning');
+    return;
+  }
+  if (typeof openCreateTaskModal === 'undefined') {
+    console.error('[handleAction] openCreateTaskModal is not defined yet');
+    showToast('功能加载中，请稍后重试', 'warning');
+    return;
+  }
+  
   // 临时在这里定义__deleteItem函数
   if (typeof __deleteItem === 'undefined') {
     window.__deleteItem = async function(idOrCode) {
