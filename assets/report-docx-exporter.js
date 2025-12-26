@@ -145,7 +145,7 @@
               color: COLORS.textMain
             })
           ],
-          spacing: { before: 300, after: 200 },
+          spacing: { before: 300, after: 300 },
           shading: { fill: COLORS.bgSubtle }
         })
       );
@@ -172,7 +172,7 @@
                 color: COLORS.textMain
               })
             ],
-            spacing: { before: 200, after: 150 },
+            spacing: { before: 200, after: 200 },
             shading: { fill: COLORS.bgSubtle },
             indent: { left: convertInchesToTwip(0.3) },
             border: {
@@ -201,7 +201,7 @@
                   color: COLORS.textMain
                 })
               ],
-              spacing: { before: 150, after: 100 },
+              spacing: { before: 150, after: 200 },
               shading: { fill: COLORS.bgSubtle },
               indent: { left: convertInchesToTwip(0.6) },
               border: {
