@@ -105,6 +105,27 @@
           })
         ],
         alignment: AlignmentType.CENTER,
+        spacing: { after: 200 }
+      })
+    );
+    
+    // 日期下方的分隔线
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: '',
+            size: 1
+          })
+        ],
+        border: {
+          bottom: {
+            color: COLORS.primary,
+            space: 1,
+            style: BorderStyle.SINGLE,
+            size: 20
+          }
+        },
         spacing: { after: 600 }
       })
     );
@@ -153,7 +174,15 @@
             ],
             spacing: { before: 200, after: 150 },
             shading: { fill: COLORS.bgSubtle },
-            indent: { left: convertInchesToTwip(0.3) }
+            indent: { left: convertInchesToTwip(0.3) },
+            border: {
+              left: {
+                color: COLORS.primary,
+                space: 1,
+                style: BorderStyle.SINGLE,
+                size: 24
+              }
+            }
           })
         );
         
@@ -174,7 +203,15 @@
               ],
               spacing: { before: 150, after: 100 },
               shading: { fill: COLORS.bgSubtle },
-              indent: { left: convertInchesToTwip(0.6) }
+              indent: { left: convertInchesToTwip(0.6) },
+              border: {
+                left: {
+                  color: COLORS.primary,
+                  space: 1,
+                  style: BorderStyle.SINGLE,
+                  size: 18
+                }
+              }
             })
           );
           
