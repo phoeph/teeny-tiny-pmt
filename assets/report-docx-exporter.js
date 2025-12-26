@@ -74,7 +74,7 @@
    */
   async function exportReportToDocx(reportData, helpers) {
     const { formatDateRange, numberToChinese, numberToCircle, getStatusText, calculateTaskProgress, formatDate } = helpers;
-    const { Document, Paragraph, TextRun, Table, TableRow, WidthType, AlignmentType, HeadingLevel, convertInchesToTwip, Packer } = docx;
+    const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, convertInchesToTwip, Packer } = docx;
     
     const reportTypeNames = { weekly: '周报', monthly: '月报', yearly: '年报' };
     const completionRate = reportData.summary.totalTasks > 0 
