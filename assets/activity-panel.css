@@ -1,0 +1,673 @@
+/* ============================================
+   Activity Panel - Comments & History
+   Premium Design with Card Layout
+   ============================================ */
+
+/* Activity Container - 包裹 Comments 和 History */
+.activity-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-top: 24px;
+  max-width: 900px;
+}
+
+/* Activity Header with Tabs */
+.activity-header {
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-body) 100%);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 24px;
+}
+
+.activity-tabs {
+  display: flex;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.activity-tab {
+  position: relative;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-tab:hover {
+  color: var(--text-main);
+}
+
+.activity-tab.active {
+  color: var(--primary);
+}
+
+.activity-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: calc(100% - 16px);
+  height: 3px;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-tab.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.activity-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.activity-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.activity-tab.active .activity-tab-count {
+  color: white;
+  background: var(--primary);
+}
+
+/* Activity Content Area */
+.activity-content {
+  padding: 24px;
+  min-height: 200px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.activity-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activity-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activity-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.activity-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Comments Pane */
+.comments-pane {
+  display: block;
+}
+
+.comments-pane.hidden {
+  display: none;
+}
+
+/* Comment List */
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Single Comment Item - 与 History 保持一致的样式 */
+.comment-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px 12px;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--border-light) !important;
+}
+
+.comment-card:last-child {
+  border-bottom: none !important;
+}
+
+.comment-card:hover {
+  background: var(--bg-hover);
+}
+
+/* Comments 列表中的评论项 - 覆盖内联样式 */
+#commentList > div[id^="comment-"] {
+  display: flex;
+  gap: 12px;
+  padding: 16px 12px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  border-radius: 10px !important;
+  margin: 0 !important;
+  transition: all 0.15s ease;
+}
+
+#commentList > div[id^="comment-"]:hover {
+  background: var(--bg-hover);
+}
+
+#commentList > div[id^="comment-"]:last-child {
+  border-bottom: none !important;
+}
+
+/* 评论头部 */
+.cm-head {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+/* 评论头像 */
+.cm-avatar {
+  flex-shrink: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: var(--bg-hover) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* 评论作者名 */
+.cm-author {
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: var(--text-main) !important;
+}
+
+/* 回复箭头 */
+.cm-arrow {
+  color: var(--text-muted) !important;
+  margin: 0 2px !important;
+}
+
+/* 回复对象 */
+.cm-replyto {
+  font-size: 13px !important;
+  color: var(--text-secondary) !important;
+}
+
+/* 评论内容 */
+.comment-content {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: var(--text-main) !important;
+  word-break: break-word;
+  margin-top: 4px;
+}
+
+/* 评论操作按钮 */
+.cm-action-reply,
+.cm-action-menu {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--primary) !important;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.cm-action-reply:hover,
+.cm-action-menu:hover {
+  color: var(--primary-dark) !important;
+}
+
+/* 展开/收起按钮 */
+.cm-toggle {
+  font-size: 12px !important;
+  color: var(--primary) !important;
+  margin-left: 44px !important;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+/* 回复样式 */
+.comment-reply-indicator {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.comment-reply-arrow {
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+/* Comment Editor Area */
+.comment-editor-area {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.comment-editor-wrapper {
+  background: var(--bg-body);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.comment-editor-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.comment-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* History Pane */
+.history-pane {
+  display: none;
+}
+
+.history-pane.active {
+  display: block;
+}
+
+/* History List */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Single History Item */
+.history-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px 12px;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.history-card:last-child {
+  border-bottom: none;
+}
+
+.history-card:hover {
+  background: var(--bg-hover);
+}
+
+.history-card-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.history-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.history-card-header .history-card-time {
+  order: -1;
+  margin-right: 4px;
+}
+
+.history-card-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.history-card-action {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.history-card-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.history-card-status.success {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.history-card-status.failure {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.history-card-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.history-card-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* 变更行样式 - 显示字段: 旧值 → 新值 */
+.history-card-change-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-body);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+  font-size: 13px;
+}
+
+.history-card-field {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.history-card-old-value {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.history-card-arrow {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.history-card-new-value {
+  color: var(--success);
+  font-weight: 500;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.history-card-new-value.history-card-deleted {
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  font-style: italic;
+}
+
+/* 旧数据简化显示样式 */
+.history-card-detail-simple {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-body);
+  border-radius: 8px;
+  border-left: 3px solid var(--border-color);
+  font-size: 13px;
+}
+
+.history-card-target-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.history-card-target-name {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+/* 评论内容显示样式 */
+.history-card-comment {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-body);
+  border-radius: 8px;
+  border-left: 3px solid var(--info);
+  font-size: 13px;
+}
+
+.history-card-comment-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.history-card-comment-text {
+  color: var(--text-main);
+  font-style: italic;
+}
+
+/* 变更描述样式 - 保留兼容 */
+.history-card-change {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--bg-body);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+}
+
+.history-card-detail {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-body);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.history-card-detail-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.history-card-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.history-card-detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.history-card-detail-value {
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.history-card-detail-old {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.history-card-detail-new {
+  color: var(--success);
+}
+
+.history-card-failure {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* History Pagination */
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.history-pagination-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.history-pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.history-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.history-pagination-info {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Empty State */
+.activity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.activity-empty-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.activity-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.activity-empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Loading State */
+.activity-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.activity-loading::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.activity-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .activity-content {
+    padding: 16px;
+  }
+  
+  .activity-tab {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  
+  .comment-card {
+    padding: 12px;
+  }
+  
+  .comment-card-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .history-card-time {
+    display: none;
+  }
+}

@@ -64,7 +64,8 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = DATABASE_URL
+    db_url = DATABASE_URL.replace("sqlite+aiosqlite://", "sqlite://")
+    configuration["sqlalchemy.url"] = db_url
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

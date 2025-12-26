@@ -6,6 +6,7 @@
   <title>任务详情 - 项目管理系统</title>
   <link rel="stylesheet" href="assets/modern-theme.css" />
   <link rel="stylesheet" href="assets/issue-layout.css" />
+  <link rel="stylesheet" href="assets/activity-panel.css" />
   <link rel="stylesheet" href="assets/header-user-menu.css" />
   <link rel="stylesheet" href="assets/left-sidebar.css" />
 </head>
@@ -36,21 +37,43 @@
     <div id="projDescEditor" style="margin-top:8px; display:none;"></div>
   </div>
 
-  <div class="gantt" style="margin-top:24px;">
-    <div class="jira-tabs" style="margin-top:8px;">
-      <div class="jira-tab active" id="tabComments">Comments</div>
+  <div class="activity-container">
+    <div class="activity-header">
+      <div class="activity-tabs">
+        <div class="activity-tab active" id="tabComments">
+          <span class="activity-tab-icon">💬</span>Comments
+        </div>
+        <div class="activity-tab" id="tabHistory">
+          <span class="activity-tab-icon">📋</span>History
+        </div>
+      </div>
     </div>
-    <div id="commentsPane">
-      <div id="comments"></div>
-      <div id="commentEditor" style="margin-top:12px;"></div>
-      <div style="margin-top:8px;"><span id="commentError" style="color:var(--danger);"></span></div>
-      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
-        <button id="addCommentBtn" class="primary-btn">添加评论</button>
-        <button id="cancelCommentBtn" class="ghost-btn" style="display:none;">取消</button>
+    <div class="activity-content">
+      <div id="commentsPane" class="comments-pane">
+        <div id="comments" class="comment-list"></div>
+        <div class="comment-editor-area">
+          <div id="commentEditor"></div>
+          <div id="commentError" style="color:var(--danger); font-size:13px; margin-top:8px;"></div>
+          <div class="comment-buttons">
+            <button id="cancelCommentBtn" class="ghost-btn" style="display:none;">取消</button>
+            <button id="addCommentBtn" class="primary-btn">添加评论</button>
+          </div>
+        </div>
+      </div>
+      <div id="historyPane" class="history-pane">
+        <div id="historyList" class="history-list"></div>
+        <div id="historyLoading" class="activity-loading" style="display:none;">加载中...</div>
+        <div id="historyEmpty" class="activity-empty" style="display:none;">
+          <div class="activity-empty-title">暂无操作记录</div>
+          <div class="activity-empty-desc">所有操作历史将显示在这里</div>
+        </div>
+        <div id="historyError" class="activity-error" style="display:none;"></div>
+        <div id="historyPagination" class="history-pagination" style="display:none;"></div>
       </div>
     </div>
   </div>
 
+  <script src="assets/datetime-utils.js"></script>
   <script src="assets/rich-editor.js"></script>
   <script src="assets/meta-panel.js"></script>
   <script src="assets/label-cascader-multi.js"></script>
@@ -59,6 +82,7 @@
   <script src="assets/left-sidebar.js"></script>
   <script src="assets/ux-enhancements.js"></script>
   <script src="assets/comments.js"></script>
+  <script src="assets/history.js"></script>
   
   <script>
     // Global scroll listener
@@ -151,7 +175,7 @@
       const entityObj = normalizeEntity('task', task, { project: { id: projectId } });
       if(rawProject && rawProject.priority){ entityObj.priority = rawProject.priority; }
       
-      renderJiraIssueLayout(metaTarget, entityObj, { breadcrumb: bc, counter: '', linksHtml: '', project_id: projectId, rawProject: rawProject||null, rawItem: task, hideHeader: true });
+      await renderJiraIssueLayout(metaTarget, entityObj, { breadcrumb: bc, counter: '', linksHtml: '', project_id: projectId, rawProject: rawProject||null, rawItem: task, hideHeader: true });
       try{ setupLabelEditor(metaTarget, entityObj, { project_id: projectId, rawItem: task }); }catch(_){}
       
       const descEl=document.getElementById('issueDescProject'); 
@@ -188,6 +212,7 @@
                                     if(view){ view.innerHTML = html || '暂无描述'; view.style.display='block'; } 
                                     editor.style.display='none'; 
                                     showToast('描述已保存','success'); 
+                                    if(window.HistoryModule&&window.HistoryModule.refresh){ window.HistoryModule.refresh(); }
                                     return true; 
                                 } else { 
                                     await __showErrorFromResponse(res); 
@@ -208,6 +233,7 @@
       window.__currentTaskId = task.id || null;
       if(window.__setupCommentsModule) window.__setupCommentsModule();
       if(window.__setupComments) window.__setupComments();
+      if(window.__setupHistoryModule) window.__setupHistoryModule();
       await loadComments();
     }
 
@@ -216,8 +242,9 @@
     // Hash change handler for comments
     try{ const onHashChange=function(){ const h=(location.hash||'').trim(); const targetId = h && h.startsWith('#comment-') ? h.slice(1) : ''; if(targetId){ const target=document.getElementById(targetId); if(target){ target.scrollIntoView({ behavior:'smooth', block:'start' }); target.style.boxShadow='0 0 0 2px var(--primary) inset'; setTimeout(()=>{ target.style.boxShadow=''; }, 1500); } } }; window.addEventListener('hashchange', onHashChange); }catch(_){}
 
-    function bindCommentTabs(){ const cTab=document.getElementById('tabComments'); const hTab=document.getElementById('tabHistory'); const cPane=document.getElementById('commentsPane'); const hPane=document.getElementById('historyPane'); if(cTab&&hTab){ cTab.onclick=function(){ cTab.classList.add('active'); hTab.classList.remove('active'); cPane.style.display='block'; hPane.style.display='none'; PageHistory.log('切换标签','Comments'); }; hTab.onclick=function(){ hTab.classList.add('active'); cTab.classList.remove('active'); cPane.style.display='none'; hPane.style.display='block'; PageHistory.renderTo('historyList'); PageHistory.log('切换标签','History'); }; } }
+    function bindCommentTabs(){ const cTab=document.getElementById('tabComments'); const hTab=document.getElementById('tabHistory'); const cPane=document.getElementById('commentsPane'); const hPane=document.getElementById('historyPane'); if(cTab&&hTab){ cTab.onclick=function(){ cTab.classList.add('active'); hTab.classList.remove('active'); cPane.classList.remove('hidden'); cPane.classList.add('comments-pane'); hPane.classList.remove('active'); PageHistory.log('切换标签','Comments'); }; hTab.onclick=function(){ hTab.classList.add('active'); cTab.classList.remove('active'); cPane.classList.add('hidden'); hPane.classList.add('active'); if(window.__historyModule){ window.__historyModule.load(); } PageHistory.log('切换标签','History'); }; } }
     window.__setupCommentsModule = function(){ var cm=CommentsModule.init({ entityType:'work_item', entityId:(window.__currentTaskId||0), selectors:{ listId:'comments', editorId:'commentEditor', addBtnId:'addCommentBtn', cancelBtnId:'cancelCommentBtn', errorId:'commentError', historyListId:'historyList' }, hooks:{ PageHistory: PageHistory } }); window.loadComments=cm.load; window.__disableLegacyTaskComments=true; bindCommentTabs(); };
+    window.__setupHistoryModule = function(){ var hm=HistoryModule.init({ entityType:'work_item', entityId:(window.__currentTaskId||0), selectors:{ listId:'historyList', loadingId:'historyLoading', emptyId:'historyEmpty', errorId:'historyError', paginationId:'historyPagination' } }); window.__historyModule=hm; };
     
     // Priority dropdown logic (copied from task.html)
     document.addEventListener('click', function(ev){ try{ var item = ev.target.closest('#priorityDropdown .dropdown-item'); if(!item) return; var p = item.getAttribute('data-p') || 'medium'; var link = document.getElementById('priorityEditLink'); var lab = document.getElementById('priorityLabel'); var color = (p==='low') ? 'var(--success)' : (p==='high' ? 'var(--danger)' : 'var(--warning)'); if(lab) { lab.textContent = (p==='low' ? 'Low' : (p==='high' ? 'High' : 'Medium')); } if(link){ var path = link.querySelector('path'); if(path){ path.setAttribute('fill', color); } } var menu = document.getElementById('priorityDropdown'); if(menu){ menu.style.width = '140px'; menu.style.minWidth = '120px'; } }catch(_){ } });

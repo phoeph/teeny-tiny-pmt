@@ -33,8 +33,22 @@ FRONTEND_PORT=8080
 BACKEND_PORT=8000
 
 echo "🔍 检查端口占用情况..."
-FRONTEND_PID=$(lsof -ti:$FRONTEND_PORT 2>/dev/null)
-BACKEND_PID=$(lsof -ti:$BACKEND_PORT 2>/dev/null)
+
+# 更精确地查找我们的服务进程，避免误杀其他应用
+# 只查找 node 和 python/uvicorn 进程
+FRONTEND_PID=$(lsof -ti:$FRONTEND_PORT 2>/dev/null | while read pid; do
+    cmd=$(ps -p $pid -o comm= 2>/dev/null)
+    if [[ "$cmd" == "node" || "$cmd" == "npm" ]]; then
+        echo $pid
+    fi
+done)
+
+BACKEND_PID=$(lsof -ti:$BACKEND_PORT 2>/dev/null | while read pid; do
+    cmd=$(ps -p $pid -o comm= 2>/dev/null)
+    if [[ "$cmd" == "python"* || "$cmd" == "uvicorn" ]]; then
+        echo $pid
+    fi
+done)
 
 if [ ! -z "$FRONTEND_PID" ]; then
     echo "⚠️  发现前端服务已在运行 (PID: $FRONTEND_PID)，正在终止..."

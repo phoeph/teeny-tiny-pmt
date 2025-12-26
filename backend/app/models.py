@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from typing import Optional, List
+from enum import Enum
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, Date, Float, ForeignKey, 
     Text, UniqueConstraint, CheckConstraint, Index, MetaData
@@ -322,3 +323,61 @@ def get_active_work_item_query():
 def get_active_comment_query():
     """获取活跃评论的基础查询条件"""
     return Comment.deleted_at.is_(None)
+
+
+class OperationType(str, Enum):
+    CREATE_PROJECT = "create_project"
+    UPDATE_PROJECT = "update_project"
+    DELETE_PROJECT = "delete_project"
+    ADD_MEMBER = "add_member"
+    REMOVE_MEMBER = "remove_member"
+    CREATE_TASK = "create_task"
+    UPDATE_TASK = "update_task"
+    DELETE_TASK = "delete_task"
+    MOVE_TASK = "move_task"
+    ASSIGN_TASK = "assign_task"
+    CHANGE_TASK_STATUS = "change_task_status"
+    CREATE_JOB = "create_job"
+    UPDATE_JOB = "update_job"
+    DELETE_JOB = "delete_job"
+    CHANGE_JOB_STATUS = "change_job_status"
+    ADD_COMMENT = "add_comment"
+    UPDATE_COMMENT = "update_comment"
+    DELETE_COMMENT = "delete_comment"
+    START_WATCHING = "start_watching"
+    STOP_WATCHING = "stop_watching"
+
+
+class EntityType(str, Enum):
+    PROJECT = "project"
+    WORK_ITEM = "work_item"
+    JOB = "job"
+    COMMENT = "comment"
+
+
+class OperationLog(Base):
+    __tablename__ = "operation_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    username = Column(String(100), nullable=False)
+    operation_type = Column(String(50), nullable=False)
+    entity_type = Column(String(20), nullable=False)
+    entity_id = Column(Integer, nullable=False)
+    operation_content = Column(Text, nullable=False)
+    field_name = Column(String(100), nullable=True)
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    result_status = Column(String(20), nullable=False)
+    failure_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    __table_args__ = (
+        CheckConstraint("entity_type IN ('project', 'work_item', 'job', 'comment')", name="valid_operation_log_entity_type"),
+        CheckConstraint("result_status IN ('success', 'failure')", name="valid_operation_log_result_status"),
+        Index("idx_operation_logs_entity", "entity_type", "entity_id"),
+        Index("idx_operation_logs_user", "user_id"),
+        Index("idx_operation_logs_created", "created_at"),
+    )
+    
+    user = relationship("User", foreign_keys=[user_id])

@@ -1,25 +1,5 @@
 {
+  "public": ".",
   "cleanUrls": false,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/projects",
-      "destination": "/projects.html"
-    },
-    {
-      "source": "/project",
-      "destination": "/project.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "**/*.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache"
-        }
-      ]
-    }
-  ]
+  "trailingSlash": false
 }

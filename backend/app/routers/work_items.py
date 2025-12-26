@@ -12,6 +12,8 @@ from app.models import WorkItem, User
 from app.dependencies.auth import get_current_user
 from app.schemas.work_item import WorkItemCreate, WorkItemUpdate, WorkItemResponse, WorkItemBatchUpdateRequest
 from app.services.work_item_service import work_item_service
+from app.services.operation_log_service import operation_log_service
+from app.models import OperationType, EntityType
 
 
 router = APIRouter(prefix="/api/work-items", tags=["工作项"])
@@ -206,8 +208,37 @@ async def create_work_item(
             assignee_prefix=body.assignee_prefix,
             assignee_email=body.assignee_email,
         )
+        
+        operation_type = OperationType.CREATE_JOB if body.kind == "JOB" else OperationType.CREATE_TASK
+        kind_name = "作业" if body.kind == "JOB" else "任务"
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=operation_type,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=wi.id,
+            operation_content=f"创建{kind_name}: {wi.title} (编号: {wi.code})",
+            result_status="success"
+        )
+        
         return wi
     except Exception as e:
+        kind_name = "作业" if body.kind == "JOB" else "任务"
+        operation_type = OperationType.CREATE_JOB if body.kind == "JOB" else OperationType.CREATE_TASK
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=operation_type,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=0,
+            operation_content=f"创建{kind_name}失败: {body.title}",
+            result_status="failure",
+            failure_reason=str(e)
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -300,10 +331,88 @@ async def update_work_item(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    wi = await work_item_service.update(db, id=id, data=body.dict(exclude_unset=True), current_user_id=current_user.id)
-    if not wi:
-        raise HTTPException(status_code=404, detail="工作项不存在")
-    return wi
+    try:
+        # 先获取旧数据，用于记录变更
+        old_wi = await work_item_service.get(db, id=id)
+        if not old_wi:
+            raise HTTPException(status_code=404, detail="工作项不存在")
+        
+        # 保存旧值
+        old_values = {
+            'title': old_wi.title,
+            'description': old_wi.description,
+            'status': old_wi.status,
+            'priority': old_wi.priority,
+            'assignee_id': old_wi.assignee_id,
+            'planned_start_date': str(old_wi.planned_start_date) if old_wi.planned_start_date else None,
+            'planned_end_date': str(old_wi.planned_end_date) if old_wi.planned_end_date else None,
+            'actual_hours': old_wi.actual_hours,
+            'label_path': old_wi.label_path,
+        }
+        
+        wi = await work_item_service.update(db, id=id, data=body.dict(exclude_unset=True), current_user_id=current_user.id)
+        if not wi:
+            raise HTTPException(status_code=404, detail="工作项不存在")
+        
+        kind_name = "作业" if wi.kind == "JOB" else "任务"
+        operation_type = OperationType.UPDATE_JOB if wi.kind == "JOB" else OperationType.UPDATE_TASK
+        
+        # 获取更新的字段
+        update_data = body.dict(exclude_unset=True)
+        
+        # 记录每个字段的变更
+        field_logged = False
+        for field_name, new_value in update_data.items():
+            old_value = old_values.get(field_name)
+            
+            # 处理日期类型
+            if field_name in ('planned_start_date', 'planned_end_date') and new_value:
+                new_value = str(new_value)
+            
+            # 只记录实际变更的字段
+            if str(old_value) != str(new_value):
+                await operation_log_service.log_field_change(
+                    db,
+                    user_id=current_user.id,
+                    username=current_user.username,
+                    entity_type=EntityType.WORK_ITEM,
+                    entity_id=wi.id,
+                    field_name=field_name,
+                    old_value=str(old_value) if old_value is not None else None,
+                    new_value=str(new_value) if new_value is not None else None,
+                    operation_type=operation_type
+                )
+                field_logged = True
+        
+        # 如果没有记录任何字段变更，记录一条通用日志
+        if not field_logged:
+            await operation_log_service.log_operation(
+                db,
+                user_id=current_user.id,
+                username=current_user.username,
+                operation_type=operation_type,
+                entity_type=EntityType.WORK_ITEM,
+                entity_id=wi.id,
+                operation_content=f"更新{kind_name}: {wi.title} (编号: {wi.code})",
+                result_status="success"
+            )
+        
+        return wi
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.UPDATE_TASK,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=id,
+            operation_content=f"更新工作项失败: ID {id}",
+            result_status="failure",
+            failure_reason=str(e)
+        )
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 class CascadeStatusRequest(BaseModel):
@@ -359,7 +468,38 @@ async def delete_work_item(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    wi = await work_item_service.soft_delete(db, id=id, current_user_id=current_user.id)
-    if not wi:
-        raise HTTPException(status_code=404, detail="工作项不存在")
-    return wi
+    try:
+        wi = await work_item_service.soft_delete(db, id=id, current_user_id=current_user.id)
+        if not wi:
+            raise HTTPException(status_code=404, detail="工作项不存在")
+        
+        kind_name = "作业" if wi.kind == "JOB" else "任务"
+        operation_type = OperationType.DELETE_JOB if wi.kind == "JOB" else OperationType.DELETE_TASK
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=operation_type,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=wi.id,
+            operation_content=f"删除{kind_name}: {wi.title} (编号: {wi.code})",
+            result_status="success"
+        )
+        
+        return wi
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.DELETE_TASK,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=id,
+            operation_content=f"删除工作项失败: ID {id}",
+            result_status="failure",
+            failure_reason=str(e)
+        )
+        raise HTTPException(status_code=400, detail=str(e))

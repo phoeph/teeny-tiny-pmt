@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies.auth import get_current_user
-from app.models import User, Comment
+from app.models import User, Comment, OperationType, EntityType
 from app.services.comment_service import comment_service
+from app.services.operation_log_service import operation_log_service
 from pydantic import BaseModel, Field
 
 
@@ -24,8 +25,35 @@ class CommentEdit(BaseModel):
 async def create_comment(body: CommentCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
         c = await comment_service.add_comment(db, entity_type=body.entity_type, entity_id=body.entity_id, author_id=current_user.id, content=body.content)
+        
+        target_entity_type = EntityType.PROJECT if body.entity_type == 'project' else EntityType.WORK_ITEM
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.ADD_COMMENT,
+            entity_type=target_entity_type,
+            entity_id=body.entity_id,
+            operation_content=f"添加评论: {body.content[:50]}{'...' if len(body.content) > 50 else ''}",
+            result_status="success"
+        )
+        
         return {"id": c.id}
     except Exception as e:
+        target_entity_type = EntityType.PROJECT if body.entity_type == 'project' else EntityType.WORK_ITEM
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.ADD_COMMENT,
+            entity_type=target_entity_type,
+            entity_id=body.entity_id,
+            operation_content=f"添加评论失败",
+            result_status="failure",
+            failure_reason=str(e)
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -54,8 +82,33 @@ async def list_comments(entity_type: str, entity_id: int, db: AsyncSession = Dep
 async def edit_comment(id: int, body: CommentEdit, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
         c = await comment_service.edit_comment(db, id=id, content=body.content)
+        
+        target_entity_type = EntityType.PROJECT if c.entity_type == 'project' else EntityType.WORK_ITEM
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.UPDATE_COMMENT,
+            entity_type=target_entity_type,
+            entity_id=c.entity_id,
+            operation_content=f"更新评论: {body.content[:50]}{'...' if len(body.content) > 50 else ''}",
+            result_status="success"
+        )
+        
         return {"id": c.id}
     except Exception as e:
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.UPDATE_COMMENT,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=0,
+            operation_content=f"更新评论失败",
+            result_status="failure",
+            failure_reason=str(e)
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -63,8 +116,33 @@ async def edit_comment(id: int, body: CommentEdit, db: AsyncSession = Depends(ge
 async def delete_comment(id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
         c = await comment_service.delete_comment(db, id=id)
+        
+        target_entity_type = EntityType.PROJECT if c.entity_type == 'project' else EntityType.WORK_ITEM
+        
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.DELETE_COMMENT,
+            entity_type=target_entity_type,
+            entity_id=c.entity_id,
+            operation_content=f"删除评论: ID {c.id}",
+            result_status="success"
+        )
+        
         return {"id": c.id}
     except Exception as e:
+        await operation_log_service.log_operation(
+            db,
+            user_id=current_user.id,
+            username=current_user.username,
+            operation_type=OperationType.DELETE_COMMENT,
+            entity_type=EntityType.WORK_ITEM,
+            entity_id=0,
+            operation_content=f"删除评论失败",
+            result_status="failure",
+            failure_reason=str(e)
+        )
         raise HTTPException(status_code=400, detail=str(e))
 
 
