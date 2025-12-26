@@ -94,6 +94,26 @@ async def list_work_items_by_project(
     return {"items": response}
 
 
+@router.get("/name-exists")
+async def check_name_exists(
+    project_id: int = Query(..., description="项目ID"),
+    type: str = Query(..., pattern="^(job|task)$", description="类型：job或task"),
+    title: str = Query(..., min_length=1, max_length=500, description="标题"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    kind = 'JOB' if type.lower() == 'job' else 'TASK'
+    stmt = select(WorkItem).where(
+        WorkItem.project_id == project_id,
+        WorkItem.kind == kind,
+        WorkItem.title == title,
+        WorkItem.deleted_at.is_(None)
+    )
+    res = await db.execute(stmt)
+    wi = res.scalars().first()
+    return {"exists": wi is not None, "conflict_id": wi.id if wi else None}
+
+
 @router.get("/{id}")
 async def get_work_item_by_id(
     id: int,
@@ -240,26 +260,6 @@ async def create_work_item(
             failure_reason=str(e)
         )
         raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/name-exists")
-async def check_name_exists(
-    project_id: int = Query(..., description="项目ID"),
-    type: str = Query(..., pattern="^(job|task)$", description="类型：job或task"),
-    title: str = Query(..., min_length=1, max_length=500, description="标题"),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    kind = 'JOB' if type.lower() == 'job' else 'TASK'
-    stmt = select(WorkItem).where(
-        WorkItem.project_id == project_id,
-        WorkItem.kind == kind,
-        WorkItem.title == title,
-        WorkItem.deleted_at.is_(None)
-    )
-    res = await db.execute(stmt)
-    wi = res.scalars().first()
-    return {"exists": wi is not None, "conflict_id": wi.id if wi else None}
 
 
 @router.patch("/batch")

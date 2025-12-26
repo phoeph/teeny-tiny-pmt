@@ -241,6 +241,155 @@
       border-color: var(--primary);
       color: var(--primary);
     }
+    
+    /* Modal Enhancements */
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal {
+      animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    .modal-header {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .modal-header h4 {
+      margin: 0 0 6px 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+    
+    .modal-subtitle {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .modal-body {
+      margin-bottom: 24px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    .form-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    
+    .label-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    
+    .label-required {
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+    
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
+      background: var(--bg-surface);
+    }
+    
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.6;
+    }
+    
+    .form-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .form-hint svg {
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+    
+    .form-error {
+      display: none;
+      padding: 10px 14px;
+      background: var(--danger-light);
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+    
+    .form-error:not(:empty) {
+      display: block;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-light);
+    }
+    
+    .modal-footer .btn-ghost,
+    .modal-footer .btn-primary {
+      min-width: 100px;
+    }
   </style>
 </head>
 <body>
@@ -272,23 +421,102 @@
   </div>
 
   <div id="projectCreateBackdrop" class="modal-backdrop">
-    <div class="modal">
-      <h4>新建项目</h4>
-      <div class="row"><label>项目名称</label><input id="projNameInput" placeholder="例如 官网改版 2026Q1" /></div>
-      <div class="row"><label>项目描述</label><textarea id="projDescInput" placeholder="例如 项目背景与目标" style="min-height:120px; resize:vertical; padding:8px; border:1px solid var(--border-color); border-radius:6px; width:100%; font-family:inherit; color: var(--text-main); background: var(--bg-input);"></textarea></div>
-      <div class="row"><label>负责人</label><input id="projOwnerInput" placeholder="输入邮箱或前缀，例如 zhangsan" /></div>
-      <div id="projError" style="color:var(--danger); font-size:12px; margin-top:8px;"></div>
-      <div class="actions"><button id="projCancelBtn" class="btn-ghost">取消</button><button id="projCreateBtn" class="btn-primary">创建</button></div>
+    <div class="modal" style="max-width: 520px;">
+      <div class="modal-header">
+        <h4>新建项目</h4>
+        <p class="modal-subtitle">创建一个新的项目来管理任务和工作流程</p>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">
+            <span class="label-text">项目名称</span>
+            <span class="label-required">*</span>
+          </label>
+          <input 
+            id="projNameInput" 
+            class="form-input" 
+            placeholder="例如：官网改版 2026Q1" 
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">
+            <span class="label-text">项目描述</span>
+          </label>
+          <textarea 
+            id="projDescInput" 
+            class="form-textarea" 
+            placeholder="简要描述项目的背景、目标和范围..."
+            rows="4"
+          ></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">
+            <span class="label-text">负责人</span>
+          </label>
+          <input 
+            id="projOwnerInput" 
+            class="form-input" 
+            placeholder="输入邮箱或用户名，例如：zhangsan" 
+            autocomplete="off"
+          />
+          <div class="form-hint">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            输入用户邮箱前缀或完整邮箱地址
+          </div>
+        </div>
+        
+        <div id="projError" class="form-error"></div>
+      </div>
+      
+      <div class="modal-footer">
+        <button id="projCancelBtn" class="btn-ghost">取消</button>
+        <button id="projCreateBtn" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          创建项目
+        </button>
+      </div>
     </div>
   </div>
 
   <div id="deleteConfirmBackdrop" class="modal-backdrop">
-    <div class="modal" style="max-width: 400px;">
-      <h4 style="color:var(--danger)">删除项目</h4>
-      <p style="margin-bottom:24px; color:var(--text-secondary)">确定要删除项目 <strong id="deleteProjName" style="color:var(--text-main)"></strong> 吗？<br>此操作不可恢复，请谨慎操作。</p>
-      <div class="actions">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header" style="border-bottom-color: var(--danger-light);">
+        <h4 style="color: var(--danger); display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          删除项目
+        </h4>
+        <p class="modal-subtitle">此操作不可恢复，请谨慎操作</p>
+      </div>
+      
+      <div class="modal-body">
+        <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+          确定要删除项目 <strong id="deleteProjName" style="color: var(--text-main); font-weight: 600;"></strong> 吗？
+        </p>
+      </div>
+      
+      <div class="modal-footer">
         <button id="deleteCancelBtn" class="btn-ghost">取消</button>
-        <button id="deleteConfirmBtn" class="btn-primary" style="background-color:var(--danger)">确认删除</button>
+        <button id="deleteConfirmBtn" class="btn-primary" style="background: linear-gradient(135deg, var(--danger), #dc2626); border: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          确认删除
+        </button>
       </div>
     </div>
   </div>
@@ -558,9 +786,106 @@
     function hideOwnerDropdown(){ const el=document.getElementById('ownerDropdown'); if(el) el.style.display='none'; }
     function enableOwnerDropdown(inputId){ const input=document.getElementById(inputId); if(!input) return; input.addEventListener('focus', function(){ showOwnerDropdown(input, input.value); }); input.addEventListener('input', function(){ showOwnerDropdown(input, input.value); }); input.addEventListener('blur', function(){ setTimeout(hideOwnerDropdown, 120); }); }
 
-    function openCreateProjectModal(){ const b=document.getElementById('projectCreateBackdrop'); const name=document.getElementById('projNameInput'); const desc=document.getElementById('projDescInput'); const owner=document.getElementById('projOwnerInput'); const err=document.getElementById('projError'); if(b){ b.style.display='flex'; } if(name){ name.value=''; } if(desc){ desc.value=''; } if(owner){ owner.value=''; } if(err){ err.textContent=''; } }
+    function openCreateProjectModal(){ 
+      const b=document.getElementById('projectCreateBackdrop'); 
+      const name=document.getElementById('projNameInput'); 
+      const desc=document.getElementById('projDescInput'); 
+      const owner=document.getElementById('projOwnerInput'); 
+      const err=document.getElementById('projError'); 
+      
+      if(b){ 
+        b.style.display='flex'; 
+      } 
+      if(name){ 
+        name.value=''; 
+      } 
+      if(desc){ 
+        desc.value=''; 
+      } 
+      if(owner){ 
+        owner.value=''; 
+        owner.dataset.prefix='';
+        owner.dataset.email='';
+      } 
+      if(err){ 
+        err.textContent=''; 
+      } 
+    }
     function closeCreateProjectModal(){ const b=document.getElementById('projectCreateBackdrop'); if(b){ b.style.display='none'; } }
-    async function createProject(){ const name=document.getElementById('projNameInput').value.trim(); const desc=document.getElementById('projDescInput').value.trim(); const owner=document.getElementById('projOwnerInput').value.trim(); const err=document.getElementById('projError'); err.textContent=''; if(!name){ err.textContent='请输入项目名称'; return; } try{ const res=await fetch(`${API}/projects/`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify({ name, description: desc||undefined }) }); if(res.ok){ const p=await res.json(); const pid=p && p.id; if(owner && pid){ try{ const isEmail = owner.indexOf('@')>0; const body = isEmail? { owner_email: owner } : { owner_prefix: owner }; await fetch(`${API}/projects/${pid}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) }); }catch(_){ } } closeCreateProjectModal(); if(pid){ location.href = `project.html?id=${pid}`; } else { await fetchProjects(); } } else { try{ const txt=await res.text(); err.textContent = (txt||'创建失败'); }catch(_){ err.textContent='创建失败'; } } } catch(e){ err.textContent='网络错误'; } }
+    async function createProject(){ 
+      const name=document.getElementById('projNameInput').value.trim(); 
+      const desc=document.getElementById('projDescInput').value.trim(); 
+      const ownerInput=document.getElementById('projOwnerInput');
+      const owner=ownerInput.value.trim(); 
+      const err=document.getElementById('projError'); 
+      err.textContent=''; 
+      
+      if(!name){ 
+        err.textContent='请输入项目名称'; 
+        return; 
+      } 
+      
+      try{ 
+        const res=await fetch(`${API}/projects/`, { 
+          method:'POST', 
+          headers:{ 
+            'Content-Type':'application/json', 
+            Authorization:`Bearer ${token}` 
+          }, 
+          body: JSON.stringify({ name, description: desc||undefined }) 
+        }); 
+        
+        if(res.ok){ 
+          const p=await res.json(); 
+          const pid=p && p.id; 
+          
+          if(owner && pid){ 
+            try{ 
+              // 优先使用下拉选择时存储的 prefix 或 email
+              const ownerPrefix = ownerInput.dataset.prefix || '';
+              const ownerEmail = ownerInput.dataset.email || '';
+              
+              let body;
+              if(ownerEmail && ownerEmail.indexOf('@') > 0){
+                body = { owner_email: ownerEmail };
+              } else if(ownerPrefix){
+                body = { owner_prefix: ownerPrefix };
+              } else {
+                // 如果没有存储的数据，尝试判断输入的是邮箱还是前缀
+                const isEmail = owner.indexOf('@') > 0;
+                body = isEmail ? { owner_email: owner } : { owner_prefix: owner };
+              }
+              
+              await fetch(`${API}/projects/${pid}`, { 
+                method:'PUT', 
+                headers:{ 
+                  'Content-Type':'application/json', 
+                  Authorization:`Bearer ${token}` 
+                }, 
+                body: JSON.stringify(body) 
+              }); 
+            }catch(_){ } 
+          } 
+          
+          closeCreateProjectModal(); 
+          
+          if(pid){ 
+            location.href = `project.html?id=${pid}`; 
+          } else { 
+            await fetchProjects(); 
+          } 
+        } else { 
+          try{ 
+            const txt=await res.text(); 
+            err.textContent = (txt||'创建失败'); 
+          }catch(_){ 
+            err.textContent='创建失败'; 
+          } 
+        } 
+      } catch(e){ 
+        err.textContent='网络错误'; 
+      } 
+    }
 
     document.getElementById('btnCard').addEventListener('click', () => applyViewMode('card'));
     document.getElementById('btnList').addEventListener('click', () => applyViewMode('list'));
