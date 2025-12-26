@@ -8,10 +8,17 @@
     "build": "echo 'Building static files...' && cp *.html dist/ && cp -r assets dist/ 2>/dev/null || true",
     "start": "npx serve -s . -p 8080"
   },
-  "keywords": ["gantt", "project-management"],
+  "keywords": [
+    "gantt",
+    "project-management"
+  ],
   "author": "Leo Zhi",
   "license": "MIT",
   "devDependencies": {
     "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "docx": "^9.5.1",
+    "file-saver": "^2.0.5"
   }
 }

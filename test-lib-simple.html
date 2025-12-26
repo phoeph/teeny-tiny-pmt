@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简单测试</title>
+</head>
+<body>
+  <h1>测试库加载</h1>
+  <div id="result"></div>
+  
+  <script src="node_modules/docx/dist/index.iife.js"></script>
+  <script src="node_modules/file-saver/dist/FileSaver.min.js"></script>
+  
+  <script>
+    const result = document.getElementById('result');
+    let html = '<h3>测试结果：</h3>';
+    
+    html += '<p>docx 类型: ' + typeof docx + '</p>';
+    if (typeof docx !== 'undefined') {
+      html += '<p>docx 是对象: ' + (typeof docx === 'object') + '</p>';
+      
+      // 检查关键类是否存在
+      const requiredClasses = ['Document', 'Paragraph', 'TextRun', 'Table', 'TableRow', 'TableCell', 'Packer', 'AlignmentType', 'HeadingLevel', 'WidthType', 'BorderStyle', 'convertInchesToTwip'];
+      html += '<h4>关键类检查：</h4><ul>';
+      requiredClasses.forEach(className => {
+        const exists = typeof docx[className] !== 'undefined';
+        html += '<li style="color: ' + (exists ? 'green' : 'red') + '">' + className + ': ' + (exists ? '✓' : '✗') + '</li>';
+      });
+      html += '</ul>';
+      
+      html += '<p>docx 的所有键 (' + Object.keys(docx).length + ' 个): ' + Object.keys(docx).slice(0, 30).join(', ') + '...</p>';
+    }
+    
+    html += '<p>saveAs 类型: ' + typeof saveAs + '</p>';
+    
+    result.innerHTML = html;
+  </script>
+</body>
+</html>

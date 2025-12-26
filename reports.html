@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="assets/header-user-menu.css" />
   <link rel="stylesheet" href="assets/left-sidebar.css" />
   <link rel="stylesheet" href="assets/non-dev-work-styles.css" />
+  <!-- DOCX generation libraries -->
+  <script src="node_modules/docx/dist/index.iife.js"></script>
+  <script src="node_modules/file-saver/dist/FileSaver.min.js"></script>
+  <script src="assets/report-docx-exporter.js"></script>
   <style>
     /* Page Header */
     .page-header {
@@ -1471,410 +1475,35 @@
       return `㊣${num}`;
     }
 
-    // 导出Word文档
-    function exportToWord() {
+    // 导出Word文档（DOCX格式）
+    async function exportToWord() {
       if (!reportData) return;
       
-      const reportTypeNames = { weekly: '周报', monthly: '月报', yearly: '年报' };
-      const completionRate = reportData.summary.totalTasks > 0 
-        ? Math.round(reportData.summary.completedTasks / reportData.summary.totalTasks * 100) 
-        : 0;
+      // 检查库是否加载
+      if (typeof docx === 'undefined' || typeof saveAs === 'undefined' || typeof ReportDocxExporter === 'undefined') {
+        showToast('Word导出库加载中，请稍后重试', 'warning');
+        return;
+      }
       
-      // 生成与页面一致的内容
-      let contentHtml = `
-        <div class="report-container">
-          <div class="report-header">
-            <div class="report-title">${reportTypeNames[reportData.reportType]}</div>
-            <div class="report-period">${formatDateRange(reportData.startDate, reportData.endDate)}</div>
-          </div>
-          
-          <div class="report-section">
-            <h3 class="section-title">项目概览</h3>
-            <table class="kpi-table">
-              <tr>
-                <td class="kpi-card">
-                  <div class="kpi-value">${reportData.summary.totalProjects}</div>
-                  <div class="kpi-label">涉及项目</div>
-                </td>
-                <td class="kpi-card">
-                  <div class="kpi-value">${reportData.summary.totalTasks}</div>
-                  <div class="kpi-label">总任务数</div>
-                </td>
-                <td class="kpi-card">
-                  <div class="kpi-value">${reportData.summary.completedTasks}</div>
-                  <div class="kpi-label">已完成任务</div>
-                </td>
-                <td class="kpi-card">
-                  <div class="kpi-value">${completionRate}%</div>
-                  <div class="kpi-label">完成率</div>
-                </td>
-              </tr>
-            </table>
-          </div>
-          
-          <div class="report-section">
-            ${generateWordProjectGroups(reportData.projectGroups)}
-          </div>
-        </div>
-      `;
-      
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>工作报告</title>
-          <style>
-            @page {
-              margin: 2cm 2.5cm;
-              size: A4;
-            }
-            
-            body { 
-              font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important; 
-              margin: 0 !important; 
-              padding: 0 !important; 
-              line-height: 1.6; 
-              color: #2c3e50;
-              background: #ffffff;
-              font-size: 14px;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              zoom: 1.4; /* 140%缩放 */
-            }
-            
-            * {
-              font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            
-            .report-container {
-              width: calc(100% - 12cm) !important; /* 稍微增加左右留白，从10cm改为12cm */
-              max-width: none !important;
-              margin: 0 6cm !important; /* 左右各6cm留白，从5cm增加 */
-              padding: 32px 0 !important;
-              font-family: "Microsoft YaHei", "微软雅黑";
-              background: #ffffff;
-              border: none;
-              box-sizing: border-box;
-            }
-            
-            /* 报告头部 */
-            .report-header { 
-              text-align: center; 
-              margin-bottom: 32px; 
-              padding-bottom: 20px; 
-              border-bottom: 3px solid #4f46e5; 
-              font-family: "Microsoft YaHei", "微软雅黑";
-              margin-left: 0px;
-              margin-right: 0px;
-            }
-            .report-title { 
-              font-size: 24px; 
-              font-weight: bold; 
-              margin-bottom: 8px; 
-              color: #0f172a;
-              letter-spacing: 1px;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            .report-period { 
-              font-size: 16px; 
-              color: #64748b; 
-              font-weight: 500;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            /* 概览部分 */
-            .report-section { 
-              margin-bottom: 8px; 
-              font-family: "Microsoft YaHei", "微软雅黑";
-              margin-left: 0px;
-              margin-right: 0px;
-            }
-            .section-title { 
-              font-size: 18px; 
-              font-weight: bold; 
-              margin: 0 0 12px 0; 
-              padding: 8px 0;
-              color: #0f172a;
-              background: transparent;
-              border: none;
-              font-family: "Microsoft YaHei", "微软雅黑";
-              width: 100%;
-              box-sizing: border-box;
-            }
-            
-            /* KPI 卡片 */
-            .kpi-table { 
-              width: 70%; /* 恢复原来的70%宽度 */
-              border-collapse: separate;
-              border-spacing: 4px;
-              margin-bottom: 20px; 
-              table-layout: fixed;
-              margin-left: auto;
-              margin-right: auto;
-            }
-            .kpi-card { 
-              border: 2px solid #bdc3c7; 
-              padding: 12px 8px; 
-              text-align: center; 
-              width: 25%;
-              background: #f8f9fa;
-              border-radius: 8px;
-              vertical-align: top;
-            }
-            .kpi-value { 
-              font-size: 24px; 
-              font-weight: bold; 
-              color: #4f46e5; 
-              margin-bottom: 4px; 
-              display: block;
-            }
-            .kpi-label { 
-              font-size: 11px; 
-              color: #64748b; 
-              font-weight: 500;
-            }
-            
-            /* 项目部分 */
-            .project-section {
-              margin-bottom: 24px;
-              margin-top: 8px;
-              page-break-inside: avoid;
-              margin-left: 0px;
-              margin-right: 0px;
-              max-width: 100%;
-            }
-            
-            .project-header {
-              color: #2c3e50 !important;
-              padding: 16px 24px;
-              margin-bottom: 4px;
-              border-radius: 8px;
-              font-size: 18px;
-              font-weight: bold;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              font-family: "Microsoft YaHei", "微软雅黑" !important;
-              width: 100%;
-              box-sizing: border-box;
-            }
-            
-            .project-header span {
-              color: #2c3e50 !important;
-              font-family: "Microsoft YaHei", "微软雅黑" !important;
-            }
-            
-            .project-progress {
-              font-size: 16px;
-              font-weight: 600;
-              background: #34495e !important;
-              color: #ffffff !important;
-              padding: 6px 16px;
-              border-radius: 25px;
-              font-family: "Microsoft YaHei", "微软雅黑" !important;
-              border: 1px solid #ffffff;
-            }
-            
-            /* 第一级标签 */
-            .first-level-section {
-              margin: 4px 0 4px 20px;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            .first-level-header {
-              background: #f8fafc;
-              border-left: 4px solid #4f46e5;
-              padding: 10px 16px;
-              margin-bottom: 4px;
-              border-radius: 0 4px 4px 0;
-              font-size: 15px;
-              font-weight: 600;
-              color: #0f172a;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            .first-level-stats {
-              font-size: 13px;
-              color: #7f8c8d;
-              font-weight: 500;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            /* 最后一级标签 */
-            .last-level-section {
-              margin: 4px 0 4px 30px;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            .last-level-header {
-              background: #f8fafc;
-              border-left: 3px solid #4f46e5;
-              padding: 6px 12px;
-              margin-bottom: 4px;
-              border-radius: 0 3px 3px 0;
-              font-size: 14px;
-              font-weight: 600;
-              color: #0f172a;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            .last-level-progress {
-              font-size: 12px;
-              color: #7f8c8d;
-              font-weight: 500;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            /* 任务列表 */
-            .task-list {
-              margin-left: 30px;
-              font-family: "Microsoft YaHei", "微软雅黑";
-            }
-            
-            .task-list table {
-              border: 1px solid #f5f5f5;
-              border-collapse: collapse;
-            }
-            
-            .task-list table tr {
-              border: 1px solid #f5f5f5;
-            }
-            
-            .task-list table td {
-              border: 1px solid #f8f8f8;
-            }
-            
-            .task-item {
-              margin-bottom: 2px;
-              padding: 2px 0;
-              font-size: 13px;
-              line-height: 1.2;
-            }
-            
-            .progress-high { color: #27ae60; }
-            .progress-medium { color: #f39c12; }
-            .progress-low { color: #95a5a6; }
-            
-            .status-done { color: #27ae60; }
-            .status-doing { color: #f39c12; }
-            .status-todo { color: #95a5a6; }
-            
-            /* 空状态 */
-            .empty-tasks {
-              color: #95a5a6;
-              font-style: italic;
-              font-size: 13px;
-              padding: 8px 0;
-            }
-            
-            .task-status {
-              font-size: 11px;
-              font-weight: 600;
-              padding: 3px 8px;
-              border-radius: 12px;
-              text-align: center;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              display: inline-block;
-              width: 50px;
-            }
-            
-            .status-done {
-              background: #d5f4e6;
-              color: #27ae60;
-              border: 1px solid #27ae60;
-            }
-            
-            .status-doing {
-              background: #fef9e7;
-              color: #f39c12;
-              border: 1px solid #f39c12;
-            }
-            
-            .status-todo {
-              background: #f4f6f7;
-              color: #95a5a6;
-              border: 1px solid #bdc3c7;
-            }
-            
-            /* 空状态 */
-            .empty-tasks {
-              color: #95a5a6;
-              font-style: italic;
-              font-size: 13px;
-              padding: 8px;
-              text-align: center;
-            }
-            
-            /* 打印样式 - 确保打印预览和Word导出一致 */
-            @media print {
-              body {
-                font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                line-height: 1.6;
-                color: #2c3e50 !important;
-                background: #ffffff !important;
-                font-size: 14px;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                zoom: 1.4 !important; /* 保持140%缩放 */
-              }
-              
-              .report-container {
-                width: calc(100% - 12cm) !important; /* 稍微增加左右留白 */
-                margin: 0 6cm !important;
-                padding: 32px 0 !important;
-                background: #ffffff !important;
-                border: none !important;
-                box-sizing: border-box;
-              }
-              
-              .report-header {
-                border-bottom: 3px solid #4f46e5 !important;
-              }
-              
-              .project-header {
-                color: #2c3e50 !important;
-              }
-              
-              .kpi-table {
-                width: 70% !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-              }
-              
-              .kpi-card {
-                border: 2px solid #bdc3c7 !important;
-                background: #f8f9fa !important;
-              }
-            }
-          </style>
-        </head>
-        <body>${contentHtml}</body>
-        </html>
-      `;
-      
-      const blob = new Blob([fullHtml], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `工作报告_${formatDate(new Date())}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showToast('报告已导出为DOCX格式', 'success');
+      try {
+        // 准备辅助函数
+        const helpers = {
+          formatDateRange,
+          numberToChinese,
+          numberToCircle,
+          getStatusText,
+          calculateTaskProgress,
+          formatDate
+        };
+        
+        // 调用导出函数
+        await ReportDocxExporter.exportReportToDocx(reportData, helpers);
+        
+        showToast('报告已导出为DOCX格式', 'success');
+      } catch (error) {
+        console.error('导出失败:', error);
+        showToast('导出失败，请重试', 'error');
+      }
     }
     
     // 生成Word文档的项目分组内容（三级：项目 -> 第一级标签 -> 最后一级标签）

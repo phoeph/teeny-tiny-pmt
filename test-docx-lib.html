@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>测试 DOCX 库加载</title>
+  <script src="node_modules/docx/dist/index.iife.js"></script>
+  <script src="node_modules/file-saver/dist/FileSaver.min.js"></script>
+</head>
+<body>
+  <h1>测试 DOCX 库加载</h1>
+  <button onclick="testLibraries()">测试库是否加载</button>
+  <button onclick="testExport()">测试导出简单文档</button>
+  <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+  
+  <script>
+    function testLibraries() {
+      const result = document.getElementById('result');
+      let html = '<h3>库加载状态：</h3>';
+      
+      if (typeof docx !== 'undefined') {
+        html += '<p style="color: green;">✓ docx 库已加载</p>';
+        html += '<p>可用的类: ' + Object.keys(docx).slice(0, 10).join(', ') + '...</p>';
+      } else {
+        html += '<p style="color: red;">✗ docx 库未加载</p>';
+      }
+      
+      if (typeof saveAs !== 'undefined') {
+        html += '<p style="color: green;">✓ file-saver 库已加载</p>';
+      } else {
+        html += '<p style="color: red;">✗ file-saver 库未加载</p>';
+      }
+      
+      result.innerHTML = html;
+    }
+    
+    async function testExport() {
+      const result = document.getElementById('result');
+      
+      if (typeof docx === 'undefined' || typeof saveAs === 'undefined') {
+        result.innerHTML = '<p style="color: red;">库未加载，无法测试导出</p>';
+        return;
+      }
+      
+      try {
+        const { Document, Paragraph, TextRun, Packer } = docx;
+        
+        const doc = new Document({
+          sections: [{
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "测试文档",
+                    bold: true,
+                    size: 32,
+                    font: "Microsoft YaHei"
+                  })
+                ]
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "这是一个测试段落，用于验证 DOCX 导出功能。",
+                    size: 24,
+                    font: "Microsoft YaHei"
+                  })
+                ]
+              })
+            ]
+          }]
+        });
+        
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, "test.docx");
+        
+        result.innerHTML = '<p style="color: green;">✓ 导出成功！请检查下载的 test.docx 文件</p>';
+      } catch (error) {
+        result.innerHTML = '<p style="color: red;">✗ 导出失败: ' + error.message + '</p>';
+        console.error('导出失败:', error);
+      }
+    }
+    
+    // 页面加载时自动测试
+    window.addEventListener('load', testLibraries);
+  </script>
+</body>
+</html>
