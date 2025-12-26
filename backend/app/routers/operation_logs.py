@@ -11,6 +11,56 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/operation-logs", tags=["操作日志"])
 
 
+@router.get("/recent", response_model=dict)
+async def get_recent_operation_logs(
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """获取最近的操作日志"""
+    logs = await operation_log_service.get_recent_logs(db, limit=limit)
+    
+    # 获取所有用户ID，批量查询用户信息
+    user_ids = list(set(log.user_id for log in logs if log.user_id))
+    user_map = {}
+    if user_ids:
+        stmt = select(User).where(User.id.in_(user_ids))
+        users_result = await db.execute(stmt)
+        for user in users_result.scalars().all():
+            user_map[user.id] = user.full_name or user.username
+    
+    items = []
+    for log in logs:
+        # 确保时间带有时区信息
+        created_at = log.created_at
+        if created_at.tzinfo is None:
+            from datetime import timezone
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        
+        display_name = user_map.get(log.user_id, log.username)
+        
+        items.append({
+            "id": log.id,
+            "user_id": log.user_id,
+            "username": display_name,
+            "operation_type": log.operation_type,
+            "entity_type": log.entity_type,
+            "entity_id": log.entity_id,
+            "operation_content": log.operation_content,
+            "field_name": log.field_name,
+            "old_value": log.old_value,
+            "new_value": log.new_value,
+            "result_status": log.result_status,
+            "failure_reason": log.failure_reason,
+            "created_at": created_at.isoformat()
+        })
+    
+    return {
+        "total": len(items),
+        "items": items
+    }
+
+
 @router.get("/{entity_type}/{entity_id}", response_model=dict)
 async def get_operation_logs(
     entity_type: str,

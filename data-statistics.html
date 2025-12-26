@@ -782,7 +782,6 @@
     <div class="chart-card">
       <div class="chart-header">
         <h3 class="chart-title">最近活动</h3>
-        <button class="filter-btn" onclick="loadRecentActivities()">刷新</button>
       </div>
       <div class="activity-feed" id="recentActivities">
         <!-- Dynamic content -->
@@ -1024,6 +1023,9 @@
   <script src="assets/left-sidebar.js?v=1.5"></script>
   
   <script>
+    // 版本标识 - 用于调试缓存问题
+    console.log('[Data Statistics] Version: 2024-12-26-v2');
+    
     const API = 'http://localhost:8000/api';
     const token = localStorage.getItem('token');
     if (!token) location.href = 'login.html';
@@ -1232,109 +1234,160 @@
 
     // 删除模拟数据生成函数 - 只使用真实数据
 
-    // 获取真实活动数据
+    // 获取真实活动数据 - 直接从操作日志获取最近记录
     async function fetchRealActivities() {
       try {
+        console.log('[fetchRealActivities] Starting...');
+        const logsRes = await fetch(`${API}/operation-logs/recent?limit=30`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
         
+        console.log('[fetchRealActivities] Response status:', logsRes.status);
         
-        // 由于评论API只支持按实体获取，我们需要从项目和工作项中收集评论
-        const allActivities = [];
-        
-        // 从项目中获取评论作为活动 (限制只获取前3个项目的评论以避免过多API调用)
-        for (const project of statsData.projects.slice(0, 3)) {
-          try {
-            
-            const commentsRes = await fetch(`${API}/comments/project/${project.id}`, { 
-              headers: { Authorization: `Bearer ${token}` } 
-            });
-            
-            if (commentsRes.ok) {
-              const comments = await commentsRes.json();
-              const commentsArray = Array.isArray(comments) ? comments : (comments.items || []);
-              for (const comment of commentsArray) {
-                allActivities.push({
-                  id: `project-${comment.id}`,
-                  user: comment.author?.full_name || comment.author?.username || '用户',
-                  action: '评论了',
-                  type: '项目',
-                  item: project.name || `项目 ${project.id}`,
-                  time: comment.created_at
-                });
-              }
-            } else {
-              
+        if (logsRes.ok) {
+          const logsData = await logsRes.json();
+          const logs = logsData.items || [];
+          
+          console.log('[fetchRealActivities] Total logs received:', logs.length);
+          console.log('[fetchRealActivities] First 5 logs:', logs.slice(0, 5).map(l => ({
+            id: l.id,
+            type: l.operation_type,
+            entity: l.entity_id,
+            content: l.operation_content.substring(0, 40)
+          })));
+          
+          // 字段名中英文映射（用于翻译旧日志）
+          const fieldNameMap = {
+            'title': '标题',
+            'name': '名称',
+            'description': '描述',
+            'status': '状态',
+            'priority': '优先级',
+            'assignee': '负责人',
+            'assignee_prefix': '负责人',
+            'assignee_email': '负责人邮箱',
+            'planned_start_date': '计划开始日期',
+            'planned_end_date': '计划结束日期',
+            'actual_hours': '实际工时',
+            'estimated_hours': '预估工时',
+            'completed_at': '完成时间',
+            'owner_id': '所有者',
+            'creator_id': '创建者',
+            'start_date': '开始日期',
+            'end_date': '结束日期',
+            'content': '内容',
+            'comment': '评论'
+          };
+          
+          // 翻译操作内容中的英文字段名
+          const translateContent = (content) => {
+            let translated = content;
+            for (const [en, cn] of Object.entries(fieldNameMap)) {
+              // 匹配 "将 field_name 从" 这样的模式
+              const regex = new RegExp(`将 ${en} 从`, 'g');
+              translated = translated.replace(regex, `将 ${cn} 从`);
             }
-          } catch (error) {
+            return translated;
+          };
+          
+          // 将操作日志转换为活动格式
+          const activities = logs.map(log => {
+            // 操作类型映射
+            const actionMap = {
+              'create_project': '创建了',
+              'update_project': '更新了',
+              'delete_project': '删除了',
+              'create_job': '创建了',
+              'update_job': '更新了',
+              'delete_job': '删除了',
+              'create_task': '创建了',
+              'update_task': '更新了',
+              'delete_task': '删除了',
+              'create_comment': '评论了',
+              'update_comment': '更新了评论',
+              'delete_comment': '删除了评论',
+              'watch': '关注了',
+              'unwatch': '取消关注'
+            };
             
-          }
-        }
-        
-        // 从工作项中获取评论作为活动 (限制只获取前5个工作项的评论)
-        for (const workItem of statsData.workItems.slice(0, 5)) {
-          try {
+            // 实体类型映射
+            const typeMap = {
+              'project': '项目',
+              'work_item': log.operation_type.includes('job') ? '任务' : '子任务',
+              'comment': '评论'
+            };
             
-            const commentsRes = await fetch(`${API}/comments/work_item/${workItem.id}`, { 
-              headers: { Authorization: `Bearer ${token}` } 
-            });
-            
-            if (commentsRes.ok) {
-              const comments = await commentsRes.json();
-              const commentsArray = Array.isArray(comments) ? comments : (comments.items || []);
-              for (const comment of commentsArray) {
-                allActivities.push({
-                  id: `work_item-${comment.id}`,
-                  user: comment.author?.full_name || comment.author?.username || '用户',
-                  action: '评论了',
-                  type: workItem.kind || 'TASK',
-                  item: workItem.title || `${workItem.kind} ${workItem.id}`,
-                  time: comment.created_at
-                });
-              }
-            } else {
-              
+            return {
+              id: log.id,
+              user: log.username,
+              action: actionMap[log.operation_type] || '操作了',
+              type: typeMap[log.entity_type] || log.entity_type,
+              item: translateContent(log.operation_content),
+              time: log.created_at,
+              entityId: log.entity_id,
+              operationType: log.operation_type,
+              createdAt: new Date(log.created_at)
+            };
+          });
+          
+          console.log('[fetchRealActivities] Activities before merge:', activities.length);
+          
+          // 智能去重：合并5秒内同一实体的连续更新操作
+          const mergedActivities = [];
+          const recentUpdates = new Map(); // key: entityId, value: {time, index}
+          
+          for (const activity of activities) {
+            // 创建、删除、评论操作总是显示
+            if (activity.operationType.startsWith('create_') || 
+                activity.operationType.startsWith('delete_') ||
+                activity.operationType.includes('comment')) {
+              mergedActivities.push(activity);
+              continue;
             }
-          } catch (error) {
             
+            // 更新操作：检查是否是同一实体在5秒内的重复更新
+            if (activity.operationType.startsWith('update_')) {
+              const key = `${activity.operationType}-${activity.entityId}`;
+              const recent = recentUpdates.get(key);
+              
+              if (recent) {
+                const timeDiff = recent.time - activity.createdAt;
+                // 如果在5秒内，跳过（认为是同一次操作的多个字段变更）
+                if (timeDiff <= 5000) {
+                  console.log('[fetchRealActivities] Skipping duplicate update:', activity.id, 'timeDiff:', timeDiff);
+                  continue;
+                }
+              }
+              
+              // 记录这次更新
+              mergedActivities.push(activity);
+              recentUpdates.set(key, {
+                time: activity.createdAt,
+                index: mergedActivities.length - 1
+              });
+            } else {
+              mergedActivities.push(activity);
+            }
           }
+          
+          console.log('[fetchRealActivities] Activities after merge:', mergedActivities.length);
+          console.log('[fetchRealActivities] Final 5 activities:', mergedActivities.slice(0, 5).map(a => ({
+            id: a.id,
+            type: a.operationType,
+            content: a.item.substring(0, 40)
+          })));
+          
+          // 只取前 5 条
+          statsData.activities = mergedActivities.slice(0, 5);
+        } else {
+          console.error('[fetchRealActivities] API error:', logsRes.status);
+          statsData.activities = [];
         }
-        
-        // 如果没有评论数据，生成一些基于工作项更新的活动
-        if (allActivities.length === 0) {
-          
-          
-          // 基于工作项的更新时间生成活动
-          const recentWorkItems = statsData.workItems
-            .filter(item => item.updated_at)
-            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-            .slice(0, 8);
-            
-          for (const item of recentWorkItems) {
-            allActivities.push({
-              id: `update-${item.id}`,
-              user: item.assignee || '系统',
-              action: '更新了',
-              type: item.kind || 'TASK',
-              item: item.title || `${item.kind} ${item.id}`,
-              time: item.updated_at
-            });
-          }
-        }
-        
-        // 按时间排序并限制数量
-        statsData.activities = allActivities
-          .sort((a, b) => new Date(b.time) - new Date(a.time))
-          .slice(0, 20);
-          
-        
-        
       } catch (error) {
-        
-        // 不使用模拟数据，设置为空数组
+        console.error('[fetchRealActivities] Exception:', error);
         statsData.activities = [];
       }
     }
-
-    // 删除模拟活动生成函数 - 只使用真实数据
 
     // Render functions
     function renderKPIs() {
@@ -2187,13 +2240,6 @@
       `;
     }
 
-    // Load recent activities - 只从API获取真实数据
-    function loadRecentActivities() {
-      fetchRealActivities().then(() => {
-        renderRecentActivities();
-      });
-    }
-
     // Loading state management
     function showLoading() {
       document.getElementById('loadingState').style.display = 'flex';
@@ -2212,6 +2258,10 @@
         const success = await fetchAllData();
         renderAllData();
         
+        // 数据更新后实时刷新活动
+        await fetchRealActivities();
+        renderRecentActivities();
+        
         const loadTime = Date.now() - startTime;
         if (success) {
           showToast(`数据更新成功 (${loadTime}ms)`, 'success');
@@ -2219,7 +2269,6 @@
           showToast(`使用模拟数据 (${loadTime}ms)`, 'info');
         }
       } catch (error) {
-        
         showToast('数据更新失败', 'error');
         // 不使用模拟数据，显示错误状态
         showDataError('数据更新失败，请检查网络连接或联系管理员');
@@ -2433,19 +2482,13 @@
       
       // Auto refresh every 5 minutes
       setInterval(async () => {
-        
         await fetchAllData();
         renderAllData();
-        showToast('数据已自动刷新', 'info');
-      }, 5 * 60 * 1000);
-      
-      // Auto refresh activities every 1 minute
-      setInterval(async () => {
-        
+        // 数据更新后实时刷新活动
         await fetchRealActivities();
         renderRecentActivities();
-        updateTimestamp();
-      }, 60 * 1000);
+        showToast('数据已自动刷新', 'info');
+      }, 5 * 60 * 1000);
       
       // Simulate real-time data updates every 30 seconds
       setInterval(() => {

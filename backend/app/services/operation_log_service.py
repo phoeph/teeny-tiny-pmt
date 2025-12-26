@@ -38,6 +38,29 @@ class OperationLogService:
         await session.refresh(log)
         return log
 
+    # 字段名中英文映射
+    FIELD_NAME_MAP = {
+        'title': '标题',
+        'name': '名称',
+        'description': '描述',
+        'status': '状态',
+        'priority': '优先级',
+        'assignee': '负责人',
+        'assignee_prefix': '负责人',
+        'assignee_email': '负责人邮箱',
+        'planned_start_date': '计划开始日期',
+        'planned_end_date': '计划结束日期',
+        'actual_hours': '实际工时',
+        'estimated_hours': '预估工时',
+        'completed_at': '完成时间',
+        'owner_id': '所有者',
+        'creator_id': '创建者',
+        'start_date': '开始日期',
+        'end_date': '结束日期',
+        'content': '内容',
+        'comment': '评论'
+    }
+
     async def log_field_change(
         self,
         session: AsyncSession,
@@ -50,7 +73,9 @@ class OperationLogService:
         new_value: Optional[str],
         operation_type: OperationType
     ) -> OperationLog:
-        operation_content = f"将 {field_name} 从 '{old_value or '(空)'}' 修改为 '{new_value or '(空)'}'"
+        # 将字段名翻译成中文
+        field_name_cn = self.FIELD_NAME_MAP.get(field_name, field_name)
+        operation_content = f"将 {field_name_cn} 从 '{old_value or '(空)'}' 修改为 '{new_value or '(空)'}'"
         return await self.log_operation(
             session=session,
             user_id=user_id,
@@ -95,6 +120,19 @@ class OperationLogService:
             "page_size": page_size,
             "items": logs
         }
+
+    async def get_recent_logs(
+        self,
+        session: AsyncSession,
+        limit: int = 50
+    ) -> List[OperationLog]:
+        """获取最近的操作日志"""
+        stmt = select(OperationLog).order_by(
+            OperationLog.created_at.desc()
+        ).limit(limit)
+        
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
 
 
 operation_log_service = OperationLogService()
