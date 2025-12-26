@@ -333,8 +333,8 @@ async def update_work_item(
 ):
     try:
         # 先获取旧数据，用于记录变更
-        old_wi = await work_item_service.get(db, id=id)
-        if not old_wi:
+        old_wi = await db.get(WorkItem, id)
+        if not old_wi or old_wi.deleted_at is not None:
             raise HTTPException(status_code=404, detail="工作项不存在")
         
         # 保存旧值

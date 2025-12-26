@@ -2086,6 +2086,11 @@
         renderAfterLocalUpdate(items); 
         if(window.HistoryModule&&window.HistoryModule.refresh){ window.HistoryModule.refresh(); }
       } else { 
+        console.error('[PATCH Error] Status:', res.status, 'Payload:', payload);
+        try {
+          const errorText = await res.text();
+          console.error('[PATCH Error] Response:', errorText);
+        } catch(_) {}
         await __showErrorFromResponse(res, '保存失败'); 
       }
     } catch(e){ 
