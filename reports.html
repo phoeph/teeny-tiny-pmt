@@ -1864,17 +1864,17 @@
         </html>
       `;
       
-      const blob = new Blob([fullHtml], { type: 'application/msword' });
+      const blob = new Blob([fullHtml], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `工作报告_${formatDate(new Date())}.doc`;
+      a.download = `工作报告_${formatDate(new Date())}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      showToast('报告已导出', 'success');
+      showToast('报告已导出为DOCX格式', 'success');
     }
     
     // 生成Word文档的项目分组内容（三级：项目 -> 第一级标签 -> 最后一级标签）
