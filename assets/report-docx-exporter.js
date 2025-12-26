@@ -105,44 +105,9 @@
           })
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 }
+        spacing: { after: 600 }
       })
     );
-    
-    // ========== 项目概览标题 ==========
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: '项目概览',
-            font: FONT_FAMILY,
-            size: 32,
-            bold: true,
-            color: COLORS.textMain
-          })
-        ],
-        spacing: { before: 200, after: 200 }
-      })
-    );
-    
-    // ========== KPI 表格 ==========
-    const kpiTable = new Table({
-      width: { size: 70, type: WidthType.PERCENTAGE },
-      alignment: AlignmentType.CENTER,
-      rows: [
-        new TableRow({
-          children: [
-            createKpiCell(reportData.summary.totalProjects.toString(), '涉及项目'),
-            createKpiCell(reportData.summary.totalTasks.toString(), '总任务数'),
-            createKpiCell(reportData.summary.completedTasks.toString(), '已完成任务'),
-            createKpiCell(`${completionRate}%`, '完成率')
-          ]
-        })
-      ]
-    });
-    
-    children.push(kpiTable);
-    children.push(new Paragraph({ text: '', spacing: { after: 400 } }));
     
     // ========== 项目详情 ==========
     let projectIndex = 1;
@@ -213,129 +178,47 @@
             })
           );
           
-          // 任务列表 - 使用表格实现对齐
-          if (lastLevel.tasks.length > 0) {
-            const taskRows = lastLevel.tasks.map((task, idx) => {
-              const statusText = getStatusText(task.aggregatedStatus || task.status);
-              const taskProgress = calculateTaskProgress(task);
-              const progressColor = taskProgress >= 100 ? COLORS.success : (taskProgress >= 50 ? COLORS.warning : COLORS.textMuted);
-              const statusColor = statusText === '已完成' ? COLORS.success : (statusText === '进行中' ? COLORS.warning : COLORS.textMuted);
-              
-              return new TableRow({
+          // 任务列表 - 使用段落格式
+          lastLevel.tasks.forEach((task, idx) => {
+            const statusText = getStatusText(task.aggregatedStatus || task.status);
+            const taskProgress = calculateTaskProgress(task);
+            const progressColor = taskProgress >= 100 ? COLORS.success : (taskProgress >= 50 ? COLORS.warning : COLORS.textMuted);
+            const statusColor = statusText === '已完成' ? COLORS.success : (statusText === '进行中' ? COLORS.warning : COLORS.textMuted);
+            
+            // 任务名称部分
+            const taskName = task.title || task.name || task.code || '未命名任务';
+            // 进度和状态部分，使用固定宽度的空格来对齐
+            const progressText = `${taskProgress}%`.padStart(5, ' ');
+            const statusTextPadded = statusText.padStart(6, ' ');
+            
+            children.push(
+              new Paragraph({
                 children: [
-                  // 序号列
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: numberToCircle(idx + 1),
-                            font: FONT_FAMILY,
-                            size: 22,
-                            color: COLORS.textSecondary
-                          })
-                        ],
-                        alignment: AlignmentType.CENTER
-                      })
-                    ],
-                    width: { size: 5, type: WidthType.PERCENTAGE },
-                    borders: {
-                      top: { style: BorderStyle.NIL },
-                      bottom: { style: BorderStyle.NIL },
-                      left: { style: BorderStyle.NIL },
-                      right: { style: BorderStyle.NIL }
-                    }
+                  new TextRun({
+                    text: `      ${numberToCircle(idx + 1)} ${taskName}`,
+                    font: FONT_FAMILY,
+                    size: 24,
+                    color: COLORS.textMain
                   }),
-                  // 任务名称列
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: task.title || task.name || task.code || '未命名任务',
-                            font: FONT_FAMILY,
-                            size: 24,
-                            color: COLORS.textMain
-                          })
-                        ]
-                      })
-                    ],
-                    width: { size: 65, type: WidthType.PERCENTAGE },
-                    borders: {
-                      top: { style: BorderStyle.NIL },
-                      bottom: { style: BorderStyle.NIL },
-                      left: { style: BorderStyle.NIL },
-                      right: { style: BorderStyle.NIL }
-                    }
+                  new TextRun({
+                    text: `    ${progressText}`,
+                    font: FONT_FAMILY,
+                    size: 22,
+                    bold: true,
+                    color: progressColor
                   }),
-                  // 进度列
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: `${taskProgress}%`,
-                            font: FONT_FAMILY,
-                            size: 22,
-                            bold: true,
-                            color: progressColor
-                          })
-                        ],
-                        alignment: AlignmentType.RIGHT
-                      })
-                    ],
-                    width: { size: 15, type: WidthType.PERCENTAGE },
-                    borders: {
-                      top: { style: BorderStyle.NIL },
-                      bottom: { style: BorderStyle.NIL },
-                      left: { style: BorderStyle.NIL },
-                      right: { style: BorderStyle.NIL }
-                    }
-                  }),
-                  // 状态列
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [
-                          new TextRun({
-                            text: statusText,
-                            font: FONT_FAMILY,
-                            size: 20,
-                            color: statusColor
-                          })
-                        ],
-                        alignment: AlignmentType.RIGHT
-                      })
-                    ],
-                    width: { size: 15, type: WidthType.PERCENTAGE },
-                    borders: {
-                      top: { style: BorderStyle.NIL },
-                      bottom: { style: BorderStyle.NIL },
-                      left: { style: BorderStyle.NIL },
-                      right: { style: BorderStyle.NIL }
-                    }
+                  new TextRun({
+                    text: `  ${statusTextPadded}`,
+                    font: FONT_FAMILY,
+                    size: 20,
+                    color: statusColor
                   })
-                ]
-              });
-            });
-            
-            const taskTable = new Table({
-              width: { size: 65, type: WidthType.PERCENTAGE },
-              rows: taskRows,
-              indent: { size: convertInchesToTwip(0.9), type: WidthType.DXA },
-              borders: {
-                top: { style: BorderStyle.NIL, size: 0 },
-                bottom: { style: BorderStyle.NIL, size: 0 },
-                left: { style: BorderStyle.NIL, size: 0 },
-                right: { style: BorderStyle.NIL, size: 0 },
-                insideHorizontal: { style: BorderStyle.NIL, size: 0 },
-                insideVertical: { style: BorderStyle.NIL, size: 0 }
-              }
-            });
-            
-            children.push(taskTable);
-            children.push(new Paragraph({ text: '', spacing: { after: 100 } }));
-          }
+                ],
+                spacing: { after: 100 },
+                indent: { left: convertInchesToTwip(0.9) }
+              })
+            );
+          });
           
           lastLevelIndex++;
         }
