@@ -1,3 +1,19 @@
+#!/bin/bash
+
+# 修复后端 MySQL 支持脚本
+# 在腾讯云服务器上运行此脚本
+
+echo "======================================================"
+echo "修复后端 MySQL 兼容性问题"
+echo "======================================================"
+
+cd /root/teeny-tiny-pmt-prod
+
+# 备份原文件
+cp backend/app/main.py backend/app/main.py.backup
+
+# 创建修复后的 main.py
+cat > backend/app/main.py << 'EOFMAIN'
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -264,3 +280,52 @@ app.include_router(users.router)
 app.include_router(labels.router)
 app.include_router(exports.router)
 app.include_router(non_dev_works.router)
+EOFMAIN
+
+echo "✅ 文件已更新"
+
+# 停止服务
+echo ""
+echo "停止服务..."
+docker-compose -f docker-compose.external-mysql.yml down
+
+# 重新构建并启动
+echo ""
+echo "重新构建并启动服务..."
+docker-compose -f docker-compose.external-mysql.yml up -d --build
+
+# 等待启动
+echo ""
+echo "等待服务启动..."
+sleep 20
+
+# 检查状态
+echo ""
+echo "======================================================"
+echo "服务状态："
+echo "======================================================"
+docker ps
+
+echo ""
+echo "======================================================"
+echo "网络中的容器："
+echo "======================================================"
+docker network inspect pmt_pmt-network --format '{{range .Containers}}{{.Name}} {{end}}'
+
+echo ""
+echo "======================================================"
+echo "后端日志（最后 50 行）："
+echo "======================================================"
+docker logs pmt-backend --tail 50
+
+echo ""
+echo "======================================================"
+echo "测试 API："
+echo "======================================================"
+sleep 5
+curl -s http://localhost/api/health && echo "" || echo "API 测试失败"
+
+echo ""
+echo "======================================================"
+echo "完成！访问 http://124.220.35.110 测试"
+echo "======================================================"
