@@ -44,13 +44,6 @@ Thumbs.db
 backend.log
 frontend.log
 
-# Office documents
-*.docx
-*.doc
-*.xlsx
-*.xls
-*.pptx
-*.ppt
 
 # Markdown files (documentation)
 *.md

@@ -1,5 +1,5 @@
 ;(function(){
-  const API = (typeof window!=='undefined' && window.API) ? window.API : 'http://localhost:8000/api';
+  const API = (typeof window!=='undefined' && window.API_CONFIG && window.API_CONFIG.API) ? window.API_CONFIG.API : (typeof window!=='undefined' && window.API) ? window.API : 'http://localhost:8000/api';
   const token = (typeof localStorage!=='undefined') ? localStorage.getItem('token') : null;
 
   function ensureContainer(){ let c=document.getElementById('left-sidebar'); if(c) return c; c=document.createElement('div'); c.id='left-sidebar'; document.body.appendChild(c); return c; }
