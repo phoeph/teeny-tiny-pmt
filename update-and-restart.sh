@@ -15,7 +15,7 @@ docker-compose -f docker-compose.external-mysql.yml down 2>/dev/null || echo "�
 
 echo ""
 echo "[2/5] 从 GitHub 拉取最新代码..."
-git pull origin main
+git pull prod main
 
 echo ""
 echo "[3/5] 检查网络..."
