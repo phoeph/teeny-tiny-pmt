@@ -159,27 +159,28 @@
 
     <div class="divider"><span>快速登录</span></div>
     <div class="quick-fill">
-      <button id="fillAdmin" class="btn-ghost">👑 Admin</button>
-      <button id="fillDemo" class="btn-ghost">🎯 Demo</button>
-      <button id="fillZhang" class="btn-ghost">📋 PM Zhang</button>
+      <button id="fillAdmin" class="btn-ghost">👑 管理员</button>
+      <button id="fillDemo" class="btn-ghost">🎯 宁梦瑶</button>
+      <button id="fillZhang" class="btn-ghost">📋 智飞</button>
     </div>
     
     <div id="error" class="error-msg"></div>
   </div>
 
+  <script src="assets/api-config.js"></script>
   <script>
-    const API = 'http://localhost:8000/api';
+    const API = window.API_CONFIG.API;
     
     document.getElementById('fillAdmin').onclick = () => {
       document.getElementById('username').value = 'admin';
       document.getElementById('password').value = '123';
     };
     document.getElementById('fillDemo').onclick = () => {
-      document.getElementById('username').value = 'demo';
-      document.getElementById('password').value = 'demo123';
+      document.getElementById('username').value = 'ningmy5';
+      document.getElementById('password').value = '123456';
     };
     document.getElementById('fillZhang').onclick = () => {
-      document.getElementById('username').value = 'pm_zhang';
+      document.getElementById('username').value = 'zhif';
       document.getElementById('password').value = '123456';
     };
     

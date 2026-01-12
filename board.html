@@ -95,8 +95,9 @@
   </div>
 
   <link rel="stylesheet" href="assets/issue-layout.css" />
+  <script src="assets/api-config.js"></script>
   <script>
-    const API = 'http://localhost:8000/api';
+    const API = window.API_CONFIG.API;
     const token = localStorage.getItem('token');
     const params = new URLSearchParams(location.search);
     const projectId = parseInt(params.get('project') || params.get('id') || '0', 10);
@@ -158,7 +159,10 @@
     }
 
     function buildGanttTasks(items){ const startDates=(items||[]).map(i=> fmtDate(getPlannedStartStr(i))).filter(Boolean); const endDates=(items||[]).map(i=> fmtDate(getPlannedEndStr(i))).filter(Boolean);
-      const now=new Date(); const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); const clampMax=new Date(now.getFullYear(), now.getMonth()+7, 0);
+      const now=new Date(); 
+      const clampMin=new Date(now.getFullYear(), now.getMonth()-6, 1); 
+      // 确保时间上限始终是当前时间加12个月
+      const clampMax=new Date(now.getFullYear(), now.getMonth()+12, 0);
       if(startDates.length||endDates.length){ const minStart = startDates.length ? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null; const maxEnd = endDates.length ? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null; state.startDate = minStart ? new Date(Math.max(minStart.getTime(), clampMin.getTime())) : clampMin; state.endDate = maxEnd ? new Date(Math.min(maxEnd.getTime(), clampMax.getTime())) : clampMax; } else { state.startDate=clampMin; state.endDate=clampMax; }
       state.totalDays = Math.ceil((state.endDate - state.startDate)/(1000*60*60*24)) + 1;
       const ganttTasks=[]; const included=new Set();

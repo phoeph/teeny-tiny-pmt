@@ -525,8 +525,9 @@
   <link rel="stylesheet" href="assets/left-sidebar.css" />
   <script src="assets/header-user-menu.js"></script>
   <script src="assets/left-sidebar.js"></script>
+  <script src="assets/api-config.js"></script>
   <script>
-    const API = 'http://localhost:8000/api';
+    const API = window.API_CONFIG.API;
     const token = localStorage.getItem('token');
     if (!token) location.href = 'login.html';
 

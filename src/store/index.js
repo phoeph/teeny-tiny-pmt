@@ -125,9 +125,16 @@ export default new Vuex.Store({
         ]
       }
     ],
-    // 时间范围
-    startDate: '2023-01-01',
-    endDate: '2024-12-31',
+    // 时间范围 - 动态设置为当前时间后12个月
+    startDate: (() => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    })(),
+    endDate: (() => {
+      const now = new Date();
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 12, 0);
+      return `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+    })(),
     // 时间粒度 (day, week, month, quarter, year)
     timeScale: 'month'
   },

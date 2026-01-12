@@ -405,8 +405,10 @@
         }, 2000);
       }
     }, true); // useCapture = true 以捕获所有子元素的滚动
-
-    const API = 'http://localhost:8000/api';
+  </script>
+  <script src="assets/api-config.js"></script>
+  <script>
+    const API = window.API_CONFIG.API;
     const token = localStorage.getItem('token');
     const params = new URLSearchParams(location.search);
     const idParam = params.get('id');
@@ -956,10 +958,10 @@
       const startDates = (items||[]).map(i => fmtDate(__getPlannedStartStr(i))).filter(Boolean);
       const endDates = (items||[]).map(i => fmtDate(__getPlannedEndStr(i))).filter(Boolean);
       const now = new Date();
-      const WINDOW_DAYS = 30;
-      const half = Math.floor(WINDOW_DAYS/2);
-      const baseStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - half);
-      const baseEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + half - 1);
+      // 扩展时间窗口：从当前时间前6个月到后12个月
+      const WINDOW_DAYS = 365 * 1.5; // 18个月的天数
+      const baseStart = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      const baseEnd = new Date(now.getFullYear(), now.getMonth() + 12, 0);
       if (startDates.length || endDates.length) {
         const minStart = startDates.length ? new Date(Math.min.apply(null, startDates.map(d=>d.getTime()))) : null;
         const maxEnd = endDates.length ? new Date(Math.max.apply(null, endDates.map(d=>d.getTime()))) : null;
@@ -1378,7 +1380,11 @@
     window.__runGanttLinkageTest = function(){
       try {
         const ms = 1000*60*60*24;
-        startDate = new Date('2025-11-01'); endDate = new Date('2025-11-30'); totalDays = Math.ceil((endDate-startDate)/ms)+1; columnWidth = 30;
+        // 使用当前时间动态设置甘特图范围
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1); 
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); 
+        totalDays = Math.ceil((endDate-startDate)/ms)+1; columnWidth = 30;
         ganttData.tasks = [ { id:'JOB-TEST', name:'父', startDay:0, duration:10, color:'var(--primary)', type:'parent', subtasks:[ { id:'TASK-A', name:'子A', startDay:2, duration:4, color:'var(--success)' }, { id:'TASK-B', name:'子B', startDay:5, duration:3, color:'var(--success)' } ] } ];
         renderTimeline();
         // 模拟父移动 +3 天
@@ -2319,7 +2325,7 @@ function handleAction(action) {
   if (typeof __deleteItem === 'undefined') {
     window.__deleteItem = async function(idOrCode) {
       try {
-        const API = (window.API) || 'http://localhost:8000/api';
+        const API = window.API_CONFIG?.API || window.API || 'http://localhost:8000/api';
         const token = localStorage.getItem('token') || '';
         
         const r = await fetch(`${API}/work-items/${idOrCode}`, {
@@ -2754,7 +2760,7 @@ async function updateStatus(status) {
         showToast('优先级已更新', 'success');
       } else {
         // 如果__patchTask不存在，使用fetch直接调用API
-        const API = (window.API) || 'http://localhost:8000/api';
+        const API = window.API_CONFIG?.API || window.API || 'http://localhost:8000/api';
         const token = localStorage.getItem('token') || '';
         
         const response = await fetch(`${API}/work-items/${idOrCode}`, {

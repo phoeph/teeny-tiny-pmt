@@ -97,8 +97,10 @@
         }, 2000);
       }
     }, true);
-
-    const API = 'http://localhost:8000/api';
+  </script>
+  <script src="assets/api-config.js"></script>
+  <script>
+    const API = window.API_CONFIG.API;
     const token = localStorage.getItem('token');
     const params = new URLSearchParams(location.search);
     const codeParam = params.get('code');

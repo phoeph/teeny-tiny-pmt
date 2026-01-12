@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>数据统计 v1.5 - 项目管理系统</title>
+  <title>数据统计 v1.6 - 项目管理系统</title>
   <link rel="stylesheet" href="assets/modern-theme.css" />
   <style>
     /* Statistics Page Styles */
@@ -169,6 +169,17 @@
     .chart-card svg {
       max-width: 100%;
       height: auto;
+    }
+    
+    /* 确保图表文字颜色正确 */
+    .chart-card svg text {
+      fill: var(--text-main) !important;
+      font-size: 14px;
+      font-family: var(--font-family);
+    }
+    
+    .chart-card canvas {
+      color: var(--text-main);
     }
     
     .chart-header {
@@ -550,7 +561,7 @@
           </svg>
         </div>
         <div class="stats-title-text">
-          <h1>数据统计 <small style="font-size: 12px; color: var(--text-muted);">v1.5</small></h1>
+          <h1>数据统计 <small style="font-size: 12px; color: var(--text-muted);">v1.6</small></h1>
           <p>项目、任务和团队的全面数据分析</p>
         </div>
       </div>
@@ -729,21 +740,6 @@
   </div>
   <!-- Charts Section -->
   <div class="chart-grid">
-    <!-- Project Status Chart -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3 class="chart-title">项目状态分布</h3>
-        <div class="chart-filter">
-          <button class="filter-btn active" data-period="7d" data-chart="status">7天</button>
-          <button class="filter-btn" data-period="30d" data-chart="status">30天</button>
-          <button class="filter-btn" data-period="90d" data-chart="status">90天</button>
-        </div>
-      </div>
-      <div id="projectStatusChart" style="height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-        加载中...
-      </div>
-    </div>
-
     <!-- Top Projects by Progress -->
     <div class="chart-card">
       <div class="chart-header">
@@ -752,30 +748,6 @@
       <div class="progress-list" id="topProjectsProgress">
         <!-- Dynamic content -->
       </div>
-    </div>
-  </div>
-
-  <!-- Data Tables Section -->
-  <div class="chart-grid">
-    <!-- Upcoming Deadlines -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3 class="chart-title">即将到期项目</h3>
-        <span class="badge badge-warning" id="urgentCount">0 个紧急</span>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>项目名称</th>
-            <th>截止时间</th>
-            <th>剩余天数</th>
-            <th>状态</th>
-          </tr>
-        </thead>
-        <tbody id="upcomingDeadlines">
-          <!-- Dynamic content -->
-        </tbody>
-      </table>
     </div>
 
     <!-- Recent Activities -->
@@ -1018,15 +990,17 @@
 
   <link rel="stylesheet" href="assets/header-user-menu.css" />
   <link rel="stylesheet" href="assets/left-sidebar.css" />
-  <script src="assets/chart-utils.js?v=1.5"></script>
-  <script src="assets/header-user-menu.js?v=1.5"></script>
-  <script src="assets/left-sidebar.js?v=1.5"></script>
+  <script src="assets/chart-utils.js?v=1.6"></script>
+  <script src="assets/header-user-menu.js?v=1.6"></script>
+  <script src="assets/left-sidebar.js?v=1.6"></script>
   
   <script>
     // 版本标识 - 用于调试缓存问题
-    console.log('[Data Statistics] Version: 2024-12-26-v2');
-    
-    const API = 'http://localhost:8000/api';
+    console.log('[Data Statistics] Version: 2025-01-08-v1.8 - Vertical bar chart for task distribution');
+  </script>
+  <script src="assets/api-config.js"></script>
+  <script>
+    const API = window.API_CONFIG.API;
     const token = localStorage.getItem('token');
     if (!token) location.href = 'login.html';
     
@@ -1226,7 +1200,6 @@
       document.getElementById('productivity').textContent = '-';
       
       // 在主要图表区域显示错误信息
-      document.getElementById('projectStatusChart').innerHTML = errorHtml;
       document.getElementById('topProjectsProgress').innerHTML = errorHtml;
       document.getElementById('taskDistributionChart').innerHTML = errorHtml;
       document.getElementById('recentActivities').innerHTML = errorHtml;
@@ -1502,49 +1475,6 @@
       `).join('');
     }
 
-    function renderUpcomingDeadlines() {
-      const container = document.getElementById('upcomingDeadlines');
-      const urgentCount = document.getElementById('urgentCount');
-      
-      const projectsWithDeadlines = statsData.projects
-        .filter(p => p.planned_end)
-        .map(p => ({
-          ...p,
-          daysUntil: getDaysUntil(p.planned_end)
-        }))
-        .filter(p => p.daysUntil !== null && p.daysUntil >= 0)
-        .sort((a, b) => a.daysUntil - b.daysUntil)
-        .slice(0, 10);
-
-      const urgent = projectsWithDeadlines.filter(p => p.daysUntil <= 7).length;
-      urgentCount.textContent = `${urgent} 个紧急`;
-
-      container.innerHTML = projectsWithDeadlines.map(project => {
-        let statusClass = 'status-active';
-        let statusText = '正常';
-        
-        if (project.daysUntil <= 3) {
-          statusClass = 'status-overdue';
-          statusText = '紧急';
-        } else if (project.daysUntil <= 7) {
-          statusClass = 'status-pending';
-          statusText = '即将到期';
-        }
-
-        return `
-          <tr>
-            <td>
-              <div style="font-weight: 600;">${project.name}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">${project.code}</div>
-            </td>
-            <td>${formatDate(project.planned_end)}</td>
-            <td>${project.daysUntil} 天</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
     function renderRecentActivities() {
       const container = document.getElementById('recentActivities');
       
@@ -1641,7 +1571,7 @@
       const taskTotal = Object.values(taskCounts).reduce((a, b) => a + b, 0);
       
       if (taskTotal === 0) {
-        taskChart.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 60px;">暂无数据</div>';
+        taskChart.innerHTML = '<div style="color: #64748b; text-align: center; padding: 60px; font-size: 14px;">暂无数据</div>';
       } else {
         const chartData = [
           { label: '待办', value: taskCounts.todo },
@@ -1649,44 +1579,56 @@
           { label: '已完成', value: taskCounts.done }
         ].filter(item => item.value > 0);
 
-        const chart = new SimpleChart(taskChart);
-        chart.renderBarChart(chartData, {
-          colors: ['#f59e0b', '#3b82f6', '#10b981'],
-          height: 220,
-          horizontal: true
-        });
+        // 渲染竖向柱状图
+        const maxValue = Math.max(...chartData.map(d => d.value));
+        const colors = ['#f59e0b', '#3b82f6', '#10b981'];
+        const chartHeight = 180; // 图表区域高度
+        
+        const html = `
+          <div style="height: 250px; display: flex; flex-direction: column; padding: 20px;">
+            <div style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; gap: 20px; padding: 20px 0;">
+              ${chartData.map((item, index) => {
+                const barHeight = Math.max((item.value / maxValue) * chartHeight, 20); // 最小高度20px
+                const color = colors[index % colors.length];
+                return `
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; max-width: 80px;">
+                    <!-- 数值显示在柱子上方 -->
+                    <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">${item.value}</div>
+                    
+                    <!-- 柱状图 -->
+                    <div style="
+                      width: 60px; 
+                      height: ${barHeight}px; 
+                      background: linear-gradient(180deg, ${color} 0%, ${color}DD 100%);
+                      border-radius: 8px 8px 4px 4px;
+                      transition: all 0.3s ease;
+                      cursor: pointer;
+                      position: relative;
+                      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                      display: flex;
+                      align-items: flex-end;
+                      justify-content: center;
+                      padding-bottom: 8px;
+                    " onmouseover="this.style.transform='scaleY(1.05) scaleX(1.1)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='scaleY(1) scaleX(1)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'">
+                      <!-- 柱子内的数值（小字体） -->
+                      <span style="font-size: 12px; font-weight: 600; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${item.value}</span>
+                    </div>
+                    
+                    <!-- 标签显示在柱子下方 -->
+                    <div style="font-size: 13px; font-weight: 500; color: #0f172a; text-align: center; margin-top: 8px;">${item.label}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+        
+        taskChart.innerHTML = html;
       }
     }
 
     function renderCharts() {
-      // Project Status Chart using SimpleChart
-      const statusChart = document.getElementById('projectStatusChart');
-      const statusCounts = {
-        active: statsData.projects.filter(p => p.status === 'active').length,
-        completed: statsData.projects.filter(p => p.status === 'completed').length,
-        paused: statsData.projects.filter(p => p.status === 'paused').length
-      };
-
-      const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-      
-      if (total === 0) {
-        statusChart.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 60px;">暂无数据</div>';
-      } else {
-        const chartData = [
-          { label: '进行中', value: statusCounts.active },
-          { label: '已完成', value: statusCounts.completed },
-          { label: '暂停', value: statusCounts.paused }
-        ].filter(item => item.value > 0);
-
-        const chart = new SimpleChart(statusChart);
-        chart.renderPieChart(chartData, {
-          colors: ['#10b981', '#4f46e5', '#f59e0b'],
-          size: 180
-        });
-      }
-
-      // Task Distribution Chart
-      renderTaskDistribution();
+      // Task Distribution Chart - 现在由initializeProjectFilter处理默认选择
 
       // Workload Chart - Weekly trend
       const workloadChart = document.getElementById('workloadChart');
@@ -1851,41 +1793,6 @@
           </td>
         </tr>
       `).join('');
-    }
-
-    // Enhanced chart update functions
-    function updateProjectStatusChart(period) {
-      const statusChart = document.getElementById('projectStatusChart');
-      
-      // Mock data based on period
-      let statusCounts;
-      switch(period) {
-        case '7d':
-          statusCounts = { active: 8, completed: 3, paused: 1 };
-          break;
-        case '30d':
-          statusCounts = { active: 15, completed: 12, paused: 3 };
-          break;
-        case '90d':
-          statusCounts = { active: 25, completed: 35, paused: 8 };
-          break;
-        default:
-          statusCounts = { active: 12, completed: 8, paused: 2 };
-      }
-
-      const chartData = [
-        { label: '进行中', value: statusCounts.active },
-        { label: '已完成', value: statusCounts.completed },
-        { label: '暂停', value: statusCounts.paused }
-      ].filter(item => item.value > 0);
-
-      const chart = new SimpleChart(statusChart);
-      chart.renderPieChart(chartData, {
-        colors: ['#10b981', '#4f46e5', '#f59e0b'],
-        size: 180
-      });
-      
-      showToast(`已更新${period === '7d' ? '7天' : period === '30d' ? '30天' : '90天'}数据`, 'info');
     }
 
     function updateMonthlyTrendChart(metric) {
@@ -2101,12 +2008,9 @@
             
             // Handle specific chart updates
             const chartType = e.target.dataset.chart;
-            const period = e.target.dataset.period;
             const metric = e.target.dataset.metric;
             
-            if (chartType === 'status' && period) {
-              updateProjectStatusChart(period);
-            } else if (chartType === 'trend' && metric) {
+            if (chartType === 'trend' && metric) {
               updateMonthlyTrendChart(metric);
             }
           }
@@ -2170,6 +2074,28 @@
         filterSelect.appendChild(option);
       });
       
+      // 优先选择"政企指挥平台"项目，如果没有则选择第一个项目
+      let defaultProjectId = null;
+      
+      // 查找"政企指挥平台"项目
+      const targetProject = statsData.projects.find(p => 
+        (p.name && p.name.includes('政企指挥平台')) || 
+        (p.title && p.title.includes('政企指挥平台'))
+      );
+      
+      if (targetProject) {
+        defaultProjectId = targetProject.id;
+      } else if (statsData.projects.length > 0) {
+        // 如果没有找到"政企指挥平台"，选择第一个项目
+        defaultProjectId = statsData.projects[0].id;
+      }
+      
+      if (defaultProjectId) {
+        filterSelect.value = defaultProjectId;
+        // 立即渲染选中项目的数据
+        renderTaskDistribution(defaultProjectId);
+      }
+      
       // Add event listener
       filterSelect.addEventListener('change', (e) => {
         renderTaskDistribution(e.target.value);
@@ -2187,7 +2113,6 @@
       
       renderKPIs();
       renderTopProjectsProgress();
-      renderUpcomingDeadlines();
       renderRecentActivities();
       renderTeamPerformance();
       renderCharts();

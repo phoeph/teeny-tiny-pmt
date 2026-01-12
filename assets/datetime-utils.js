@@ -56,11 +56,26 @@
     }
   }
 
+  // 获取甘特图动态时间范围
+  function getGanttTimeRange() {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 12, 0);
+    
+    return {
+      startDate: startDate,
+      endDate: endDate,
+      startDateStr: formatCSTDate(startDate),
+      endDateStr: formatCSTDate(endDate)
+    };
+  }
+
   // 暴露到全局
   window.DateTimeUtils = {
     formatCST: formatCST,
     formatCSTShort: formatCSTShort,
-    formatCSTDate: formatCSTDate
+    formatCSTDate: formatCSTDate,
+    getGanttTimeRange: getGanttTimeRange
   };
 
   // 兼容旧代码的全局函数

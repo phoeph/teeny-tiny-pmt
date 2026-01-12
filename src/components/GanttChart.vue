@@ -260,33 +260,14 @@ export default {
         }
       ],
       
-      // 时间轴数据
-      months: [
-        // 2023年
-        { key: '2023-Q1', label: 'Q1', year: 2023 },
-        { key: '2023-Q2', label: 'Q2', year: 2023 },
-        { key: '2023-Q3', label: 'Q3', year: 2023 },
-        { key: '2023-Q4', label: 'Q4', year: 2023 },
-        // 2024年
-        { key: '2024-Q1', label: 'Q1', year: 2024 },
-        { key: '2024-Q2', label: 'Q2', year: 2024 },
-        { key: '2024-Q3', label: 'Q3', year: 2024 },
-        { key: '2024-Q4', label: 'Q4', year: 2024 },
-        // 2025年
-        { key: '2025-1', label: '1月', year: 2025 },
-        { key: '2025-2', label: '2月', year: 2025 },
-        { key: '2025-3', label: '3月', year: 2025 },
-        { key: '2025-4', label: '4月', year: 2025 },
-        { key: '2025-5', label: '5月', year: 2025 },
-        { key: '2025-6', label: '6月', year: 2025 },
-        { key: '2025-7', label: '7月', year: 2025 },
-        { key: '2025-8', label: '8月', year: 2025 },
-        { key: '2025-9', label: '9月', year: 2025 },
-        { key: '2025-10', label: '10月', year: 2025 },
-        { key: '2025-11', label: '11月', year: 2025 },
-        { key: '2025-12', label: '12月', year: 2025 }
-      ]
+      // 时间轴数据 - 动态生成当前时间后12个月
+      months: []
     }
+  },
+  
+  mounted() {
+    // 页面加载时生成动态时间轴
+    this.generateTimeAxis();
   },
   
   computed: {
@@ -322,6 +303,27 @@ export default {
   },
   
   methods: {
+    // 动态生成时间轴（当前时间后12个月）
+    generateTimeAxis() {
+      const now = new Date();
+      const months = [];
+      
+      // 生成从当前月份开始的12个月
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        
+        months.push({
+          key: `${year}-${month}`,
+          label: `${month}月`,
+          year: year
+        });
+      }
+      
+      this.months = months;
+    },
+    
     getCategoryColor(category) {
       const colors = {
         '触达': '#e6f7ff',

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>数据统计布局测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>数据统计页面布局测试</h1>
+    
+    <div class="test-result info">
+        <h3>测试说明</h3>
+        <p>此页面用于验证数据统计页面的修改是否生效</p>
+        <p>修改内容：删除"项目状态分布"和"即将到期项目"两个模块</p>
+    </div>
+
+    <div class="test-result success">
+        <h3>预期结果</h3>
+        <ul>
+            <li>✅ 应该只看到"项目进度 TOP5"和"最近活动"两个模块并排显示</li>
+            <li>✅ 不应该看到"项目状态分布"饼图</li>
+            <li>✅ 不应该看到"即将到期项目"表格</li>
+            <li>✅ 页面版本应该显示为 v1.6</li>
+        </ul>
+    </div>
+
+    <div class="test-result warning">
+        <h3>如果仍然看到旧版本</h3>
+        <p>请尝试以下操作：</p>
+        <ul>
+            <li>1. 强制刷新页面：Ctrl+F5 (Windows) 或 Cmd+Shift+R (Mac)</li>
+            <li>2. 清除浏览器缓存</li>
+            <li>3. 在开发者工具中禁用缓存</li>
+            <li>4. 使用无痕/隐私模式打开页面</li>
+        </ul>
+    </div>
+
+    <div class="test-result info">
+        <h3>访问链接</h3>
+        <p><a href="http://localhost:8080/data-statistics.html" target="_blank">打开数据统计页面</a></p>
+        <p><small>点击链接在新标签页中打开，便于对比</small></p>
+    </div>
+
+    <script>
+        console.log('测试页面加载完成 - 时间戳:', new Date().toISOString());
+        
+        // 检查是否能访问主页面
+        fetch('http://localhost:8080/data-statistics.html')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ 数据统计页面可访问');
+                } else {
+                    console.log('❌ 数据统计页面访问失败:', response.status);
+                }
+            })
+            .catch(error => {
+                console.log('❌ 网络错误:', error);
+            });
+    </script>
+</body>
+</html>

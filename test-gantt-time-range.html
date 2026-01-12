@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甘特图时间范围测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>甘特图时间范围测试</h1>
+    
+    <div class="test-result info">
+        <h3>当前时间信息</h3>
+        <p>当前日期: <span id="currentDate"></span></p>
+        <p>当前月份: <span id="currentMonth"></span></p>
+    </div>
+
+    <div class="test-result success">
+        <h3>甘特图时间范围计算结果</h3>
+        <p>开始时间（当前月-6个月）: <span id="startDate"></span></p>
+        <p>结束时间（当前月+12个月）: <span id="endDate"></span></p>
+        <p>总天数: <span id="totalDays"></span></p>
+    </div>
+
+    <div class="test-result info">
+        <h3>预期结果</h3>
+        <p>甘特图应该显示从 <strong>2024年7月</strong> 到 <strong>2026年1月</strong> 的时间范围</p>
+        <p>这样就能看到当前时间（2025年1月8日）后的12个月时间</p>
+    </div>
+
+    <script>
+        // 获取当前时间
+        const now = new Date();
+        
+        // 计算甘特图时间范围
+        const startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 12, 0);
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // 格式化日期
+        function formatDate(date) {
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        // 显示结果
+        document.getElementById('currentDate').textContent = formatDate(now);
+        document.getElementById('currentMonth').textContent = `${now.getFullYear()}年${now.getMonth() + 1}月`;
+        document.getElementById('startDate').textContent = formatDate(startDate);
+        document.getElementById('endDate').textContent = formatDate(endDate);
+        document.getElementById('totalDays').textContent = totalDays + ' 天';
+        
+        console.log('甘特图时间范围测试结果:');
+        console.log('当前时间:', now);
+        console.log('开始时间:', startDate);
+        console.log('结束时间:', endDate);
+        console.log('总天数:', totalDays);
+    </script>
+</body>
+</html>

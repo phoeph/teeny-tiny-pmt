@@ -14,11 +14,11 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS配置
+# CORS配置 - 允许所有来源（开发环境）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:65300", "http://127.0.0.1:65300"],
-    allow_credentials=True,
+    allow_origins=["*"],  # 开发环境允许所有来源
+    allow_credentials=False,  # 允许所有来源时必须设为False
     allow_methods=["*"],
     allow_headers=["*"],
 )
