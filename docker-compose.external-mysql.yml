@@ -59,4 +59,5 @@ volumes:
 
 networks:
   pmt-network:
-    driver: bridge
+    external: true
+    name: pmt_pmt-network
