@@ -1,0 +1,62 @@
+# Docker Compose 配置 - 使用外部 MySQL
+# 适用于已有 MySQL 服务的场景
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pmt-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      LABELS_EXCEL_PATH: ${LABELS_EXCEL_PATH:-/data/labels/菜单级联关系.xlsx}
+      ATTACHMENTS_DIR: /app/attachments
+    volumes:
+      - attachments:/app/attachments
+      - labels-data:/data/labels
+    networks:
+      - pmt-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: nginx:alpine
+    container_name: pmt-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./:/usr/share/nginx/html:ro
+    networks:
+      - pmt-network
+    depends_on:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  attachments:
+    driver: local
+  labels-data:
+    driver: local
+
+networks:
+  pmt-network:
+    driver: bridge

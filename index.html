@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>项目管理系统</title>
+    <!-- 版本信息 -->
+    <script src="version.js?v=1.0.0"></script>
     <script>
         // 自动重定向到登录页面
-        window.location.replace('login.html');
+        window.location.replace('login.html?v=' + Date.now());
     </script>
 </head>
 <body>
     <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
         <h2>正在跳转到登录页面...</h2>
         <p>如果页面没有自动跳转，请<a href="login.html">点击这里</a></p>
+        <p style="color: #666; font-size: 12px;">版本: 1.0.0 | 构建时间: 2025-01-12</p>
     </div>
 </body>
 </html>

@@ -64,7 +64,17 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    db_url = DATABASE_URL.replace("sqlite+aiosqlite://", "sqlite://")
+    
+    # 处理不同数据库的 URL
+    db_url = DATABASE_URL
+    
+    # 如果是 SQLite 异步 URL，转换为同步 URL
+    if "sqlite+aiosqlite://" in db_url:
+        db_url = db_url.replace("sqlite+aiosqlite://", "sqlite://")
+    # 如果是 MySQL 异步 URL，转换为同步 URL
+    elif "mysql+aiomysql://" in db_url:
+        db_url = db_url.replace("mysql+aiomysql://", "mysql+pymysql://")
+    
     configuration["sqlalchemy.url"] = db_url
     connectable = engine_from_config(
         configuration,

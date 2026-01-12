@@ -46,6 +46,21 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 @app.on_event("startup")
 async def startup():
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # 测试数据库连接
+    from .database import test_database_connection
+    try:
+        logger.info("🔍 Testing database connection...")
+        await test_database_connection(max_retries=5, retry_interval=5)
+    except RuntimeError as e:
+        logger.error(f"❌ Failed to connect to database: {e}")
+        # 在生产环境应该退出，开发环境可以继续（使用 SQLite）
+        import os
+        if os.getenv("ENVIRONMENT") == "production":
+            raise
+    
     # 创建数据库表（使用同步引擎避免greenlet依赖）
     from sqlalchemy import create_engine as create_sync_engine
     from sqlalchemy import text
