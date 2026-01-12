@@ -29,6 +29,9 @@
     BASE_URL: BASE_URL
   };
   
+  // 兼容旧代码：同时导出 window.API
+  window.API = API_BASE;
+  
   console.log('[API Config] Environment:', isLocalDev ? 'Local Dev' : 'Production');
   console.log('[API Config] Backend URL:', API_BASE);
 })();
